@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "1004439512234",
+    "project_id": "orcamentos-de1ba",
+    "storage_bucket": "orcamentos-de1ba.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1004439512234:android:73a3fa2caac5eed32d9cd3",
+        "android_client_info": {
+          "package_name": "com.bapps.orcamentos"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1004439512234-sv5o9li9vg1ct5aev9vhuts1oh92rp5q.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bapps.orcamentos",
+            "certificate_hash": "4dbf6e910ddbfd00c57b97bdcd20ce334e5eaeac"
+          }
+        },
+        {
+          "client_id": "1004439512234-mqqb1622hk1f9tlomi5r83gmh14b9bno.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBygCWgeZwLqs--MjHqIa-D06LKm9-X2QQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1004439512234-mqqb1622hk1f9tlomi5r83gmh14b9bno.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

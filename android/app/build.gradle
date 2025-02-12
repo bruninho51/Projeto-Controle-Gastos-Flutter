@@ -1,0 +1,54 @@
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    id "dev.flutter.flutter-gradle-plugin"
+}
+
+android {
+    namespace = "com.bapps.orcamentos"
+    compileSdk = flutter.compileSdkVersion
+    ndkVersion = flutter.ndkVersion
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17  // Usando Java 17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_17  // Usando Java 17
+    }
+
+    defaultConfig {
+        applicationId = "com.bapps.orcamentos"
+        minSdk = 23  // Altere para 23
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+    }
+
+    buildTypes {
+        release {
+            signingConfig = signingConfigs.debug
+        }
+    }
+}
+
+dependencies {
+    // Firebase BOM para gerenciar versões do Firebase
+    implementation platform('com.google.firebase:firebase-bom:32.0.0')  // Firebase BOM (Bill of Materials)
+
+    // Dependências específicas do Firebase
+    implementation 'com.google.firebase:firebase-auth'  // Firebase Authentication
+    implementation 'com.google.firebase:firebase-firestore'  // Firestore
+    implementation 'com.google.firebase:firebase-messaging'  // Firebase Cloud Messaging
+
+    // Outras dependências do Firebase podem ser adicionadas, como:
+    // implementation 'com.google.firebase:firebase-analytics'  // Firebase Analytics, por exemplo
+}
+
+flutter {
+    source = "../.."
+}
+
+// Necessário para a configuração do Firebase no Android
+apply plugin: 'com.google.gms.google-services'
