@@ -167,7 +167,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   }
 
   Future<List<dynamic>> fetchGastosVariaveis(int orcamentoId) async {
-    final url = 'http://192.168.73.103:3000/api/v1/orcamentos/$orcamentoId/gastos-variaveis';
+    final url = 'http://192.168.73.103:3000/api/v1/orcamentos/$orcamentoId/gastos-variados';
 
     final response = await http.get(
       Uri.parse(url),
@@ -178,7 +178,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     );
 
     if (response.statusCode >= 200 && response.statusCode <= 299) {
-      return jsonDecode(response.body);
+      var gastosVariaveis = jsonDecode(response.body);
+      print('gastos variaveis orcamento: $gastosVariaveis');
+      return gastosVariaveis;
     } else {
       print("Erro na API de orçamentos: ${response.statusCode}");
       return [];

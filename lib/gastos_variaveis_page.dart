@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:orcamentos_app/form_gasto_variado_page.dart';
 import 'dart:convert';
+import 'package:orcamentos_app/gasto_variado_detalhes_page.dart';
 
 class GastosVariaveisPage extends StatefulWidget {
   final int orcamentoId;
@@ -80,27 +81,26 @@ class _GastosVariaveisPageState extends State<GastosVariaveisPage> {
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(child: Text('Nenhum gasto variado encontrado'));
           } else {
-            List<Map<String, dynamic>> _gastosVariaveis = snapshot.data!;
+            List<Map<String, dynamic>> gastosVariaveis = snapshot.data!;
 
             return ListView.builder(
-              itemCount: _gastosVariaveis.length,
+              itemCount: gastosVariaveis.length,
               itemBuilder: (context, index) {
-                final gasto = _gastosVariaveis[index];
+                final gasto = gastosVariaveis[index];
                 return GestureDetector(
-                  onTap: () {}, // deve abrir a tela de detalhes
-                  /*onTap: () async {
+                  onTap: () async {
                     // Navegar para a tela de detalhes do gasto variado
                     await Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => DetalhesGastoFixoPage(gastoId: gasto['id'], orcamentoId: gasto['orcamento_id'], apiToken: widget.apiToken,),
+                        builder: (context) => DetalhesGastoVariadoPage(gastoId: gasto['id'], orcamentoId: gasto['orcamento_id'], apiToken: widget.apiToken,),
                       ),
                     );
 
-                    setState(() async {
-                      _gastosVariaveis = await fetchGastosVariaveis(widget.orcamentoId);
+                    setState(() {
+                      _gastosVariaveis = fetchGastosVariaveis(widget.orcamentoId);
                     });
-                  },*/
+                  },
                   child: Card(
                     elevation: 5.0,
                     shape: RoundedRectangleBorder(

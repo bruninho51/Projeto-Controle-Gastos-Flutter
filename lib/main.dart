@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'home_page.dart'; // Importa o arquivo que contém a HomePage
 import 'login_page.dart'; // Importa o arquivo que contém a LoginPage
 
