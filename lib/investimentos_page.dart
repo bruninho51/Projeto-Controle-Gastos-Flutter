@@ -1,6 +1,6 @@
-// investimentos_page.dart
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:orcamentos_app/form_investimento.dart';
 import 'dart:convert';
 import 'orcamento_detalhes_page.dart';
 
@@ -17,6 +17,7 @@ class _InvestimentosPageState extends State<InvestimentosPage> {
   List<dynamic> _investimentos = [];
   bool _isLoading = false;
   String _apiToken = '';
+  bool _isMenuOpen = false; // Controla se os botões secundários estão visíveis
 
   @override
   void initState() {
@@ -48,6 +49,28 @@ class _InvestimentosPageState extends State<InvestimentosPage> {
     } else {
       print("erro na api de investimentos ${response.statusCode}");
     }
+  }
+
+  void _addNewInvestimento() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FormularioInvestimentoPage(apiToken: widget.apiToken),
+      ),
+    );
+
+    if (result == true) {
+      _fetchApiData();
+    }
+  }
+
+  void _addNewCategoria() async {
+    /*await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CategoriasDeGastoPage(apiToken: widget.apiToken),  // Supondo que você tenha uma página para adicionar categoria
+      ),
+    );*/
   }
 
   @override
@@ -125,6 +148,81 @@ class _InvestimentosPageState extends State<InvestimentosPage> {
                       );
                     },
                   ),
+      ),
+      floatingActionButton: Stack(
+        children: [
+          // Botão principal (abre os outros botões)
+          Positioned(
+            bottom: 0,
+            right: 0,
+            child: FloatingActionButton(
+              onPressed: () {
+                setState(() {
+                  _isMenuOpen = !_isMenuOpen;
+                });
+              },
+              backgroundColor: Colors.blue,
+              child: Icon(
+                _isMenuOpen ? Icons.close : Icons.add,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          
+          // Botão para adicionar um novo investimento (aparece quando _isMenuOpen for true)
+          _isMenuOpen
+              ? Positioned(
+                  width: 230,
+                  bottom: 70,
+                  right: 0,
+                  child: FloatingActionButton(
+                    onPressed: _addNewInvestimento,
+                    backgroundColor: Colors.green,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'Novo Investimento               ',  // Texto ao lado do ícone
+                          style: TextStyle(
+                            color: Colors.white,  // Cor do texto
+                            fontSize: 14,  // Tamanho da fonte
+                          ),
+                        ),
+                        const SizedBox(width: 8),  // Espaçamento entre o ícone e o texto
+                        const Icon(Icons.trending_up, color: Colors.white),
+                      ],
+                    ), 
+                  ),
+                )
+              : Container(),
+
+          // Botão para adicionar uma nova categoria de investimento
+          _isMenuOpen
+              ? Positioned(
+                  width: 230,
+                  bottom: 134,
+                  right: 0,
+                  child: FloatingActionButton(
+                    onPressed: _addNewCategoria,
+                    backgroundColor: Colors.orange,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'Categorias de Investimento',  // Texto ao lado do ícone
+                          style: TextStyle(
+                            color: Colors.white,  // Cor do texto
+                            fontSize: 14,  // Tamanho da fonte
+                          ),
+                        ),
+                        const SizedBox(width: 8),  // Espaçamento entre o ícone e o texto
+                        const Icon(Icons.category, color: Colors.white),
+                      ],
+                    ),
+                  ),
+                )
+              : Container(),
+        ],
       ),
     );
   }

@@ -23,7 +23,6 @@ class _CriacaoGastoFixoPageState extends State<CriacaoGastoFixoPage> {
   final TextEditingController _valorPrevistoController = TextEditingController();
   final TextEditingController _observacoesController = TextEditingController();
 
-  String? _categoriaSelecionada;
   int? _categoriaIdSelecionada;  // Para armazenar o ID da categoria
   List<Map<String, dynamic>> _categorias = []; // Lista de categorias (id e nome)
 
@@ -188,9 +187,6 @@ class _CriacaoGastoFixoPageState extends State<CriacaoGastoFixoPage> {
                       onChanged: (value) {
                         setState(() {
                           _categoriaIdSelecionada = value;
-                          _categoriaSelecionada = _categorias.firstWhere(
-                            (categoria) => categoria['id'] == value,
-                          )['nome'];
                         });
                       },
                       decoration: const InputDecoration(

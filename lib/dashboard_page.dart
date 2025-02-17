@@ -36,14 +36,14 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
           controller: _tabController,
           tabs: const [
             Tab(text: 'Métricas Orçamentos'),
-            Tab(text: 'Métricas Investimentos'),
+            /*Tab(text: 'Métricas Investimentos'),*/
           ],
         ),
       ),
       body: TabBarView(
         controller: _tabController,
         children: [
-          // Página de métricas
+          // Página de orçamentos
           FutureBuilder<Map<String, dynamic>>(
             future: _fetchDashboardData(),
             builder: (context, snapshot) {
@@ -98,8 +98,8 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             },
           ),
 
-          // Página de Orçamentos
-          FutureBuilder<List<dynamic>>(
+          // Página de investimentos
+          /*FutureBuilder<List<dynamic>>(
             future: _fetchOrcamentos(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
@@ -124,7 +124,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                 },
               );
             },
-          ),
+          ),*/
         ],
       ),
     );

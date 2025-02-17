@@ -130,9 +130,9 @@ class _MyHomePageState extends State<MyHomePage> {
           _apiToken != ''
               ? OrcamentosPage(apiToken: _apiToken!)
               : const Center(child: CircularProgressIndicator()),
-          _apiToken != ''
+          /*_apiToken != ''
               ? InvestimentosPage(apiToken: _apiToken!)
-              : const Center(child: CircularProgressIndicator()),
+              : const Center(child: CircularProgressIndicator()),*/
           _buildProfilePage(),
         ],
       ),
@@ -150,10 +150,10 @@ class _MyHomePageState extends State<MyHomePage> {
             icon: Icon(Icons.account_balance),
             label: 'Orçamentos',
           ),
-          BottomNavigationBarItem(
+          /*BottomNavigationBarItem(
             icon: Icon(Icons.trending_up),
             label: 'Investimentos',
-          ),
+          ),*/
           BottomNavigationBarItem(
             icon: Icon(Icons.account_circle),
             label: 'Perfil',

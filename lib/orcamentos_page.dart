@@ -69,16 +69,12 @@ class _OrcamentosPageState extends State<OrcamentosPage> {
   }
 
   void _addNewCategoria() async {
-    final result = await Navigator.push(
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => CategoriasDeGastoPage(apiToken: widget.apiToken),  // Supondo que você tenha uma página para adicionar categoria
       ),
     );
-
-    if (result == true) {
-      // Atualize a lista de categorias ou faça algum outro processamento necessário
-    }
   }
 
   void _navigateToArquivados() async {
