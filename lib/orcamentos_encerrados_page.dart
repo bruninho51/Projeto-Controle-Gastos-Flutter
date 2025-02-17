@@ -34,7 +34,7 @@ class _OrcamentosEncerradosPageState extends State<OrcamentosEncerradosPage> {
     });
 
     final response = await http.get(
-      Uri.parse('http://192.168.1.147:3000/api/v1/orcamentos'),
+      Uri.parse('http://192.168.73.103:3000/api/v1/orcamentos'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken}',

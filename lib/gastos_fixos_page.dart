@@ -23,9 +23,9 @@ class _GastosFixosPageState extends State<GastosFixosPage> {
     _gastosFixos = fetchGastosFixos(widget.orcamentoId);
   }
 
-   Future<Map<String, dynamic>> _getOrcamento(int orcamentoId) async {
+  Future<Map<String, dynamic>> _getOrcamento(int orcamentoId) async {
     final url =
-        'http://192.168.1.147:3000/api/v1/orcamentos/${widget.orcamentoId}';
+        'http://192.168.73.103:3000/api/v1/orcamentos/${widget.orcamentoId}';
 
     final response = await http.get(
       Uri.parse(url),
@@ -47,7 +47,7 @@ class _GastosFixosPageState extends State<GastosFixosPage> {
   }
 
   Future<List<Map<String, dynamic>>> fetchGastosFixos(int orcamentoId) async {
-    final url = 'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId/gastos-fixos';
+    final url = 'http://192.168.73.103:3000/api/v1/orcamentos/$orcamentoId/gastos-fixos';
 
     final response = await http.get(
       Uri.parse(url),
@@ -94,7 +94,7 @@ class _GastosFixosPageState extends State<GastosFixosPage> {
                     await Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => DetalhesGastoPage(gastoId: gasto['id'], orcamentoId: gasto['orcamento_id'], apiToken: widget.apiToken,),
+                        builder: (context) => DetalhesGastoFixoPage(gastoId: gasto['id'], orcamentoId: gasto['orcamento_id'], apiToken: widget.apiToken,),
                       ),
                     );
 

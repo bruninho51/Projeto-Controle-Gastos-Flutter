@@ -3,24 +3,25 @@ import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-class CriacaoGastoFixoPage extends StatefulWidget {
+class CriacaoGastoVariadoPage extends StatefulWidget {
   final int orcamentoId;
   final String apiToken;
 
-  const CriacaoGastoFixoPage({
+  const CriacaoGastoVariadoPage({
     Key? key,
     required this.orcamentoId,
     required this.apiToken,
   }) : super(key: key);
 
   @override
-  _CriacaoGastoFixoPageState createState() => _CriacaoGastoFixoPageState();
+  _CriacaoGastoVariadoPageState createState() => _CriacaoGastoVariadoPageState();
 }
 
-class _CriacaoGastoFixoPageState extends State<CriacaoGastoFixoPage> {
+class _CriacaoGastoVariadoPageState extends State<CriacaoGastoVariadoPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _descricaoController = TextEditingController();
-  final TextEditingController _valorPrevistoController = TextEditingController();
+  final TextEditingController _valorController = TextEditingController();
+  TextEditingController _dataController = TextEditingController();
   final TextEditingController _observacoesController = TextEditingController();
 
   String? _categoriaSelecionada;
@@ -75,12 +76,15 @@ class _CriacaoGastoFixoPageState extends State<CriacaoGastoFixoPage> {
     }
   }
 
-  // Método para salvar o gasto fixo
-  Future<void> _salvarGastoFixo() async {
+  // Método para salvar o gasto variado
+  Future<void> _salvarGastoVariado() async {
     if (_formKey.currentState?.validate() ?? false) {
-      final valorPrevisto = converterParaFormatoNumerico(_valorPrevistoController.text);
+      final valor = converterParaFormatoNumerico(_valorController.text);
 
-      final url = 'http://192.168.73.103:3000/api/v1/orcamentos/${widget.orcamentoId}/gastos-fixos';
+      DateFormat inputFormat = DateFormat('dd/MM/yyyy');
+      DateTime parsedDate = inputFormat.parse(_dataController.text);
+
+      final url = 'http://192.168.73.103:3000/api/v1/orcamentos/${widget.orcamentoId}/gastos-variados';
 
       final response = await http.post(
         Uri.parse(url),
@@ -90,22 +94,23 @@ class _CriacaoGastoFixoPageState extends State<CriacaoGastoFixoPage> {
         },
         body: jsonEncode({
           'descricao': _descricaoController.text,
-          'previsto': valorPrevisto,
+          'valor': valor,
+          'data_pgto': parsedDate.toIso8601String(),
           'categoria_id': _categoriaIdSelecionada,  // Usando o id da categoria selecionada
           'observacoes': _observacoesController.text,
         }),
       );
 
       if (response.statusCode >= 200 && response.statusCode <= 299) {
-        // Se o gasto fixo for salvo com sucesso
+        // Se o gasto variado for salvo com sucesso
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gasto fixo criado com sucesso!')),
+          const SnackBar(content: Text('Gasto variado criado com sucesso!')),
         );
         Navigator.pop(context, true); // Volta para a tela anterior
       } else {
         // Se a requisição falhar
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Falha ao criar o gasto fixo')),
+          const SnackBar(content: Text('Falha ao criar o gasto variado')),
         );
         print(response.body.toString());
       }
@@ -122,7 +127,7 @@ class _CriacaoGastoFixoPageState extends State<CriacaoGastoFixoPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Criar Gasto Fixo'),
+        title: Text('Criar Gasto Variado'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -146,28 +151,56 @@ class _CriacaoGastoFixoPageState extends State<CriacaoGastoFixoPage> {
               ),
               const SizedBox(height: 16),
 
-              // Valor Previsto
+              // Valor
               TextFormField(
-                controller: _valorPrevistoController,
+                controller: _valorController,
                 decoration: const InputDecoration(
-                  labelText: 'Valor Previsto',
+                  labelText: 'Valor',
                 ),
                 keyboardType: TextInputType.number,
                 onChanged: (value) {
                   String formattedValue = _formatarValor(value);
-                  _valorPrevistoController.value = TextEditingValue(
+                  _valorController.value = TextEditingValue(
                     text: formattedValue,
                     selection: TextSelection.collapsed(offset: formattedValue.length),
                   );
                 },
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Por favor, insira o valor previsto';
+                    return 'Por favor, insira o valor';
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 16),
+
+              TextFormField(
+                  controller: _dataController,
+                  decoration: const InputDecoration(
+                    labelText: 'Data de Pagamento',
+                  ),
+                  readOnly: true,
+                  validator: (value) {
+                    print('valor data: $value');
+                    if (value != null && value.isEmpty) {
+                      return 'Por favor, selecione uma data';
+                    }
+                    return null;
+                  },
+                  onTap: () async {
+                    DateTime? pickedDate = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2101),
+                    );
+                    if (pickedDate != null) {
+                      _dataController.text = DateFormat('dd/MM/yyyy').format(pickedDate);
+                    }
+                  },
+                ),
+
+                const SizedBox(height: 16),
 
               // Categoria (Dropdown)
               _categorias.isEmpty
@@ -218,8 +251,8 @@ class _CriacaoGastoFixoPageState extends State<CriacaoGastoFixoPage> {
 
               // Botão de envio
               ElevatedButton(
-                onPressed: _salvarGastoFixo,
-                child: const Text('Criar Gasto Fixo'),
+                onPressed: _salvarGastoVariado,
+                child: const Text('Criar Gasto Variado'),
               ),
             ],
           ),

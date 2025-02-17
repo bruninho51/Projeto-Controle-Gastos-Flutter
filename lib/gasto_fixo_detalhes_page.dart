@@ -3,12 +3,12 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-class DetalhesGastoPage extends StatefulWidget {
+class DetalhesGastoFixoPage extends StatefulWidget {
   final int gastoId;
   final int orcamentoId;
   final String apiToken;
 
-  const DetalhesGastoPage({
+  const DetalhesGastoFixoPage({
     super.key,
     required this.orcamentoId,
     required this.gastoId,
@@ -16,10 +16,10 @@ class DetalhesGastoPage extends StatefulWidget {
   });
 
   @override
-  _DetalhesGastoPageState createState() => _DetalhesGastoPageState();
+  _DetalhesGastoFixoPageState createState() => _DetalhesGastoFixoPageState();
 }
 
-class _DetalhesGastoPageState extends State<DetalhesGastoPage> {
+class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage> {
   Map<String, dynamic> gasto = {}; // Inicializa com um mapa vazio
   Map<String, dynamic> orcamento = {}; 
   bool isLoading = true; // Controla o estado de carregamento
@@ -49,7 +49,7 @@ class _DetalhesGastoPageState extends State<DetalhesGastoPage> {
 
   // Método para obter as categorias de gasto da API
   Future<void> _obterCategoriasGastos() async {
-    final url = 'http://192.168.1.147:3000/api/v1/categorias-gastos'; // URL da sua API
+    final url = 'http://192.168.73.103:3000/api/v1/categorias-gastos'; // URL da sua API
     final response = await http.get(
       Uri.parse(url),
       headers: {
@@ -77,7 +77,7 @@ class _DetalhesGastoPageState extends State<DetalhesGastoPage> {
 
   // Função para apagar o orçamento
   Future<void> deleteGastoFixo(int gastoFixoId) async {
-    final url = 'http://192.168.1.147:3000/api/v1/orcamentos/${widget.orcamentoId}/gastos-fixos/$gastoFixoId';
+    final url = 'http://192.168.73.103:3000/api/v1/orcamentos/${widget.orcamentoId}/gastos-fixos/$gastoFixoId';
     final response = await http.delete(
       Uri.parse(url),
       headers: {
@@ -99,7 +99,7 @@ class _DetalhesGastoPageState extends State<DetalhesGastoPage> {
 
   Future<void> _getOrcamento(int orcamentoId) async {
     final url =
-        'http://192.168.1.147:3000/api/v1/orcamentos/${widget.orcamentoId}';
+        'http://192.168.73.103:3000/api/v1/orcamentos/${widget.orcamentoId}';
 
     final response = await http.get(
       Uri.parse(url),
@@ -127,7 +127,7 @@ class _DetalhesGastoPageState extends State<DetalhesGastoPage> {
   // Função para buscar o gasto atualizado via API
   Future<void> _getGasto(int gastoId) async {
     final url =
-        'http://192.168.1.147:3000/api/v1/orcamentos/${widget.orcamentoId}/gastos-fixos/${widget.gastoId}';
+        'http://192.168.73.103:3000/api/v1/orcamentos/${widget.orcamentoId}/gastos-fixos/${widget.gastoId}';
 
     final response = await http.get(
       Uri.parse(url),
@@ -196,7 +196,7 @@ class _DetalhesGastoPageState extends State<DetalhesGastoPage> {
     final orcamentoId = widget.orcamentoId;
 
     final url =
-        'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId/gastos-fixos/$gastoId';
+        'http://192.168.73.103:3000/api/v1/orcamentos/$orcamentoId/gastos-fixos/$gastoId';
 
     final response = await http.patch(
       Uri.parse(url),
@@ -229,7 +229,7 @@ class _DetalhesGastoPageState extends State<DetalhesGastoPage> {
     final orcamentoId = widget.orcamentoId;
 
     final url =
-        'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId/gastos-fixos/$gastoId';
+        'http://192.168.73.103:3000/api/v1/orcamentos/$orcamentoId/gastos-fixos/$gastoId';
 
     final response = await http.patch(
       Uri.parse(url),
@@ -261,7 +261,7 @@ class _DetalhesGastoPageState extends State<DetalhesGastoPage> {
     final orcamentoId = widget.orcamentoId;
 
     final url =
-        'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId/gastos-fixos/$gastoId';
+        'http://192.168.73.103:3000/api/v1/orcamentos/$orcamentoId/gastos-fixos/$gastoId';
 
     final response = await http.patch(
       Uri.parse(url),
@@ -294,7 +294,7 @@ class _DetalhesGastoPageState extends State<DetalhesGastoPage> {
     final orcamentoId = widget.orcamentoId;
 
     final url =
-        'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId/gastos-fixos/$gastoId';
+        'http://192.168.73.103:3000/api/v1/orcamentos/$orcamentoId/gastos-fixos/$gastoId';
 
     final response = await http.patch(
       Uri.parse(url),
@@ -329,7 +329,7 @@ class _DetalhesGastoPageState extends State<DetalhesGastoPage> {
     DateTime parsedDate = inputFormat.parse(dataPgto);
 
     final url =
-        'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId/gastos-fixos/$gastoId';
+        'http://192.168.73.103:3000/api/v1/orcamentos/$orcamentoId/gastos-fixos/$gastoId';
 
     final response = await http.patch(
       Uri.parse(url),
@@ -365,7 +365,7 @@ class _DetalhesGastoPageState extends State<DetalhesGastoPage> {
     DateTime parsedDate = inputFormat.parse(dataPgto);
 
     final url =
-        'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId/gastos-fixos/$gastoId';
+        'http://192.168.73.103:3000/api/v1/orcamentos/$orcamentoId/gastos-fixos/$gastoId';
 
     final response = await http.patch(
       Uri.parse(url),
@@ -551,10 +551,15 @@ class _DetalhesGastoPageState extends State<DetalhesGastoPage> {
                   ? const CircularProgressIndicator() // Exibe um carregando enquanto as categorias são carregadas
                   : DropdownButtonFormField<int>(
                       value: _categoriaIdSelecionada,
+                      isExpanded: true,  // Faz o DropdownButton ocupar toda a largura disponível
                       items: _categorias.map((categoria) {
                         return DropdownMenuItem<int>(
                           value: categoria['id'],
-                          child: Text(categoria['nome']),
+                          child: Text(
+                            categoria['nome'],
+                            overflow: TextOverflow.ellipsis,  // Adiciona elipses se o texto for muito grande
+                            softWrap: true,  // Permite que o texto quebre para a linha seguinte se necessário
+                          ),
                         );
                       }).toList(),
                       onChanged: (value) {

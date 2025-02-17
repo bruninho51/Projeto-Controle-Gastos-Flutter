@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:orcamentos_app/categorias_gastos_page.dart';
 import 'package:orcamentos_app/orcamentos_encerrados_page.dart';
 import 'dart:convert';
 import 'orcamento_detalhes_page.dart';
@@ -35,7 +36,7 @@ class _OrcamentosPageState extends State<OrcamentosPage> {
     });
 
     final response = await http.get(
-      Uri.parse('http://192.168.1.147:3000/api/v1/orcamentos'),
+      Uri.parse('http://192.168.73.103:3000/api/v1/orcamentos'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken}',
@@ -71,7 +72,7 @@ class _OrcamentosPageState extends State<OrcamentosPage> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => FormularioOrcamentoPage(apiToken: widget.apiToken),  // Supondo que você tenha uma página para adicionar categoria
+        builder: (context) => CategoriasDeGastoPage(apiToken: widget.apiToken),  // Supondo que você tenha uma página para adicionar categoria
       ),
     );
 

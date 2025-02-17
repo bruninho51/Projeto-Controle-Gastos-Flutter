@@ -55,7 +55,7 @@ class _FormOrcamentoValorInicialPageState
   }
 
   void _updateValorInicial(orcamentoId, valorInicial) async {
-    final url = 'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId';
+    final url = 'http://192.168.73.103:3000/api/v1/orcamentos/$orcamentoId';
 
     print("valor inicial novo : $valorInicial");
 
