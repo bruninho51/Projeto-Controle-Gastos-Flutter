@@ -30,7 +30,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.blue[50], // Cor da AppBar
       appBar: AppBar(
+        backgroundColor: Colors.blue[50], // Cor da AppBar
         title: const Text('Dashboard'),
         bottom: TabBar(
           controller: _tabController,
@@ -132,7 +134,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
 
   Future<List<dynamic>> _fetchOrcamentos() async {
     final response = await http.get(
-      Uri.parse('http://192.168.73.103:3000/api/v1/orcamentos'),
+      Uri.parse('http://192.168.1.147:3000/api/v1/orcamentos'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken}',
@@ -148,7 +150,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   }
 
   Future<List<dynamic>> fetchGastosFixos(int orcamentoId) async {
-    final url = 'http://192.168.73.103:3000/api/v1/orcamentos/$orcamentoId/gastos-fixos';
+    final url = 'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId/gastos-fixos';
 
     final response = await http.get(
       Uri.parse(url),
@@ -167,7 +169,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   }
 
   Future<List<dynamic>> fetchGastosVariaveis(int orcamentoId) async {
-    final url = 'http://192.168.73.103:3000/api/v1/orcamentos/$orcamentoId/gastos-variados';
+    final url = 'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId/gastos-variados';
 
     final response = await http.get(
       Uri.parse(url),

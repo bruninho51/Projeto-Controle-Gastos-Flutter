@@ -26,7 +26,7 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
   }
 
   Future<Map<String, dynamic>> fetchOrcamentoDetalhes(int orcamentoId) async {
-    final url = 'http://192.168.73.103:3000/api/v1/orcamentos/$orcamentoId';
+    final url = 'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId';
 
     final response = await http.get(
       Uri.parse(url),
@@ -49,7 +49,7 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
   }
 
   Future<int> fetchQtdGastosFixos(int orcamentoId) async {
-    final url = 'http://192.168.73.103:3000/api/v1/orcamentos/$orcamentoId/gastos-fixos';
+    final url = 'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId/gastos-fixos';
 
     final response = await http.get(
       Uri.parse(url),
@@ -68,7 +68,7 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
   }
 
   Future<int> fetchQtdGastosVariados(int orcamentoId) async {
-    final url = 'http://192.168.73.103:3000/api/v1/orcamentos/$orcamentoId/gastos-variados';
+    final url = 'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId/gastos-variados';
 
     final response = await http.get(
       Uri.parse(url),
@@ -86,7 +86,7 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
   }
 
   Future<void> encerrarOrcamento(int orcamentoId) async {
-    final url = 'http://192.168.73.103:3000/api/v1/orcamentos/$orcamentoId';
+    final url = 'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId';
     final response = await http.patch(
       Uri.parse(url),
       headers: {
@@ -110,7 +110,7 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
   }
 
   Future<void> reativarOrcamento(int orcamentoId) async {
-    final url = 'http://192.168.73.103:3000/api/v1/orcamentos/$orcamentoId';
+    final url = 'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId';
     final response = await http.patch(
       Uri.parse(url),
       headers: {
@@ -136,7 +136,7 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
 
   // Função para apagar o orçamento
   Future<void> deleteOrcamento(int orcamentoId) async {
-    final url = 'http://192.168.73.103:3000/api/v1/orcamentos/$orcamentoId';
+    final url = 'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId';
     final response = await http.delete(
       Uri.parse(url),
       headers: {
@@ -159,7 +159,9 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.blue[50], // Cor da AppBar
       appBar: AppBar(
+        backgroundColor: Colors.blue[50], // Cor da AppBar
         title: const Text('Detalhes do Orçamento'),
         actions: [
           IconButton(

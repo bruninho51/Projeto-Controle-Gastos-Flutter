@@ -29,7 +29,7 @@ class _CategoriasDeGastoPageState extends State<CategoriasDeGastoPage> {
     });
 
     final response = await http.get(
-      Uri.parse('http://192.168.73.103:3000/api/v1/categorias-gastos'),
+      Uri.parse('http://192.168.1.147:3000/api/v1/categorias-gastos'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken}',
@@ -48,7 +48,7 @@ class _CategoriasDeGastoPageState extends State<CategoriasDeGastoPage> {
 
   Future<void> _deleteCategoria(int categoriaId) async {
     final response = await http.delete(
-      Uri.parse('http://192.168.73.103:3000/api/v1/categorias-gastos/$categoriaId'),
+      Uri.parse('http://192.168.1.147:3000/api/v1/categorias-gastos/$categoriaId'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken}',
@@ -99,7 +99,7 @@ class _CategoriasDeGastoPageState extends State<CategoriasDeGastoPage> {
   // Função para criar nova categoria
   Future<void> _createCategoria(String nomeCategoria) async {
     final response = await http.post(
-      Uri.parse('http://192.168.73.103:3000/api/v1/categorias-gastos'),
+      Uri.parse('http://192.168.1.147:3000/api/v1/categorias-gastos'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken}',
@@ -175,7 +175,9 @@ class _CategoriasDeGastoPageState extends State<CategoriasDeGastoPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.blue[50], // Cor da AppBar
       appBar: AppBar(
+        backgroundColor: Colors.blue[50], // Cor da AppBar
         title: const Text('Categorias de Gasto'),
       ),
       body: _isLoading

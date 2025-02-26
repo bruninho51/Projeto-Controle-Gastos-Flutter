@@ -45,7 +45,7 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage> {
 
   // Método para obter as categorias de gasto da API
   Future<void> _obterCategoriasGastos() async {
-    final url = 'http://192.168.73.103:3000/api/v1/categorias-gastos'; // URL da sua API
+    final url = 'http://192.168.1.147:3000/api/v1/categorias-gastos'; // URL da sua API
     final response = await http.get(
       Uri.parse(url),
       headers: {
@@ -72,7 +72,7 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage> {
   }
 
   Future<void> deleteGastoVariado(int gastoVariadoId) async {
-    final url = 'http://192.168.73.103:3000/api/v1/orcamentos/${widget.orcamentoId}/gastos-variados/$gastoVariadoId';
+    final url = 'http://192.168.1.147:3000/api/v1/orcamentos/${widget.orcamentoId}/gastos-variados/$gastoVariadoId';
     final response = await http.delete(
       Uri.parse(url),
       headers: {
@@ -94,7 +94,7 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage> {
 
   Future<void> _getOrcamento(int orcamentoId) async {
     final url =
-        'http://192.168.73.103:3000/api/v1/orcamentos/${widget.orcamentoId}';
+        'http://192.168.1.147:3000/api/v1/orcamentos/${widget.orcamentoId}';
 
     final response = await http.get(
       Uri.parse(url),
@@ -122,7 +122,7 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage> {
   // Função para buscar o gasto atualizado via API
   Future<void> _getGasto(int gastoId) async {
     final url =
-        'http://192.168.73.103:3000/api/v1/orcamentos/${widget.orcamentoId}/gastos-variados/${widget.gastoId}';
+        'http://192.168.1.147:3000/api/v1/orcamentos/${widget.orcamentoId}/gastos-variados/${widget.gastoId}';
 
     final response = await http.get(
       Uri.parse(url),
@@ -191,7 +191,7 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage> {
     final orcamentoId = widget.orcamentoId;
 
     final url =
-        'http://192.168.73.103:3000/api/v1/orcamentos/$orcamentoId/gastos-variados/$gastoId';
+        'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId/gastos-variados/$gastoId';
 
     final response = await http.patch(
       Uri.parse(url),
@@ -224,7 +224,7 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage> {
     final orcamentoId = widget.orcamentoId;
 
     final url =
-        'http://192.168.73.103:3000/api/v1/orcamentos/$orcamentoId/gastos-variados/$gastoId';
+        'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId/gastos-variados/$gastoId';
 
     final response = await http.patch(
       Uri.parse(url),
@@ -256,7 +256,7 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage> {
     final orcamentoId = widget.orcamentoId;
 
     final url =
-        'http://192.168.73.103:3000/api/v1/orcamentos/$orcamentoId/gastos-variados/$gastoId';
+        'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId/gastos-variados/$gastoId';
 
     final response = await http.patch(
       Uri.parse(url),
@@ -291,7 +291,7 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage> {
     DateTime parsedDate = inputFormat.parse(dataPgto);
 
     final url =
-        'http://192.168.73.103:3000/api/v1/orcamentos/$orcamentoId/gastos-variados/$gastoId';
+        'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId/gastos-variados/$gastoId';
 
     final response = await http.patch(
       Uri.parse(url),
@@ -591,7 +591,9 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.blue[50], // Cor da AppBar
       appBar: AppBar(
+        backgroundColor: Colors.blue[50], // Cor da AppBar
         title: Text(gasto.isNotEmpty && gasto['descricao'] != null ? gasto['descricao'] : 'Não especificado'),
       ),
       body: gasto.isEmpty || orcamento.isEmpty

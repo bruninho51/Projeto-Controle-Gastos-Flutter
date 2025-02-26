@@ -47,7 +47,7 @@ class _FormularioOrcamentoPageState extends State<FormularioOrcamentoPage> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
-      final url = 'http://192.168.73.103:3000/api/v1/orcamentos';
+      final url = 'http://192.168.1.147:3000/api/v1/orcamentos';
       
       final response = await http.post(
         Uri.parse(url),
@@ -81,7 +81,9 @@ class _FormularioOrcamentoPageState extends State<FormularioOrcamentoPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.blue[50], // Cor da AppBar
       appBar: AppBar(
+        backgroundColor: Colors.blue[50], // Cor da AppBar
         title: const Text('Formulário de Orçamento'),
       ),
       body: Padding(

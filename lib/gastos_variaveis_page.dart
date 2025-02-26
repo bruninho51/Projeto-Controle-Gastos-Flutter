@@ -25,7 +25,7 @@ class _GastosVariaveisPageState extends State<GastosVariaveisPage> {
 
   Future<Map<String, dynamic>> _getOrcamento(int orcamentoId) async {
     final url =
-        'http://192.168.73.103:3000/api/v1/orcamentos/${widget.orcamentoId}';
+        'http://192.168.1.147:3000/api/v1/orcamentos/${widget.orcamentoId}';
 
     final response = await http.get(
       Uri.parse(url),
@@ -47,7 +47,7 @@ class _GastosVariaveisPageState extends State<GastosVariaveisPage> {
   }
 
   Future<List<Map<String, dynamic>>> fetchGastosVariaveis(int orcamentoId) async {
-    final url = 'http://192.168.73.103:3000/api/v1/orcamentos/$orcamentoId/gastos-variados';
+    final url = 'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId/gastos-variados';
 
     final response = await http.get(
       Uri.parse(url),
@@ -68,7 +68,9 @@ class _GastosVariaveisPageState extends State<GastosVariaveisPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.blue[50], // Cor da AppBar
       appBar: AppBar(
+        backgroundColor: Colors.blue[50], // Cor da AppBar
         title: const Text('Gastos Variados'),
       ),
       body: FutureBuilder<List<Map<String, dynamic>>>(

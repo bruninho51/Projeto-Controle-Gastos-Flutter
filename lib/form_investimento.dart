@@ -27,7 +27,7 @@ class _FormularioInvestimentoPageState extends State<FormularioInvestimentoPage>
 
   // Método para obter as categorias de gasto da API
   Future<void> _obterCategoriasGastos() async {
-    final url = 'http://192.168.73.103:3000/api/v1/categorias-investimentos'; // URL da sua API
+    final url = 'http://192.168.1.147:3000/api/v1/categorias-investimentos'; // URL da sua API
     final response = await http.get(
       Uri.parse(url),
       headers: {
@@ -80,7 +80,7 @@ class _FormularioInvestimentoPageState extends State<FormularioInvestimentoPage>
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
-      final url = 'http://192.168.73.103:3000/api/v1/investimentos';
+      final url = 'http://192.168.1.147:3000/api/v1/investimentos';
       
       final response = await http.post(
         Uri.parse(url),
@@ -115,7 +115,9 @@ class _FormularioInvestimentoPageState extends State<FormularioInvestimentoPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.blue[50], // Cor da AppBar
       appBar: AppBar(
+        backgroundColor: Colors.blue[50], // Cor da AppBar
         title: const Text('Formulário de Orçamento'),
       ),
       body: Padding(

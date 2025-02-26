@@ -34,7 +34,7 @@ class _InvestimentosPageState extends State<InvestimentosPage> {
     });
 
     final response = await http.get(
-      Uri.parse('http://192.168.73.103:3000/api/v1/investimentos'),
+      Uri.parse('http://192.168.1.147:3000/api/v1/investimentos'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken}',
@@ -76,7 +76,9 @@ class _InvestimentosPageState extends State<InvestimentosPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.blue[50], // Cor da AppBar
       appBar: AppBar(
+        backgroundColor: Colors.blue[50], // Cor da AppBar
         title: const Text('Investimentos'),
         actions: [
           IconButton(

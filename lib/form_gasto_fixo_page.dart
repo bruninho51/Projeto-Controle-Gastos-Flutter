@@ -48,7 +48,7 @@ class _CriacaoGastoFixoPageState extends State<CriacaoGastoFixoPage> {
 
   // Método para obter as categorias de gasto da API
   Future<void> _obterCategoriasGastos() async {
-    final url = 'http://192.168.73.103:3000/api/v1/categorias-gastos'; // URL da sua API
+    final url = 'http://192.168.1.147:3000/api/v1/categorias-gastos'; // URL da sua API
     final response = await http.get(
       Uri.parse(url),
       headers: {
@@ -79,7 +79,7 @@ class _CriacaoGastoFixoPageState extends State<CriacaoGastoFixoPage> {
     if (_formKey.currentState?.validate() ?? false) {
       final valorPrevisto = converterParaFormatoNumerico(_valorPrevistoController.text);
 
-      final url = 'http://192.168.73.103:3000/api/v1/orcamentos/${widget.orcamentoId}/gastos-fixos';
+      final url = 'http://192.168.1.147:3000/api/v1/orcamentos/${widget.orcamentoId}/gastos-fixos';
 
       final response = await http.post(
         Uri.parse(url),
@@ -120,7 +120,9 @@ class _CriacaoGastoFixoPageState extends State<CriacaoGastoFixoPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.blue[50], // Cor da AppBar
       appBar: AppBar(
+        backgroundColor: Colors.blue[50], // Cor da AppBar
         title: Text('Criar Gasto Fixo'),
       ),
       body: SingleChildScrollView(

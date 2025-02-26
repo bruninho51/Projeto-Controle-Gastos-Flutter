@@ -51,7 +51,7 @@ class _MyHomePageState extends State<MyHomePage> {
     if (idToken == null) return;
 
     final response = await http.post(
-      Uri.parse('http://192.168.73.103:3000/api/v1/auth/google/verify'),
+      Uri.parse('http://192.168.1.147:3000/api/v1/auth/google/verify'),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -83,20 +83,45 @@ class _MyHomePageState extends State<MyHomePage> {
           if (snapshot.hasData) {
             User? user = snapshot.data;
             return Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                user!.photoURL != null
-                    ? CircleAvatar(
-                        radius: 50,
-                        backgroundImage: NetworkImage(user.photoURL!),
-                      )
-                    : const Icon(Icons.account_circle, size: 100),
-                const SizedBox(height: 10),
-                Text('Logado como ${user.displayName}'),
-                ElevatedButton(
-                  onPressed: _signOut,
-                  child: const Text('Logout'),
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Image.asset(
+                  'assets/icon.png',
+                  width: 150, // Logo maior
+                  height: 150,
                 ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    // Ícone do aplicativo (maior)
+                    user!.photoURL != null
+                        ? CircleAvatar(
+                            radius: 40,
+                            backgroundImage: NetworkImage(user.photoURL!),
+                          )
+                        : const Icon(Icons.account_circle, size: 80),
+                    const SizedBox(width: 10),
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.verified, color: Colors.blue),
+                            const SizedBox(width: 5),
+                            Text('Logado como ${user.displayName}',
+                                style: const TextStyle(fontSize: 16)),
+                          ],
+                        ),
+                        const SizedBox(height: 5),
+                        ElevatedButton(
+                          onPressed: _signOut,
+                          child: const Text('Logout'),
+                        ),
+                      ],
+                    ),
+                  ],
+                )
               ],
             );
           }
@@ -121,6 +146,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.blue[50], // Cor da AppBar
       body: IndexedStack(
         index: _currentIndex,
         children: [
@@ -137,6 +163,7 @@ class _MyHomePageState extends State<MyHomePage> {
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: Colors.blue[50], // Cor da AppBar
         currentIndex: _currentIndex,
         selectedItemColor: Colors.blue,
         unselectedItemColor: Colors.grey,
