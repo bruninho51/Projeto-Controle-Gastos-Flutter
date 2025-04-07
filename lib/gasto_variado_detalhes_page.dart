@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:orcamentos_app/http.dart';
+import 'formatters.dart';
 
 class DetalhesGastoVariadoPage extends StatefulWidget {
   final int gastoId;
@@ -45,9 +46,9 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage> {
 
   // Método para obter as categorias de gasto da API
   Future<void> _obterCategoriasGastos() async {
-    final url = 'http://192.168.1.147:3000/api/v1/categorias-gastos'; // URL da sua API
-    final response = await http.get(
-      Uri.parse(url),
+    final client = await MyHttpClient.create();
+    final response = await client.get(
+      'categorias-gastos',
       headers: {
         'Authorization': 'Bearer ${widget.apiToken}',
       },
@@ -72,9 +73,9 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage> {
   }
 
   Future<void> deleteGastoVariado(int gastoVariadoId) async {
-    final url = 'http://192.168.1.147:3000/api/v1/orcamentos/${widget.orcamentoId}/gastos-variados/$gastoVariadoId';
-    final response = await http.delete(
-      Uri.parse(url),
+    final client = await MyHttpClient.create();
+    final response = await client.delete(
+      'orcamentos/${widget.orcamentoId}/gastos-variados/$gastoVariadoId',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken ?? ''}',
@@ -93,11 +94,9 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage> {
   }
 
   Future<void> _getOrcamento(int orcamentoId) async {
-    final url =
-        'http://192.168.1.147:3000/api/v1/orcamentos/${widget.orcamentoId}';
-
-    final response = await http.get(
-      Uri.parse(url),
+final client = await MyHttpClient.create();
+    final response = await client.get(
+      'orcamentos/${widget.orcamentoId}',
       headers: {
         'Authorization': 'Bearer ${widget.apiToken}',
       },
@@ -121,11 +120,9 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage> {
 
   // Função para buscar o gasto atualizado via API
   Future<void> _getGasto(int gastoId) async {
-    final url =
-        'http://192.168.1.147:3000/api/v1/orcamentos/${widget.orcamentoId}/gastos-variados/${widget.gastoId}';
-
-    final response = await http.get(
-      Uri.parse(url),
+final client = await MyHttpClient.create();
+    final response = await client.get(
+      'orcamentos/${widget.orcamentoId}/gastos-variados/${widget.gastoId}',
       headers: {
         'Authorization': 'Bearer ${widget.apiToken}',
       },
@@ -134,6 +131,7 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage> {
     if (response.statusCode >= 200 && response.statusCode <= 299) {
       setState(() {
         gasto = jsonDecode(response.body); 
+        _valorController.text = gasto['observacoes'] ?? '';
         print('gasto: ${gasto.isNotEmpty}');
         
       });
@@ -190,11 +188,9 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage> {
   Future<void> _updateObservacoes(int gastoId, String observacoes) async {
     final orcamentoId = widget.orcamentoId;
 
-    final url =
-        'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId/gastos-variados/$gastoId';
-
-    final response = await http.patch(
-      Uri.parse(url),
+final client = await MyHttpClient.create();
+    final response = await client.patch(
+      'orcamentos/$orcamentoId/gastos-variados/$gastoId',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken}',
@@ -223,11 +219,9 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage> {
   Future<void> _updateCategoria(int gastoId, int categoriaId) async {
     final orcamentoId = widget.orcamentoId;
 
-    final url =
-        'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId/gastos-variados/$gastoId';
-
-    final response = await http.patch(
-      Uri.parse(url),
+final client = await MyHttpClient.create();
+    final response = await client.patch(
+      'orcamentos/$orcamentoId/gastos-variados/$gastoId',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken}',
@@ -255,11 +249,9 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage> {
   Future<void> _updateValor(int gastoId, String valor) async {
     final orcamentoId = widget.orcamentoId;
 
-    final url =
-        'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId/gastos-variados/$gastoId';
-
-    final response = await http.patch(
-      Uri.parse(url),
+final client = await MyHttpClient.create();
+    final response = await client.patch(
+      'orcamentos/$orcamentoId/gastos-variados/$gastoId',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken}',
@@ -290,11 +282,9 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage> {
     DateFormat inputFormat = DateFormat('dd/MM/yyyy');
     DateTime parsedDate = inputFormat.parse(dataPgto);
 
-    final url =
-        'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId/gastos-variados/$gastoId';
-
-    final response = await http.patch(
-      Uri.parse(url),
+final client = await MyHttpClient.create();
+    final response = await client.patch(
+      'orcamentos/$orcamentoId/gastos-variados/$gastoId',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken}',
@@ -612,7 +602,7 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage> {
                           child: _buildDetailCard(
                             title: 'Valor Pago',
                             value: gasto['valor'] != null
-                                ? 'R\$ ${gasto['valor']}'
+                                ? formatarValor(gasto['valor'])
                                 : 'Não pago',
                             color: gasto['valor'] != null ? Colors.black : Colors.red,
                             icon: gasto['valor'] != null ? Icons.check_circle : Icons.cancel,
@@ -623,9 +613,11 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage> {
                         ),
                       ],
                     ),
+
+
+                    
+
                     const SizedBox(height: 20),
-                    // Linha com dois cards (Diferença e Data de Pagamento)
-                    if (gasto['diferenca'] != null) ...[
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -643,7 +635,6 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage> {
                         ],
                       ),
                       const SizedBox(height: 20),
-                    ],
                     // Card para Categoria (com largura total e ícone)
                     _buildDetailCard(
                       title: 'Categoria',

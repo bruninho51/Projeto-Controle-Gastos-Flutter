@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:orcamentos_app/formatters.dart';
 import 'dart:convert';
+
+import 'package:orcamentos_app/http.dart';
 
 class DashboardPage extends StatefulWidget {
   final String apiToken;
@@ -76,12 +78,12 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                     final metrics = [
                       {'label': 'Orçamentos Em Andamento', 'value': data['qtdOrcamentosAtivos'], 'icon': Icons.list, 'color': Colors.teal},
                       {'label': 'Orçamentos Encerrados', 'value': data['qtdOrcamentosEncerrados'], 'icon': Icons.done, 'color': Colors.orange},
-                      {'label': 'Valor Total', 'value': 'R\$ ${data['valorInicialAtivos']}', 'icon': Icons.attach_money, 'color': Colors.green},
-                      {'label': 'Valor Livre', 'value': 'R\$ ${data['valorLivreAtivos']}', 'icon': Icons.money_off, 'color': Colors.purple},
-                      {'label': 'Valor Atual', 'value': 'R\$ ${data['valorAtualAtivos']}', 'icon': Icons.account_balance_wallet, 'color': Colors.blue},
-                      {'label': 'Total Gastos Fixos', 'value': 'R\$ ${data['gastosFixosAtivos']}', 'icon': Icons.account_balance, 'color': Colors.red},
-                      {'label': 'Total Gastos Variáveis', 'value': 'R\$ ${data['gastosVariaveisAtivos']}', 'icon': Icons.trending_up, 'color': Colors.amber},
-                      {'label': 'Valor Poupado', 'value': 'R\$ ${data['gastosFixosValorPoupado']}', 'icon': Icons.pie_chart, 'color': Colors.indigo},
+                      {'label': 'Valor Total', 'value': formatarValor(data['valorInicialAtivos']), 'icon': Icons.attach_money, 'color': Colors.green},
+                      {'label': 'Valor Livre', 'value': formatarValor(data['valorLivreAtivos']), 'icon': Icons.money_off, 'color': Colors.purple},
+                      {'label': 'Valor Atual', 'value': formatarValor(data['valorAtualAtivos']), 'icon': Icons.account_balance_wallet, 'color': Colors.blue},
+                      {'label': 'Total Gastos Fixos', 'value': formatarValor(data['gastosFixosAtivos']), 'icon': Icons.account_balance, 'color': Colors.red},
+                      {'label': 'Total Gastos Variáveis', 'value': formatarValor(data['gastosVariaveisAtivos']), 'icon': Icons.trending_up, 'color': Colors.amber},
+                      {'label': 'Valor Poupado', 'value': formatarValor(data['gastosFixosValorPoupado']), 'icon': Icons.pie_chart, 'color': Colors.indigo},
                     ];
 
                     return _buildDetailCard(
@@ -89,10 +91,10 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                       value: metrics[index]['value'].toString(),
                       color: metrics[index]['color']!,
                       icon: metrics[index]['icon'],
-                      onTap: () {
+                      /*onTap: () {
                         // Ação ao tocar no card
                         print('Card Tocado: ${metrics[index]['label']}');
-                      },
+                      },*/
                     );
                   },
                 ),
@@ -133,8 +135,10 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   }
 
   Future<List<dynamic>> _fetchOrcamentos() async {
-    final response = await http.get(
-      Uri.parse('http://192.168.1.147:3000/api/v1/orcamentos'),
+    final client = await MyHttpClient.create();
+    
+    final response = await client.get(
+      'orcamentos',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken}',
@@ -150,10 +154,10 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   }
 
   Future<List<dynamic>> fetchGastosFixos(int orcamentoId) async {
-    final url = 'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId/gastos-fixos';
 
-    final response = await http.get(
-      Uri.parse(url),
+final client = await MyHttpClient.create();
+    final response = await client.get(
+      'orcamentos/$orcamentoId/gastos-fixos',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken}',
@@ -169,10 +173,10 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   }
 
   Future<List<dynamic>> fetchGastosVariaveis(int orcamentoId) async {
-    final url = 'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId/gastos-variados';
 
-    final response = await http.get(
-      Uri.parse(url),
+final client = await MyHttpClient.create();
+    final response = await client.get(
+      'orcamentos/$orcamentoId/gastos-variados',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken}',

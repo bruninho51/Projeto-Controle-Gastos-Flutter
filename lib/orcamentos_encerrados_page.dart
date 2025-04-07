@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:orcamentos_app/formatters.dart';
+import 'package:orcamentos_app/http.dart';
 import 'dart:convert';
 import 'orcamento_detalhes_page.dart';
 import 'form_orcamento.dart';
@@ -32,9 +33,9 @@ class _OrcamentosEncerradosPageState extends State<OrcamentosEncerradosPage> {
     setState(() {
       _isLoading = true;
     });
-
-    final response = await http.get(
-      Uri.parse('http://192.168.1.147:3000/api/v1/orcamentos'),
+final client = await MyHttpClient.create();
+    final response = await client.get(
+      'orcamentos',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken}',
@@ -147,7 +148,7 @@ class _OrcamentosEncerradosPageState extends State<OrcamentosEncerradosPage> {
                                       ),
                                       const SizedBox(height: 5),
                                       Text(
-                                        'Valor Atual: R\$ ${orcamento['valor_atual']}',
+                                        'Valor Atual: ${formatarValor(orcamento['valor_atual'])}',
                                         style: const TextStyle(fontSize: 16, color: Colors.grey),
                                       ),
                                     ],

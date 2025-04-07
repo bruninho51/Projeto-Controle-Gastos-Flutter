@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
+import 'package:orcamentos_app/http.dart';
+import 'package:orcamentos_app/formatters.dart';
 
 class FormOrcamentoValorInicialPage extends StatefulWidget {
   final String apiToken;
@@ -55,12 +56,12 @@ class _FormOrcamentoValorInicialPageState
   }
 
   void _updateValorInicial(orcamentoId, valorInicial) async {
-    final url = 'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId';
 
     print("valor inicial novo : $valorInicial");
+    final client = await MyHttpClient.create();
 
-    final response = await http.patch(
-      Uri.parse(url),
+    final response = await client.patch(
+      'orcamentos/$orcamentoId',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken}',  // Certifique-se de que o apiToken não é nulo
@@ -220,7 +221,7 @@ class _FormOrcamentoValorInicialPageState
           children: [
             // Exibição do valor inicial
             Text(
-              'Valor Inicial: R\$ ${_valorInicial.toStringAsFixed(2)}',
+              'Valor Inicial: ${formatarValor(_valorInicial)}',
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),

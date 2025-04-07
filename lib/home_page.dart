@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:http/http.dart' as http;
+import 'package:orcamentos_app/http.dart';
 import 'package:orcamentos_app/login_page.dart';
 import 'dart:convert';
 import 'orcamentos_page.dart';  // Agora importamos a tela de orçamentos
-import 'investimentos_page.dart';  // Novo import
 import 'dashboard_page.dart';  // Novo import para DashboardPage
 
 class MyHomePage extends StatefulWidget {
@@ -50,8 +49,10 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> _fetchApiAccessToken(String? idToken) async {
     if (idToken == null) return;
 
-    final response = await http.post(
-      Uri.parse('http://192.168.1.147:3000/api/v1/auth/google/verify'),
+    final client = await MyHttpClient.create();
+
+    final response = await client.post(
+      'auth/google/verify',
       headers: {
         'Content-Type': 'application/json',
       },

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:orcamentos_app/form_orcamento_valor_inicial.dart';
 import 'package:orcamentos_app/gastos_fixos_page.dart';
 import 'package:orcamentos_app/gastos_variaveis_page.dart';
+import 'package:orcamentos_app/http.dart';
+import 'formatters.dart';
 
 class OrcamentoDetalhesPage extends StatefulWidget {
   final int orcamentoId;
@@ -26,10 +27,10 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
   }
 
   Future<Map<String, dynamic>> fetchOrcamentoDetalhes(int orcamentoId) async {
-    final url = 'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId';
-
-    final response = await http.get(
-      Uri.parse(url),
+    
+final client = await MyHttpClient.create();
+    final response = await client.get(
+      'orcamentos/$orcamentoId',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken ?? ''}',
@@ -49,10 +50,9 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
   }
 
   Future<int> fetchQtdGastosFixos(int orcamentoId) async {
-    final url = 'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId/gastos-fixos';
-
-    final response = await http.get(
-      Uri.parse(url),
+final client = await MyHttpClient.create();
+    final response = await client.get(
+      'orcamentos/$orcamentoId/gastos-fixos',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken ?? ''}',
@@ -68,10 +68,9 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
   }
 
   Future<int> fetchQtdGastosVariados(int orcamentoId) async {
-    final url = 'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId/gastos-variados';
-
-    final response = await http.get(
-      Uri.parse(url),
+final client = await MyHttpClient.create();
+    final response = await client.get(
+      'orcamentos/$orcamentoId/gastos-variados',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken ?? ''}',
@@ -86,9 +85,9 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
   }
 
   Future<void> encerrarOrcamento(int orcamentoId) async {
-    final url = 'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId';
-    final response = await http.patch(
-      Uri.parse(url),
+    final client = await MyHttpClient.create();
+    final response = await client.patch(
+      'orcamentos/$orcamentoId',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken ?? ''}',
@@ -110,9 +109,9 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
   }
 
   Future<void> reativarOrcamento(int orcamentoId) async {
-    final url = 'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId';
-    final response = await http.patch(
-      Uri.parse(url),
+    final client = await MyHttpClient.create();
+    final response = await client.patch(
+      'orcamentos/$orcamentoId',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken ?? ''}',
@@ -136,9 +135,10 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
 
   // Função para apagar o orçamento
   Future<void> deleteOrcamento(int orcamentoId) async {
-    final url = 'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId';
-    final response = await http.delete(
-      Uri.parse(url),
+    
+    final client = await MyHttpClient.create();
+    final response = await client.delete(
+      'orcamentos/$orcamentoId',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken ?? ''}',
@@ -237,7 +237,7 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
                               } : null,
                               child: _buildDashboardCard(
                                 'Valor Inicial',
-                                'R\$ $valorInicial',
+                                formatarValor(valorInicial),
                                 Colors.blue,
                                 Icons.monetization_on,
                               ),
@@ -245,14 +245,14 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
                           case 1:
                             return _buildDashboardCard(
                               'Valor Atual',
-                              'R\$ $valorAtual',
+                              formatarValor(valorAtual),
                               Colors.green,
                               Icons.paid,
                             );
                           case 2:
                             return _buildDashboardCard(
                               'Valor Livre',
-                              'R\$ $valorLivre',
+                              formatarValor(valorLivre),
                               Colors.orange,
                               Icons.account_balance_wallet,
                             );

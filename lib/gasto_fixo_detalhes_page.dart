@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'formatters.dart';
+import 'package:orcamentos_app/http.dart';
 
 class DetalhesGastoFixoPage extends StatefulWidget {
   final int gastoId;
@@ -49,9 +50,9 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage> {
 
   // Método para obter as categorias de gasto da API
   Future<void> _obterCategoriasGastos() async {
-    final url = 'http://192.168.1.147:3000/api/v1/categorias-gastos'; // URL da sua API
-    final response = await http.get(
-      Uri.parse(url),
+    final client = await MyHttpClient.create();
+    final response = await client.get(
+      'categorias-gastos',
       headers: {
         'Authorization': 'Bearer ${widget.apiToken}',
       },
@@ -77,9 +78,10 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage> {
 
   // Função para apagar o orçamento
   Future<void> deleteGastoFixo(int gastoFixoId) async {
-    final url = 'http://192.168.1.147:3000/api/v1/orcamentos/${widget.orcamentoId}/gastos-fixos/$gastoFixoId';
-    final response = await http.delete(
-      Uri.parse(url),
+    final client = await MyHttpClient.create();
+    
+    final response = await client.delete(
+      'orcamentos/${widget.orcamentoId}/gastos-fixos/$gastoFixoId',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken ?? ''}',
@@ -98,11 +100,9 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage> {
   }
 
   Future<void> _getOrcamento(int orcamentoId) async {
-    final url =
-        'http://192.168.1.147:3000/api/v1/orcamentos/${widget.orcamentoId}';
-
-    final response = await http.get(
-      Uri.parse(url),
+final client = await MyHttpClient.create();
+    final response = await client.get(
+      'orcamentos/${widget.orcamentoId}',
       headers: {
         'Authorization': 'Bearer ${widget.apiToken}',
       },
@@ -126,11 +126,9 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage> {
 
   // Função para buscar o gasto atualizado via API
   Future<void> _getGasto(int gastoId) async {
-    final url =
-        'http://192.168.1.147:3000/api/v1/orcamentos/${widget.orcamentoId}/gastos-fixos/${widget.gastoId}';
-
-    final response = await http.get(
-      Uri.parse(url),
+final client = await MyHttpClient.create();
+    final response = await client.get(
+      'orcamentos/${widget.orcamentoId}/gastos-fixos/${widget.gastoId}',
       headers: {
         'Authorization': 'Bearer ${widget.apiToken}',
       },
@@ -139,6 +137,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage> {
     if (response.statusCode >= 200 && response.statusCode <= 299) {
       setState(() {
         gasto = jsonDecode(response.body); // Atualiza o 'gasto' com os dados recebidos
+        _valorController.text = gasto['observacoes'] ?? '';
         print('gasto: ${gasto.isNotEmpty}');
         
       });
@@ -195,11 +194,9 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage> {
   Future<void> _updateObservacoes(int gastoId, String observacoes) async {
     final orcamentoId = widget.orcamentoId;
 
-    final url =
-        'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId/gastos-fixos/$gastoId';
-
-    final response = await http.patch(
-      Uri.parse(url),
+final client = await MyHttpClient.create();
+    final response = await client.patch(
+      'orcamentos/$orcamentoId/gastos-fixos/$gastoId',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken}',
@@ -228,11 +225,9 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage> {
   Future<void> _updateCategoria(int gastoId, int categoriaId) async {
     final orcamentoId = widget.orcamentoId;
 
-    final url =
-        'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId/gastos-fixos/$gastoId';
-
-    final response = await http.patch(
-      Uri.parse(url),
+final client = await MyHttpClient.create();
+    final response = await client.patch(
+      'orcamentos/$orcamentoId/gastos-fixos/$gastoId',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken}',
@@ -260,11 +255,9 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage> {
   Future<void> _updateValor(int gastoId, String valor) async {
     final orcamentoId = widget.orcamentoId;
 
-    final url =
-        'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId/gastos-fixos/$gastoId';
-
-    final response = await http.patch(
-      Uri.parse(url),
+final client = await MyHttpClient.create();
+    final response = await client.patch(
+      'orcamentos/$orcamentoId/gastos-fixos/$gastoId',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken}',
@@ -293,11 +286,9 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage> {
   Future<void> _updateValorPrevisto(int gastoId, String valor) async {
     final orcamentoId = widget.orcamentoId;
 
-    final url =
-        'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId/gastos-fixos/$gastoId';
-
-    final response = await http.patch(
-      Uri.parse(url),
+final client = await MyHttpClient.create();
+    final response = await client.patch(
+      'orcamentos/$orcamentoId/gastos-fixos/$gastoId',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken}',
@@ -328,11 +319,9 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage> {
     DateFormat inputFormat = DateFormat('dd/MM/yyyy');
     DateTime parsedDate = inputFormat.parse(dataPgto);
 
-    final url =
-        'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId/gastos-fixos/$gastoId';
-
-    final response = await http.patch(
-      Uri.parse(url),
+final client = await MyHttpClient.create();
+    final response = await client.patch(
+      'orcamentos/$orcamentoId/gastos-fixos/$gastoId',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken}',
@@ -364,11 +353,9 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage> {
     DateFormat inputFormat = DateFormat('dd/MM/yyyy');
     DateTime parsedDate = inputFormat.parse(dataPgto);
 
-    final url =
-        'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId/gastos-fixos/$gastoId';
-
-    final response = await http.patch(
-      Uri.parse(url),
+final client = await MyHttpClient.create();
+    final response = await client.patch(
+      'orcamentos/$orcamentoId/gastos-fixos/$gastoId',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken}',
@@ -858,7 +845,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage> {
                         Expanded(
                           child: _buildDetailCard(
                             title: 'Valor Previsto',
-                            value: 'R\$ ${gasto['previsto']}',
+                            value: formatarValor(gasto['previsto']),
                             color: Colors.green,
                             icon: Icons.attach_money,
                             onTap: orcamento['data_encerramento'] == null ? () {
@@ -871,7 +858,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage> {
                           child: _buildDetailCard(
                             title: 'Valor Pago',
                             value: gasto['valor'] != null
-                                ? 'R\$ ${gasto['valor']}'
+                                ? formatarValor(gasto['valor'])
                                 : 'Não pago',
                             color: gasto['valor'] != null ? Colors.black : Colors.red,
                             icon: gasto['valor'] != null ? Icons.check_circle : Icons.cancel,
@@ -891,7 +878,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage> {
                           Expanded(
                             child: _buildDetailCard(
                               title: 'Diferença',
-                              value: gasto['diferenca'] ?? 'Não disponível',
+                              value: gasto['diferenca'] != null ? formatarValor(gasto['diferenca']) : 'Não disponível',
                               color: Colors.orange,
                               icon: Icons.compare_arrows,
                             ),

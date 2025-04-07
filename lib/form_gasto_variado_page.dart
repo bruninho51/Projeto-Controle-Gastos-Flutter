@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:orcamentos_app/http.dart';
 
 class CriacaoGastoVariadoPage extends StatefulWidget {
   final int orcamentoId;
@@ -50,9 +50,10 @@ class _CriacaoGastoVariadoPageState extends State<CriacaoGastoVariadoPage> {
 
   // Método para obter as categorias de gasto da API
   Future<void> _obterCategoriasGastos() async {
-    final url = 'http://192.168.1.147:3000/api/v1/categorias-gastos'; // URL da sua API
-    final response = await http.get(
-      Uri.parse(url),
+    final client = await MyHttpClient.create();
+    
+    final response = await client.get(
+      'categorias-gastos',
       headers: {
         'Authorization': 'Bearer ${widget.apiToken}',
       },
@@ -84,10 +85,9 @@ class _CriacaoGastoVariadoPageState extends State<CriacaoGastoVariadoPage> {
       DateFormat inputFormat = DateFormat('dd/MM/yyyy');
       DateTime parsedDate = inputFormat.parse(_dataController.text);
 
-      final url = 'http://192.168.1.147:3000/api/v1/orcamentos/${widget.orcamentoId}/gastos-variados';
-
-      final response = await http.post(
-        Uri.parse(url),
+final client = await MyHttpClient.create();
+      final response = await client.post(
+        'orcamentos/${widget.orcamentoId}/gastos-variados',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${widget.apiToken}',

@@ -1,8 +1,7 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:orcamentos_app/http.dart';
 
 class FormularioInvestimentoPage extends StatefulWidget {
   final String apiToken;
@@ -27,9 +26,9 @@ class _FormularioInvestimentoPageState extends State<FormularioInvestimentoPage>
 
   // Método para obter as categorias de gasto da API
   Future<void> _obterCategoriasGastos() async {
-    final url = 'http://192.168.1.147:3000/api/v1/categorias-investimentos'; // URL da sua API
-    final response = await http.get(
-      Uri.parse(url),
+    final client = await MyHttpClient.create();
+    final response = await client.get(
+      'categorias-investimentos',
       headers: {
         'Authorization': 'Bearer ${widget.apiToken}',
       },
@@ -79,11 +78,10 @@ class _FormularioInvestimentoPageState extends State<FormularioInvestimentoPage>
   void _saveForm() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-
-      final url = 'http://192.168.1.147:3000/api/v1/investimentos';
       
-      final response = await http.post(
-        Uri.parse(url),
+      final client = await MyHttpClient.create();
+      final response = await client.post(
+        'investimentos',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${widget.apiToken}',  // Certifique-se de que o apiToken não é nulo

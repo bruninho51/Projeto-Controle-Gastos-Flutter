@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:orcamentos_app/form_investimento.dart';
+import 'package:orcamentos_app/http.dart';
 import 'dart:convert';
 import 'orcamento_detalhes_page.dart';
 
@@ -32,9 +33,9 @@ class _InvestimentosPageState extends State<InvestimentosPage> {
     setState(() {
       _isLoading = true;
     });
-
-    final response = await http.get(
-      Uri.parse('http://192.168.1.147:3000/api/v1/investimentos'),
+final client = await MyHttpClient.create();
+    final response = await client.get(
+      'investimentos',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken}',

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:orcamentos_app/form_gasto_variado_page.dart';
 import 'dart:convert';
 import 'package:orcamentos_app/gasto_variado_detalhes_page.dart';
+import 'package:orcamentos_app/http.dart';
+import 'formatters.dart';
 
 class GastosVariaveisPage extends StatefulWidget {
   final int orcamentoId;
@@ -16,6 +17,16 @@ class GastosVariaveisPage extends StatefulWidget {
 
 class _GastosVariaveisPageState extends State<GastosVariaveisPage> {
   late Future<List<Map<String, dynamic>>> _gastosVariaveis;
+  
+  // Filtros ativos
+  String _filtroNome = '';
+  String? _filtroStatus;
+  DateTime? _filtroData;
+
+  // Filtros temporários (para o modal)
+  String _tempFiltroNome = '';
+  String? _tempFiltroStatus;
+  DateTime? _tempFiltroData;
 
   @override
   void initState() {
@@ -24,33 +35,28 @@ class _GastosVariaveisPageState extends State<GastosVariaveisPage> {
   }
 
   Future<Map<String, dynamic>> _getOrcamento(int orcamentoId) async {
-    final url =
-        'http://192.168.1.147:3000/api/v1/orcamentos/${widget.orcamentoId}';
-
-    final response = await http.get(
-      Uri.parse(url),
+    final client = await MyHttpClient.create();
+    final response = await client.get(
+      'orcamentos/${widget.orcamentoId}',
       headers: {
         'Authorization': 'Bearer ${widget.apiToken}',
       },
     );
 
     if (response.statusCode >= 200 && response.statusCode <= 299) {
-      Map<String, dynamic> result = jsonDecode(response.body);
-      return result;
+      return jsonDecode(response.body);
     } else {
-      print(response.body.toString());
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Falha ao carregar os dados do gasto.')),
+        const SnackBar(content: Text('Falha ao carregar os dados do orçamento.')),
       );
       return {};
     }
   }
 
   Future<List<Map<String, dynamic>>> fetchGastosVariaveis(int orcamentoId) async {
-    final url = 'http://192.168.1.147:3000/api/v1/orcamentos/$orcamentoId/gastos-variados';
-
-    final response = await http.get(
-      Uri.parse(url),
+    final client = await MyHttpClient.create();
+    final response = await client.get(
+      'orcamentos/$orcamentoId/gastos-variados',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken}',
@@ -59,19 +65,169 @@ class _GastosVariaveisPageState extends State<GastosVariaveisPage> {
 
     if (response.statusCode == 200) {
       List<dynamic> data = jsonDecode(response.body);
-      return data.map((item) => item as Map<String, dynamic>).toList();
+      List<Map<String, dynamic>> gastos = data.map((item) => item as Map<String, dynamic>).toList();
+      gastos.sort((a, b) => a['descricao'].toString().compareTo(b['descricao'].toString()));
+      return gastos;
     } else {
       throw Exception('Falha ao carregar os gastos variados');
     }
   }
 
+  void _abrirModalFiltros() {
+    _tempFiltroNome = _filtroNome;
+    _tempFiltroStatus = _filtroStatus;
+    _tempFiltroData = _filtroData;
+
+    showModalBottomSheet(
+  context: context,
+  isScrollControlled: true,
+  builder: (context) {
+    return StatefulBuilder(
+      builder: (context, setModalState) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Filtros',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  decoration: const InputDecoration(
+                    labelText: 'Buscar por nome',
+                    prefixIcon: Icon(Icons.search),
+                  ),
+                  onChanged: (value) {
+                    _tempFiltroNome = value;
+                  },
+                  controller: TextEditingController(text: _tempFiltroNome),
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: _tempFiltroStatus,
+                  hint: const Text('Filtrar por status'),
+                  isExpanded: true,
+                  items: ['PAGO', 'NÃO PAGO'].map((status) {
+                    return DropdownMenuItem<String>(
+                      value: status,
+                      child: Text(status),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setModalState(() {
+                      _tempFiltroStatus = value;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _tempFiltroData == null
+                            ? 'Filtrar por data de pagamento'
+                            : 'Data: ${_tempFiltroData!.day.toString().padLeft(2, '0')}/${_tempFiltroData!.month.toString().padLeft(2, '0')}/${_tempFiltroData!.year}',
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        DateTime? picked = await showDatePicker(
+                          context: context,
+                          initialDate: _tempFiltroData ?? DateTime.now(),
+                          firstDate: DateTime(2000),
+                          lastDate: DateTime(2100),
+                        );
+                        if (picked != null) {
+                          setModalState(() {
+                            _tempFiltroData = picked;
+                          });
+                        }
+                      },
+                      child: const Text('Selecionar Data'),
+                    ),
+                    if (_tempFiltroData != null)
+                      IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          setModalState(() {
+                            _tempFiltroData = null;
+                          });
+                        },
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _filtroNome = '';
+                          _filtroStatus = null;
+                          _filtroData = null;
+                        });
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Limpar filtros'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _filtroNome = _tempFiltroNome;
+                          _filtroStatus = _tempFiltroStatus;
+                          _filtroData = _tempFiltroData;
+                        });
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Aplicar filtros'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  },
+    );
+  }
+
+  List<Map<String, dynamic>> _filtrarGastos(List<Map<String, dynamic>> gastos) {
+    return gastos.where((gasto) {
+      final descricao = gasto['descricao'].toString().toLowerCase();
+      final status = gasto['valor'] != null ? 'PAGO' : 'NÃO PAGO';
+      final dataPagamento = gasto['data_pgto'];
+
+      final correspondeNome = descricao.contains(_filtroNome.toLowerCase());
+      final correspondeStatus = _filtroStatus == null || _filtroStatus == status;
+      final correspondeData = _filtroData == null ||
+          (dataPagamento != null &&
+              DateTime.tryParse(dataPagamento)?.day == _filtroData!.day &&
+              DateTime.tryParse(dataPagamento)?.month == _filtroData!.month &&
+              DateTime.tryParse(dataPagamento)?.year == _filtroData!.year);
+
+      return correspondeNome && correspondeStatus && correspondeData;
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blue[50], // Cor da AppBar
+      backgroundColor: Colors.blue[50],
       appBar: AppBar(
-        backgroundColor: Colors.blue[50], // Cor da AppBar
+        backgroundColor: Colors.blue[50],
         title: const Text('Gastos Variados'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.filter_list),
+            onPressed: _abrirModalFiltros,
+          ),
+        ],
       ),
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _gastosVariaveis,
@@ -83,19 +239,27 @@ class _GastosVariaveisPageState extends State<GastosVariaveisPage> {
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(child: Text('Nenhum gasto variado encontrado'));
           } else {
-            List<Map<String, dynamic>> gastosVariaveis = snapshot.data!;
+            List<Map<String, dynamic>> gastosFiltrados = _filtrarGastos(snapshot.data!);
+
+            if (gastosFiltrados.isEmpty) {
+              return const Center(child: Text('Nenhum gasto encontrado com os filtros aplicados.'));
+            }
 
             return ListView.builder(
-              itemCount: gastosVariaveis.length,
+              itemCount: gastosFiltrados.length,
               itemBuilder: (context, index) {
-                final gasto = gastosVariaveis[index];
+                final gasto = gastosFiltrados[index];
+
                 return GestureDetector(
                   onTap: () async {
-                    // Navegar para a tela de detalhes do gasto variado
                     await Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => DetalhesGastoVariadoPage(gastoId: gasto['id'], orcamentoId: gasto['orcamento_id'], apiToken: widget.apiToken,),
+                        builder: (context) => DetalhesGastoVariadoPage(
+                          gastoId: gasto['id'],
+                          orcamentoId: gasto['orcamento_id'],
+                          apiToken: widget.apiToken,
+                        ),
                       ),
                     );
 
@@ -113,11 +277,10 @@ class _GastosVariaveisPageState extends State<GastosVariaveisPage> {
                       padding: const EdgeInsets.all(15.0),
                       child: Row(
                         children: [
-                          // Container com o ícone
                           Container(
                             padding: const EdgeInsets.all(10.0),
                             decoration: BoxDecoration(
-                              color: Colors.blue.withOpacity(0.1), // Cor de fundo do ícone
+                              color: Colors.blue.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(50),
                             ),
                             child: const Icon(
@@ -127,7 +290,6 @@ class _GastosVariaveisPageState extends State<GastosVariaveisPage> {
                             ),
                           ),
                           const SizedBox(width: 15),
-                          // Descrição e valor do gasto
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -140,15 +302,14 @@ class _GastosVariaveisPageState extends State<GastosVariaveisPage> {
                                   ),
                                 ),
                                 const SizedBox(height: 5),
-                                Text('R\$ ${gasto['valor']}'),
+                                Text(formatarValor(gasto['valor'])),
                               ],
                             ),
                           ),
-                          // Status do pagamento
                           Text(
-                            'PAGO',
+                            gasto['valor'] != null ? 'PAGO' : 'NÃO PAGO',
                             style: TextStyle(
-                              color: Colors.green,
+                              color: gasto['valor'] != null ? Colors.green : Colors.red,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -166,17 +327,16 @@ class _GastosVariaveisPageState extends State<GastosVariaveisPage> {
         future: _getOrcamento(widget.orcamentoId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return CircularProgressIndicator();
+            return const CircularProgressIndicator();
           }
 
           if (snapshot.hasError) {
-            return Icon(Icons.error);
+            return const Icon(Icons.error);
           }
 
           if (snapshot.hasData) {
-            Map<String, dynamic> _orcamento = snapshot.data!;
-
-            return _orcamento['data_encerramento'] == null
+            final orcamento = snapshot.data!;
+            return orcamento['data_encerramento'] == null
                 ? FloatingActionButton(
                     onPressed: () async {
                       await Navigator.push(

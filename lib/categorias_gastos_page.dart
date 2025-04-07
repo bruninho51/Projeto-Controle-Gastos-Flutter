@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:orcamentos_app/http.dart';
 
 class CategoriasDeGastoPage extends StatefulWidget {
   final String apiToken;
@@ -28,8 +28,10 @@ class _CategoriasDeGastoPageState extends State<CategoriasDeGastoPage> {
       _isLoading = true;
     });
 
-    final response = await http.get(
-      Uri.parse('http://192.168.1.147:3000/api/v1/categorias-gastos'),
+    final client = await MyHttpClient.create();
+
+    final response = await client.get(
+      'categorias-gastos',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken}',
@@ -47,8 +49,10 @@ class _CategoriasDeGastoPageState extends State<CategoriasDeGastoPage> {
   }
 
   Future<void> _deleteCategoria(int categoriaId) async {
-    final response = await http.delete(
-      Uri.parse('http://192.168.1.147:3000/api/v1/categorias-gastos/$categoriaId'),
+    final client = await MyHttpClient.create();
+
+    final response = await client.delete(
+      'categorias-gastos/$categoriaId',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken}',
@@ -98,8 +102,9 @@ class _CategoriasDeGastoPageState extends State<CategoriasDeGastoPage> {
 
   // Função para criar nova categoria
   Future<void> _createCategoria(String nomeCategoria) async {
-    final response = await http.post(
-      Uri.parse('http://192.168.1.147:3000/api/v1/categorias-gastos'),
+    final client = await MyHttpClient.create();
+    final response = await client.post(
+      'categorias-gastos',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken}',

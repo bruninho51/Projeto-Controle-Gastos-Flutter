@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:orcamentos_app/http.dart';
 
 class FormularioOrcamentoPage extends StatefulWidget {
   final String apiToken;
@@ -47,10 +48,10 @@ class _FormularioOrcamentoPageState extends State<FormularioOrcamentoPage> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
-      final url = 'http://192.168.1.147:3000/api/v1/orcamentos';
+      final client = await MyHttpClient.create();
       
-      final response = await http.post(
-        Uri.parse(url),
+      final response = await client.post(
+        'orcamentos',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ${widget.apiToken}',  // Certifique-se de que o apiToken não é nulo
