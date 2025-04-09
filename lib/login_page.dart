@@ -31,56 +31,137 @@ class LoginPage extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: Colors.blue[50], // Cor de fundo suave
-      appBar: AppBar(
-        title: const Text('Entre'),
-        backgroundColor: Colors.blue[50], // Cor da AppBar
-      ),
-      body: Center(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Ícone do aplicativo (maior)
-              Image.asset(
-                'assets/icon.png',
-                width: 150, // Logo maior
-                height: 150,
-              ),
-              const SizedBox(height: 40), // Maior espaçamento entre o logo e o botão
-              // Texto de boas-vindas (opcional)
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 30.0),
-                child: Text(
-                  'Bem-vindo ao Orçamentos App! Faça login para começar.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.blueAccent,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 40),
-              // Botão de login com ícone do Google
-              ElevatedButton.icon(
-                onPressed: _signInWithGoogle,
-                icon: Image.asset(
-                  'assets/google.png', // Ícone do Google
-                  height: 30,
-                ),
-                label: const Text(
-                  'Login com Google',
-                  style: TextStyle(fontSize: 16), // Tamanho da fonte no botão
-                ),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30), // Bordas arredondadas
-                  ),
-                  elevation: 5, // Sombra no botão
-                ),
-              ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.indigo.shade700,
+              Colors.indigo.shade500,
             ],
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Logo do aplicativo
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 10,
+                          spreadRadius: 3,
+                        ),
+                      ],
+                    ),
+                    child: Image.asset(
+                      'assets/icon.png',
+                      width: 120,
+                      height: 120,
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+
+                  // Título
+                  const Text(
+                    'Bem-vindo ao',
+                    style: TextStyle(
+                      fontSize: 24,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w300,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Orçamentos App',
+                    style: TextStyle(
+                      fontSize: 32,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Descrição
+                  const Text(
+                    'Gerencie seus orçamentos de forma simples e eficiente',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.white70,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+
+                  // Botão de login
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 10,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton(
+                      onPressed: _signInWithGoogle,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.grey[800],
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Image.asset(
+                            'assets/google.png',
+                            height: 28,
+                          ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'Entrar com Google',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+
+                  // Rodapé
+                  const Text(
+                    'Ao continuar, você concorda com nossos Termos e Política de Privacidade',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.white54,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),

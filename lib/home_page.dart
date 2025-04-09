@@ -4,8 +4,8 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:orcamentos_app/http.dart';
 import 'package:orcamentos_app/login_page.dart';
 import 'dart:convert';
-import 'orcamentos_page.dart';  // Agora importamos a tela de orçamentos
-import 'dashboard_page.dart';  // Novo import para DashboardPage
+import 'orcamentos_page.dart';
+import 'dashboard_page.dart';
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title, this.user});
@@ -69,71 +69,142 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget _buildProfilePage() {
-    return Center(
-      child: StreamBuilder<User?>(
-        stream: _auth.authStateChanges(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const CircularProgressIndicator();
-          }
-
-          if (snapshot.hasError) {
-            return Text('Erro: ${snapshot.error}');
-          }
-
-          if (snapshot.hasData) {
-            User? user = snapshot.data;
-            return Column(
-              mainAxisSize: MainAxisSize.min,
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.indigo.shade700,
+            Colors.indigo.shade500,
+          ],
+        ),
+      ),
+      child: Center(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset(
-                  'assets/icon.png',
-                  width: 150, // Logo maior
-                  height: 150,
+                // Logo do aplicativo
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        spreadRadius: 3,
+                      ),
+                    ],
+                  ),
+                  child: Image.asset(
+                    'assets/icon.png',
+                    width: 120,
+                    height: 120,
+                  ),
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: <Widget>[
-                    // Ícone do aplicativo (maior)
-                    user!.photoURL != null
-                        ? CircleAvatar(
-                            radius: 40,
-                            backgroundImage: NetworkImage(user.photoURL!),
-                          )
-                        : const Icon(Icons.account_circle, size: 80),
-                    const SizedBox(width: 10),
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 40),
+
+                // Card de perfil
+                Card(
+                  elevation: 8,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.verified, color: Colors.blue),
-                            const SizedBox(width: 5),
-                            Text('Logado como ${user.displayName}',
-                                style: const TextStyle(fontSize: 16)),
-                          ],
+                        _user?.photoURL != null
+                            ? CircleAvatar(
+                                radius: 60,
+                                backgroundColor: Colors.indigo[100],
+                                backgroundImage: NetworkImage(_user!.photoURL!),
+                              )
+                            : CircleAvatar(
+                                radius: 60,
+                                backgroundColor: Colors.indigo[100],
+                                child: const Icon(
+                                  Icons.person,
+                                  size: 60,
+                                  color: Colors.indigo,
+                                ),
+                              ),
+                        const SizedBox(height: 24),
+                        Text(
+                          _user?.displayName ?? 'Usuário',
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.indigo,
+                          ),
                         ),
-                        const SizedBox(height: 5),
-                        ElevatedButton(
-                          onPressed: _signOut,
-                          child: const Text('Logout'),
+                        const SizedBox(height: 8),
+                        Text(
+                          _user?.email ?? '',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        /*Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.indigo[50],
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.verified, color: Colors.indigo[700]),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Conta verificada',
+                                style: TextStyle(
+                                  color: Colors.indigo[700],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),*/
+                        const SizedBox(height: 32),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: _signOut,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.indigo[700],
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            icon: const Icon(Icons.logout, color: Colors.white),
+                            label: const Text(
+                              'Sair da conta',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
                         ),
                       ],
                     ),
-                  ],
-                )
+                  ),
+                ),
               ],
-            );
-          }
-
-          return ElevatedButton(
-            onPressed: () async {
-              print("Usuário logado: ${_user?.displayName}");
-            },
-            child: const Text('Login com Google'),
-          );
-        },
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -147,46 +218,69 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blue[50], // Cor da AppBar
+      backgroundColor: Colors.white, // Fundo branco para um visual mais clean
       body: IndexedStack(
         index: _currentIndex,
         children: [
           _apiToken != ''
               ? DashboardPage(apiToken: _apiToken!)
-              : const Center(child: CircularProgressIndicator()),
+              : const Center(
+                  child: CircularProgressIndicator(
+                    color: Colors.blue, // Cor consistente
+                  ),
+                ),
           _apiToken != ''
               ? OrcamentosPage(apiToken: _apiToken!)
-              : const Center(child: CircularProgressIndicator()),
-          /*_apiToken != ''
-              ? InvestimentosPage(apiToken: _apiToken!)
-              : const Center(child: CircularProgressIndicator()),*/
+              : const Center(
+                  child: CircularProgressIndicator(
+                    color: Colors.blue, // Cor consistente
+                  ),
+                ),
           _buildProfilePage(),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: Colors.blue[50], // Cor da AppBar
-        currentIndex: _currentIndex,
-        selectedItemColor: Colors.blue,
-        unselectedItemColor: Colors.grey,
-        onTap: _onTabChanged,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: 'Dashboard',
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.2),
+              spreadRadius: 2,
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          child: BottomNavigationBar(
+            backgroundColor: Colors.white,
+            currentIndex: _currentIndex,
+            selectedItemColor: Colors.blue[700],
+            unselectedItemColor: Colors.grey[600],
+            selectedFontSize: 12,
+            unselectedFontSize: 12,
+            type: BottomNavigationBarType.fixed,
+            elevation: 0,
+            onTap: _onTabChanged,
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.dashboard_outlined),
+                activeIcon: Icon(Icons.dashboard),
+                label: 'Dashboard',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.account_balance_outlined),
+                activeIcon: Icon(Icons.account_balance),
+                label: 'Orçamentos',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person_outline),
+                activeIcon: Icon(Icons.person),
+                label: 'Perfil',
+              ),
+            ],
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.account_balance),
-            label: 'Orçamentos',
-          ),
-          /*BottomNavigationBarItem(
-            icon: Icon(Icons.trending_up),
-            label: 'Investimentos',
-          ),*/
-          BottomNavigationBarItem(
-            icon: Icon(Icons.account_circle),
-            label: 'Perfil',
-          ),
-        ],
+        ),
       ),
     );
   }

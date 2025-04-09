@@ -79,121 +79,121 @@ class _GastosVariaveisPageState extends State<GastosVariaveisPage> {
     _tempFiltroData = _filtroData;
 
     showModalBottomSheet(
-  context: context,
-  isScrollControlled: true,
-  builder: (context) {
-    return StatefulBuilder(
-      builder: (context, setModalState) {
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Filtros',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  decoration: const InputDecoration(
-                    labelText: 'Buscar por nome',
-                    prefixIcon: Icon(Icons.search),
-                  ),
-                  onChanged: (value) {
-                    _tempFiltroNome = value;
-                  },
-                  controller: TextEditingController(text: _tempFiltroNome),
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  value: _tempFiltroStatus,
-                  hint: const Text('Filtrar por status'),
-                  isExpanded: true,
-                  items: ['PAGO', 'NÃO PAGO'].map((status) {
-                    return DropdownMenuItem<String>(
-                      value: status,
-                      child: Text(status),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setModalState(() {
-                      _tempFiltroStatus = value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-                Row(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Expanded(
-                      child: Text(
-                        _tempFiltroData == null
-                            ? 'Filtrar por data de pagamento'
-                            : 'Data: ${_tempFiltroData!.day.toString().padLeft(2, '0')}/${_tempFiltroData!.month.toString().padLeft(2, '0')}/${_tempFiltroData!.year}',
-                      ),
+                    const Text(
+                      'Filtros',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                     ),
-                    TextButton(
-                      onPressed: () async {
-                        DateTime? picked = await showDatePicker(
-                          context: context,
-                          initialDate: _tempFiltroData ?? DateTime.now(),
-                          firstDate: DateTime(2000),
-                          lastDate: DateTime(2100),
+                    const SizedBox(height: 16),
+                    TextField(
+                      decoration: const InputDecoration(
+                        labelText: 'Buscar por nome',
+                        prefixIcon: Icon(Icons.search),
+                      ),
+                      onChanged: (value) {
+                        _tempFiltroNome = value;
+                      },
+                      controller: TextEditingController(text: _tempFiltroNome),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: _tempFiltroStatus,
+                      hint: const Text('Filtrar por status'),
+                      isExpanded: true,
+                      items: ['PAGO', 'NÃO PAGO'].map((status) {
+                        return DropdownMenuItem<String>(
+                          value: status,
+                          child: Text(status),
                         );
-                        if (picked != null) {
-                          setModalState(() {
-                            _tempFiltroData = picked;
-                          });
-                        }
+                      }).toList(),
+                      onChanged: (value) {
+                        setModalState(() {
+                          _tempFiltroStatus = value;
+                        });
                       },
-                      child: const Text('Selecionar Data'),
                     ),
-                    if (_tempFiltroData != null)
-                      IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          setModalState(() {
-                            _tempFiltroData = null;
-                          });
-                        },
-                      ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _tempFiltroData == null
+                                ? 'Filtrar por data de pagamento'
+                                : 'Data: ${_tempFiltroData!.day.toString().padLeft(2, '0')}/${_tempFiltroData!.month.toString().padLeft(2, '0')}/${_tempFiltroData!.year}',
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () async {
+                            DateTime? picked = await showDatePicker(
+                              context: context,
+                              initialDate: _tempFiltroData ?? DateTime.now(),
+                              firstDate: DateTime(2000),
+                              lastDate: DateTime(2100),
+                            );
+                            if (picked != null) {
+                              setModalState(() {
+                                _tempFiltroData = picked;
+                              });
+                            }
+                          },
+                          child: const Text('Selecionar Data'),
+                        ),
+                        if (_tempFiltroData != null)
+                          IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              setModalState(() {
+                                _tempFiltroData = null;
+                              });
+                            },
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _filtroNome = '';
+                              _filtroStatus = null;
+                              _filtroData = null;
+                            });
+                            Navigator.pop(context);
+                          },
+                          child: const Text('Limpar filtros'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              _filtroNome = _tempFiltroNome;
+                              _filtroStatus = _tempFiltroStatus;
+                              _filtroData = _tempFiltroData;
+                            });
+                            Navigator.pop(context);
+                          },
+                          child: const Text('Aplicar filtros'),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    TextButton(
-                      onPressed: () {
-                        setState(() {
-                          _filtroNome = '';
-                          _filtroStatus = null;
-                          _filtroData = null;
-                        });
-                        Navigator.pop(context);
-                      },
-                      child: const Text('Limpar filtros'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _filtroNome = _tempFiltroNome;
-                          _filtroStatus = _tempFiltroStatus;
-                          _filtroData = _tempFiltroData;
-                        });
-                        Navigator.pop(context);
-                      },
-                      child: const Text('Aplicar filtros'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
-    );
-  },
     );
   }
 
@@ -218,14 +218,17 @@ class _GastosVariaveisPageState extends State<GastosVariaveisPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blue[50],
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        backgroundColor: Colors.blue[50],
-        title: const Text('Gastos Variados'),
+        backgroundColor: Colors.purple[700],
+        title: const Text('Gastos Variados', style: TextStyle(color: Colors.white)),
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
             onPressed: _abrirModalFiltros,
+            color: Colors.white,
           ),
         ],
       ),
@@ -237,59 +240,85 @@ class _GastosVariaveisPageState extends State<GastosVariaveisPage> {
           } else if (snapshot.hasError) {
             return Center(child: Text('Erro: ${snapshot.error}'));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('Nenhum gasto variado encontrado'));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.shopping_cart, size: 50, color: Colors.grey[400]),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Nenhum gasto variado encontrado',
+                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                  ),
+                ],
+              ),
+            );
           } else {
             List<Map<String, dynamic>> gastosFiltrados = _filtrarGastos(snapshot.data!);
 
             if (gastosFiltrados.isEmpty) {
-              return const Center(child: Text('Nenhum gasto encontrado com os filtros aplicados.'));
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.filter_alt_off, size: 50, color: Colors.grey[400]),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Nenhum gasto encontrado com os filtros aplicados',
+                      style: TextStyle(fontSize: 18, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _filtroNome = '';
+                          _filtroStatus = null;
+                          _filtroData = null;
+                        });
+                      },
+                      child: const Text('Limpar filtros'),
+                    ),
+                  ],
+                ),
+              );
             }
 
             return ListView.builder(
               itemCount: gastosFiltrados.length,
               itemBuilder: (context, index) {
                 final gasto = gastosFiltrados[index];
+                final isPago = gasto['valor'] != null;
+                final dataPagamento = gasto['data_pgto'] != null 
+                    ? DateTime.tryParse(gasto['data_pgto'])
+                    : null;
+                final valor = gasto['valor'] ?? 0.0;
 
-                return GestureDetector(
-                  onTap: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => DetalhesGastoVariadoPage(
-                          gastoId: gasto['id'],
-                          orcamentoId: gasto['orcamento_id'],
-                          apiToken: widget.apiToken,
-                        ),
-                      ),
-                    );
-
-                    setState(() {
-                      _gastosVariaveis = fetchGastosVariaveis(widget.orcamentoId);
-                    });
-                  },
+                return Container(
+                  margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                   child: Card(
-                    elevation: 5.0,
+                    elevation: 2.0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
                     child: Padding(
-                      padding: const EdgeInsets.all(15.0),
+                      padding: const EdgeInsets.all(12.0),
                       child: Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.all(10.0),
+                            padding: const EdgeInsets.all(12.0),
                             decoration: BoxDecoration(
-                              color: Colors.blue.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(50),
+                              color: isPago 
+                                  ? Colors.purple[50] 
+                                  : Colors.deepOrange[50],
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Icon(
-                              Icons.attach_money,
-                              color: Colors.blue,
-                              size: 30,
+                            child: Icon(
+                              isPago ? Icons.shopping_bag : Icons.shopping_cart,
+                              color: isPago ? Colors.purple : Colors.deepOrange,
+                              size: 28,
                             ),
                           ),
-                          const SizedBox(width: 15),
+                          const SizedBox(width: 16),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -297,21 +326,65 @@ class _GastosVariaveisPageState extends State<GastosVariaveisPage> {
                                 Text(
                                   gasto['descricao'],
                                   style: const TextStyle(
-                                    fontSize: 18.0,
+                                    fontSize: 16.0,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  formatarValor(valor),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[700],
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                const SizedBox(height: 5),
-                                Text(formatarValor(gasto['valor'])),
+                                if (dataPagamento != null) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Pago em ${dataPagamento.day.toString().padLeft(2, '0')}/${dataPagamento.month.toString().padLeft(2, '0')}/${dataPagamento.year}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           ),
-                          Text(
-                            gasto['valor'] != null ? 'PAGO' : 'NÃO PAGO',
-                            style: TextStyle(
-                              color: gasto['valor'] != null ? Colors.green : Colors.red,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: isPago
+                                      ? Colors.purple[50]
+                                      : Colors.deepOrange[50],
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  isPago ? 'PAGO' : 'PENDENTE',
+                                  style: TextStyle(
+                                    color: isPago 
+                                        ? Colors.purple[800] 
+                                        : Colors.deepOrange[800],
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              if (isPago)
+                                Icon(
+                                  Icons.check_circle,
+                                  color: Colors.purple[800],
+                                  size: 20,
+                                ),
+                            ],
                           ),
                         ],
                       ),
@@ -327,11 +400,11 @@ class _GastosVariaveisPageState extends State<GastosVariaveisPage> {
         future: _getOrcamento(widget.orcamentoId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const CircularProgressIndicator();
+            return const SizedBox.shrink();
           }
 
           if (snapshot.hasError) {
-            return const Icon(Icons.error);
+            return const SizedBox.shrink();
           }
 
           if (snapshot.hasData) {
@@ -353,13 +426,14 @@ class _GastosVariaveisPageState extends State<GastosVariaveisPage> {
                         _gastosVariaveis = fetchGastosVariaveis(widget.orcamentoId);
                       });
                     },
+                    backgroundColor: Colors.purple[700],
                     tooltip: 'Adicionar Gasto Variado',
-                    child: const Icon(Icons.add),
+                    child: const Icon(Icons.add, color: Colors.white),
                   )
-                : Container();
+                : const SizedBox.shrink();
           }
 
-          return Container();
+          return const SizedBox.shrink();
         },
       ),
     );
