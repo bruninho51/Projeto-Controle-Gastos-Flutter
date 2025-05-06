@@ -3,8 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:orcamentos_app/formatters.dart';
 import 'package:orcamentos_app/http.dart';
 import 'dart:convert';
-import 'orcamento_detalhes_page.dart';
-import 'form_orcamento.dart';
+import 'orcamento_detalhes_page/orcamento_detalhes_page.dart';
 
 class OrcamentosEncerradosPage extends StatefulWidget {
   final String apiToken;
@@ -163,7 +162,6 @@ class _OrcamentosEncerradosPageState extends State<OrcamentosEncerradosPage> {
             MaterialPageRoute(
               builder: (context) => OrcamentoDetalhesPage(
                 orcamentoId: orcamento['id'],
-                apiToken: widget.apiToken,
               ),
             ),
           );

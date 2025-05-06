@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:orcamentos_app/form_investimento.dart';
 import 'package:orcamentos_app/http.dart';
 import 'dart:convert';
-import 'orcamento_detalhes_page.dart';
+import 'orcamento_detalhes_page/orcamento_detalhes_page.dart';
 
 class InvestimentosPage extends StatefulWidget {
   final String apiToken;
@@ -110,7 +110,6 @@ final client = await MyHttpClient.create();
                               MaterialPageRoute(
                                 builder: (context) => OrcamentoDetalhesPage(
                                   orcamentoId: investimento['id'],
-                                  apiToken: widget.apiToken,
                                 ),
                               ),
                             );

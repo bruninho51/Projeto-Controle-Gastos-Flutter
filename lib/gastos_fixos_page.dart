@@ -28,6 +28,10 @@ class _GastosFixosPageState extends State<GastosFixosPage> {
   String? _tempFiltroStatus;
   DateTime? _tempFiltroData;
 
+  // Ordenação
+  String _ordenacaoCampo = 'descricao'; // 'descricao' ou 'data_pgto'
+  bool _ordenacaoAscendente = true;
+
   @override
   void initState() {
     super.initState();
@@ -66,11 +70,47 @@ class _GastosFixosPageState extends State<GastosFixosPage> {
     if (response.statusCode == 200) {
       List<dynamic> data = jsonDecode(response.body);
       List<Map<String, dynamic>> gastos = data.map((item) => item as Map<String, dynamic>).toList();
-      gastos.sort((a, b) => a['descricao'].toString().compareTo(b['descricao'].toString()));
+      _aplicarOrdenacao(gastos);
       return gastos;
     } else {
       throw Exception('Falha ao carregar os gastos fixos');
     }
+  }
+
+  void _aplicarOrdenacao(List<Map<String, dynamic>> gastos) {
+    gastos.sort((a, b) {
+      int comparacao;
+      
+      if (_ordenacaoCampo == 'descricao') {
+        comparacao = a['descricao'].toString().compareTo(b['descricao'].toString());
+      } else { // 'data_pgto'
+        final dataA = a['data_pgto'] != null ? DateTime.tryParse(a['data_pgto']) : null;
+        final dataB = b['data_pgto'] != null ? DateTime.tryParse(b['data_pgto']) : null;
+        
+        if (dataA == null && dataB == null) {
+          comparacao = 0;
+        } else if (dataA == null) {
+          comparacao = 1; // Itens sem data vão para o final
+        } else if (dataB == null) {
+          comparacao = -1; // Itens sem data vão para o final
+        } else {
+          comparacao = dataA.compareTo(dataB);
+        }
+      }
+      
+      return _ordenacaoAscendente ? comparacao : -comparacao;
+    });
+  }
+
+  void _alternarOrdenacao(String campo, StateSetter setModalState) {
+    setModalState(() {
+      if (_ordenacaoCampo == campo) {
+        _ordenacaoAscendente = !_ordenacaoAscendente;
+      } else {
+        _ordenacaoCampo = campo;
+        _ordenacaoAscendente = true;
+      }
+    });
   }
 
   void _abrirModalFiltros() {
@@ -160,6 +200,46 @@ class _GastosFixosPageState extends State<GastosFixosPage> {
                       ],
                     ),
                     const SizedBox(height: 24),
+                    const Divider(),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Ordenação',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ListTile(
+                            title: const Text('Nome'),
+                            trailing: _ordenacaoCampo == 'descricao'
+                                ? Icon(
+                                    _ordenacaoAscendente
+                                        ? Icons.arrow_upward
+                                        : Icons.arrow_downward,
+                                    color: Colors.blue,
+                                  )
+                                : null,
+                            onTap: () => _alternarOrdenacao('descricao', setModalState),
+                          ),
+                        ),
+                        Expanded(
+                          child: ListTile(
+                            title: const Text('Data'),
+                            trailing: _ordenacaoCampo == 'data_pgto'
+                                ? Icon(
+                                    _ordenacaoAscendente
+                                        ? Icons.arrow_upward
+                                        : Icons.arrow_downward,
+                                    color: Colors.blue,
+                                  )
+                                : null,
+                            onTap: () => _alternarOrdenacao('data_pgto', setModalState),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -180,6 +260,7 @@ class _GastosFixosPageState extends State<GastosFixosPage> {
                               _filtroNome = _tempFiltroNome;
                               _filtroStatus = _tempFiltroStatus;
                               _filtroData = _tempFiltroData;
+                              _gastosFixos = fetchGastosFixos(widget.orcamentoId);
                             });
                             Navigator.pop(context);
                           },
