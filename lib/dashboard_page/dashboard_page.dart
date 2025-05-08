@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:orcamentos_app/refatorado/orcamentos_loading.dart';
 import 'package:orcamentos_app/formatters.dart';
 import 'package:orcamentos_app/gastos_variados_page/auth_provider.dart';
 import 'dart:convert';
 import 'package:orcamentos_app/http.dart';
+import 'package:orcamentos_app/orcamento_detalhes_page/info_state_widget.dart';
 import 'package:provider/provider.dart';
+import 'package:orcamentos_app/orcamento_detalhes_page/orcamento_detalhes_card.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -25,6 +28,66 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  Widget _buildDashboardCards(Map<String, dynamic> data) {
+    return GridView.count(
+      shrinkWrap: true,
+      crossAxisCount: 2,
+      crossAxisSpacing: 12.0,
+      mainAxisSpacing: 12.0,
+      childAspectRatio: 1.2,
+      children: [
+        OrcamentoDetalhesCard(
+            title: 'Orçamentos Ativos',
+            value: data['qtdOrcamentosAtivos'].toString(),
+            color: Colors.teal[600]!,
+            icon: Icons.list_alt_rounded,
+          ),
+          OrcamentoDetalhesCard(
+            title: 'Orçamentos Encerrados',
+            value: data['qtdOrcamentosEncerrados'].toString(),
+            color: Colors.orange[600]!,
+            icon: Icons.check_circle_outline,
+          ),
+          OrcamentoDetalhesCard(
+            title: 'Valor Total',
+            value: formatarValor(data['valorInicialAtivos']),
+            color: Colors.green[700]!,
+            icon: Icons.attach_money_rounded,
+          ),
+          OrcamentoDetalhesCard(
+            title: 'Valor Livre',
+            value: formatarValor(data['valorLivreAtivos']),
+            color: Colors.purple[600]!,
+            icon: Icons.account_balance_wallet_rounded,
+          ),
+          OrcamentoDetalhesCard(
+            title: 'Valor Atual',
+            value: formatarValor(data['valorAtualAtivos']),
+            color: Colors.blue[600]!,
+            icon: Icons.pie_chart_rounded,
+          ),
+          OrcamentoDetalhesCard(
+            title: 'Gastos Fixos',
+            value: formatarValor(data['gastosFixosAtivos']),
+            color: Colors.red[600]!,
+            icon: Icons.receipt_long_rounded,
+          ),
+          OrcamentoDetalhesCard(
+            title: 'Gastos Variáveis',
+            value: formatarValor(data['gastosVariaveisAtivos']),
+            color: Colors.amber[700]!,
+            icon: Icons.trending_up_rounded,
+          ),
+          OrcamentoDetalhesCard(
+            title: 'Valor Poupado',
+            value: formatarValor(data['gastosFixosValorPoupado']),
+            color: Colors.indigo[600]!,
+            icon: Icons.savings_rounded,
+          ),
+      ],
+    );
   }
 
   @override
@@ -71,75 +134,24 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             future: _fetchDashboardData(auth),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.indigo[700]!),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Carregando métricas...',
-                        style: TextStyle(
-                          color: Colors.indigo[700],
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
+                return OrcamentosLoading(message: 'Carregando métricas...');
+              } else if (snapshot.hasError) {
+                return InfoStateWidget(
+                  buttonForegroundColor: Colors.red,
+                  buttonBackgroundColor: Colors.white,
+                  icon: Icons.error,
+                  iconColor: Colors.red,
+                  message: snapshot.error is String ? snapshot.error as String : 'Erro desconhecido',
+                  buttonText: 'Tentar novamente',
+                  onPressed: () => setState(() {}),
                 );
-              }
-
-              if (snapshot.hasError) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.error_outline, size: 50, color: Colors.red[600]),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Erro ao carregar dados',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.red[600],
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      ElevatedButton(
-                        onPressed: () => setState(() {}),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red[600],
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: const Text('Tentar novamente', style: TextStyle(color: Colors.white)),
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              if (!snapshot.hasData || snapshot.data == null) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.info_outline, size: 50, color: Colors.amber[600]),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Nenhum dado disponível',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.indigo[700],
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
+              } else if (!snapshot.hasData) {
+                return InfoStateWidget(
+                  buttonForegroundColor: Colors.red,
+                  buttonBackgroundColor: Colors.white,
+                  icon: Icons.info_outline,
+                  iconColor: Colors.amber[600]!,
+                  message: 'Nenhum dado disponível',
                 );
               }
 
@@ -157,83 +169,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                     ],
                   ),
                 ),
-                child: GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 0.85,
-                  ),
-                  itemCount: 8,
-                  itemBuilder: (context, index) {
-                    final metrics = [
-                      {
-                        'label': 'Orçamentos Ativos',
-                        'value': data['qtdOrcamentosAtivos'],
-                        'icon': Icons.list_alt_rounded,
-                        'color': Colors.teal[600]!,
-                        'bgColor': Colors.teal[50]!,
-                      },
-                      {
-                        'label': 'Orçamentos Encerrados',
-                        'value': data['qtdOrcamentosEncerrados'],
-                        'icon': Icons.check_circle_outline,
-                        'color': Colors.orange[600]!,
-                        'bgColor': Colors.orange[50]!,
-                      },
-                      {
-                        'label': 'Valor Total',
-                        'value': formatarValor(data['valorInicialAtivos']),
-                        'icon': Icons.attach_money_rounded,
-                        'color': Colors.green[700]!,
-                        'bgColor': Colors.green[50]!,
-                      },
-                      {
-                        'label': 'Valor Livre',
-                        'value': formatarValor(data['valorLivreAtivos']),
-                        'icon': Icons.account_balance_wallet_rounded,
-                        'color': Colors.purple[600]!,
-                        'bgColor': Colors.purple[50]!,
-                      },
-                      {
-                        'label': 'Valor Atual',
-                        'value': formatarValor(data['valorAtualAtivos']),
-                        'icon': Icons.pie_chart_rounded,
-                        'color': Colors.blue[600]!,
-                        'bgColor': Colors.blue[50]!,
-                      },
-                      {
-                        'label': 'Gastos Fixos',
-                        'value': formatarValor(data['gastosFixosAtivos']),
-                        'icon': Icons.receipt_long_rounded,
-                        'color': Colors.red[600]!,
-                        'bgColor': Colors.red[50]!,
-                      },
-                      {
-                        'label': 'Gastos Variáveis',
-                        'value': formatarValor(data['gastosVariaveisAtivos']),
-                        'icon': Icons.trending_up_rounded,
-                        'color': Colors.amber[700]!,
-                        'bgColor': Colors.amber[50]!,
-                      },
-                      {
-                        'label': 'Valor Poupado',
-                        'value': formatarValor(data['gastosFixosValorPoupado']),
-                        'icon': Icons.savings_rounded,
-                        'color': Colors.indigo[600]!,
-                        'bgColor': Colors.indigo[50]!,
-                      },
-                    ];
-
-                    return _buildMetricCard(
-                      title: metrics[index]['label']!,
-                      value: metrics[index]['value'].toString(),
-                      color: metrics[index]['color'],
-                      bgColor: metrics[index]['bgColor'],
-                      icon: metrics[index]['icon'],
-                    );
-                  },
-                ),
+                child: _buildDashboardCards(data)
               );
             },
           ),
@@ -244,64 +180,6 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             child: const Text('Em desenvolvimento', style: TextStyle(fontSize: 18)),
           ),*/
         ],
-      ),
-    );
-  }
-
-  Widget _buildMetricCard({
-    required String title,
-    required String value,
-    required Color color,
-    required Color bgColor,
-    required IconData icon,
-  }) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[200]!),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: bgColor,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: color, size: 28),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 15,
-                  color: Colors.grey[800],
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 22,
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -467,14 +345,14 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
 
   Future<Map<String, dynamic>> _fetchDashboardData(AuthProvider auth) async {
     Map<String, dynamic> data = {};
-    data['qtdOrcamentosAtivos'] = await _fetchOrcamentosAtivos(auth.apiToken!);
-    data['qtdOrcamentosEncerrados'] = await _fetchOrcamentosEncerrados(auth.apiToken!);
-    data['valorInicialAtivos'] = await _fetchValorInicialAtivos(auth.apiToken!);
-    data['valorLivreAtivos'] = await _fetchValorLivreAtivos(auth.apiToken!);
-    data['valorAtualAtivos'] = await _fetchValorAtualAtivos(auth.apiToken!);
-    data['gastosFixosAtivos'] = await _fetchTotalGastosFixosOrcamentosAtivos(auth.apiToken!);
-    data['gastosVariaveisAtivos'] = await _fetchTotalGastosVariaveisOrcamentosAtivos(auth.apiToken!);
-    data['gastosFixosValorPoupado'] = await _fetchValorPoupadoGastosFixosOrcamentosAtivos(auth.apiToken!);
+    data['qtdOrcamentosAtivos'] = await _fetchOrcamentosAtivos(auth.apiToken);
+    data['qtdOrcamentosEncerrados'] = await _fetchOrcamentosEncerrados(auth.apiToken);
+    data['valorInicialAtivos'] = await _fetchValorInicialAtivos(auth.apiToken);
+    data['valorLivreAtivos'] = await _fetchValorLivreAtivos(auth.apiToken);
+    data['valorAtualAtivos'] = await _fetchValorAtualAtivos(auth.apiToken);
+    data['gastosFixosAtivos'] = await _fetchTotalGastosFixosOrcamentosAtivos(auth.apiToken);
+    data['gastosVariaveisAtivos'] = await _fetchTotalGastosVariaveisOrcamentosAtivos(auth.apiToken);
+    data['gastosFixosValorPoupado'] = await _fetchValorPoupadoGastosFixosOrcamentosAtivos(auth.apiToken);
     return data;
   }
 }

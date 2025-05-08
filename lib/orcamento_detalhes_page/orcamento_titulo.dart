@@ -21,21 +21,21 @@ class OrcamentoTitulo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activeBgColor = activeColor?.withAlpha(25) ?? Colors.green[50];
+    final activeBgColor = activeColor?.withAlpha(30) ?? Colors.green[50];
     final activeTextColor = activeColor ?? Colors.green[800];
-    final inactiveBgColor = inactiveColor?.withAlpha(25) ?? Colors.grey[200];
+    final inactiveBgColor = inactiveColor?.withAlpha(30) ?? Colors.grey[200];
     final inactiveTextColor = inactiveColor ?? Colors.grey[800];
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(20, 18, 16, 18),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withAlpha(25),
-            spreadRadius: 2,
-            blurRadius: 5,
+            color: Colors.grey.withOpacity(0.08),
+            spreadRadius: 1,
+            blurRadius: 8,
             offset: const Offset(0, 3),
           ),
         ],
@@ -48,37 +48,47 @@ class OrcamentoTitulo extends StatelessWidget {
               children: [
                 Text(
                   nome,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 22,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.grey[900],
+                    height: 1.2,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
+                          horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
                         color: isEncerrado ? inactiveBgColor : activeBgColor,
                         borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isEncerrado 
+                              ? inactiveTextColor!.withAlpha(50) 
+                              : activeTextColor!.withAlpha(50),
+                          width: 1,
+                        ),
                       ),
                       child: Text(
                         isEncerrado ? 'ENCERRADO' : 'ATIVO',
                         style: TextStyle(
                           color: isEncerrado ? inactiveTextColor : activeTextColor,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w700,
                           fontSize: 12,
+                          letterSpacing: 0.5,
                         ),
                       ),
                     ),
                     if (isEncerrado && dataEncerramento != null) ...[
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 10),
                       Text(
                         'Encerrado em ${_formatDate(dataEncerramento!)}',
                         style: TextStyle(
                           color: Colors.grey[600],
                           fontSize: 12,
+                          letterSpacing: 0.2,
                         ),
                       ),
                     ],
@@ -89,8 +99,20 @@ class OrcamentoTitulo extends StatelessWidget {
           ),
           if (!isEncerrado && onEditPressed != null)
             IconButton(
-              icon: const Icon(Icons.edit, color: Colors.indigo),
+              icon: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.indigo[50],
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.edit_outlined,
+                  size: 22,
+                  color: Colors.indigo[700],
+                ),
+              ),
               onPressed: onEditPressed,
+              splashRadius: 20,
             ),
         ],
       ),

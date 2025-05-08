@@ -7,6 +7,7 @@ import 'package:orcamentos_app/gastos_variados_page/gastos_page_empty_state.dart
 import 'package:orcamentos_app/http.dart';
 import 'package:orcamentos_app/gastos_variados_page/gasto_variado_item_card.dart';
 import 'package:orcamentos_app/gastos_variados_page/filtros_modal.dart';
+import 'package:orcamentos_app/refatorado/orcamentos_snackbar.dart';
 
 class GastosVariadosPage extends StatefulWidget {
   final int orcamentoId;
@@ -111,8 +112,9 @@ class _GastosVariadosPageState extends State<GastosVariadosPage> {
     if (response.statusCode >= 200 && response.statusCode <= 299) {
       return jsonDecode(response.body);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Falha ao carregar os dados do orçamento.')),
+      OrcamentosSnackBar.error(
+        context: context,
+        message: 'Falha ao carregar os dados do orçamento.',
       );
       return {};
     }

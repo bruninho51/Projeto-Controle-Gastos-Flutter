@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:orcamentos_app/refatorado/orcamentos_snackbar.dart';
 import 'package:provider/provider.dart';
 
 import 'package:orcamentos_app/categorias_gastos_page.dart';
@@ -7,7 +8,7 @@ import 'package:orcamentos_app/form_orcamento.dart';
 import 'package:orcamentos_app/http.dart';
 import 'package:orcamentos_app/orcamentos_page/orcamento_card.dart';
 import 'package:orcamentos_app/orcamentos_page/orcamentos_page_empty_state.dart';
-import 'package:orcamentos_app/orcamentos_encerrados_page.dart';
+import 'package:orcamentos_app/orcamentos_encerrados_page/orcamentos_encerrados_page.dart';
 import 'package:orcamentos_app/gastos_variados_page/auth_provider.dart';
 import 'package:orcamentos_app/orcamentos_page/orcamentos_fab.dart';
 
@@ -61,8 +62,9 @@ class OrcamentosPageState extends State<OrcamentosPage> {
       }
     } catch (e) {
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
+      OrcamentosSnackBar.error(
+        context: context,
+        message: 'Error: ${e.toString()}',
       );
     }
   }
@@ -90,7 +92,7 @@ class OrcamentosPageState extends State<OrcamentosPage> {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => OrcamentosEncerradosPage(apiToken: apiToken),
+        builder: (context) => OrcamentosEncerradosPage(),
       ),
     );
     _fetchApiData(apiToken);

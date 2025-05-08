@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:orcamentos_app/orcamentos_page/orcamentos_page.dart';
-import 'dashboard_page.dart';
+import '../dashboard_page/dashboard_page.dart';
 import 'perfil_page.dart';
 
 class MainAppScaffold extends StatefulWidget {

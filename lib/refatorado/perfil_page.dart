@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'gastos_variados_page/auth_provider.dart';
+import '../gastos_variados_page/auth_provider.dart';
 
 class PerfilPage extends StatelessWidget {
   const PerfilPage({super.key});

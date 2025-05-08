@@ -5,13 +5,15 @@ import 'package:orcamentos_app/gastos_fixos_page.dart';
 import 'package:orcamentos_app/gastos_variados_page/auth_provider.dart';
 import 'package:orcamentos_app/gastos_variados_page/formatters.dart';
 import 'package:orcamentos_app/gastos_variados_page/gastos_variados_page.dart';
+import 'package:orcamentos_app/refatorado/grafico_gasto_categorias.dart';
 import 'package:orcamentos_app/orcamento_detalhes_page/info_state_widget.dart';
 import 'package:orcamentos_app/orcamento_detalhes_page/orcamento_titulo.dart';
 import 'package:orcamentos_app/orcamento_detalhes_page/orcamento_detalhes_card.dart';
 import 'package:orcamentos_app/orcamento_detalhes_page/action_button.dart';
 import 'package:orcamentos_app/http.dart';
+import 'package:orcamentos_app/refatorado/orcamentos_snackbar.dart';
 import 'package:provider/provider.dart';
-import 'package:orcamentos_app/confirmation_dialog.dart';
+import 'package:orcamentos_app/refatorado/confirmation_dialog.dart';
 
 class OrcamentoDetalhesPage extends StatefulWidget {
   final int orcamentoId;
@@ -24,6 +26,7 @@ class OrcamentoDetalhesPage extends StatefulWidget {
 
 class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
   late Future<Map<String, dynamic>> _orcamentoDetalhes;
+  late Future<Map<String, double>> _spendingData;
   AuthProvider get _auth => Provider.of<AuthProvider>(context, listen: false);
 
   @override
@@ -34,6 +37,7 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
 
   void _loadOrcamentoData() {
     _orcamentoDetalhes = _fetchOrcamentoDetalhes(widget.orcamentoId);
+    _spendingData = _consolidarTotaisPorCategoria(_auth.apiToken, widget.orcamentoId);
   }
 
   Future<Map<String, dynamic>> _fetchOrcamentoDetalhes(int orcamentoId) async {
@@ -47,6 +51,7 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
       var detalhes = jsonDecode(response.body);
       detalhes['gastos_fixos'] = (await _fetchQtdGastosFixos(orcamentoId)).toString();
       detalhes['gastos_variados'] = (await _fetchQtdGastosVariados(orcamentoId)).toString();
+
       return detalhes;
     } else {
       throw Exception('Falha ao carregar os detalhes do orçamento');
@@ -87,18 +92,24 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
   }
 
   Future<void> _encerrarOrcamento() async {
-    await _updateOrcamentoStatus({
+    await _updateOrcamento({
       'data_encerramento': DateTime.now().toIso8601String(),
     }, 'Orçamento encerrado com sucesso!');
   }
 
   Future<void> _reativarOrcamento() async {
-    await _updateOrcamentoStatus({
+    await _updateOrcamento({
       'data_encerramento': null,
     }, 'Orçamento reativado com sucesso!');
   }
 
-  Future<void> _updateOrcamentoStatus(Map<String, dynamic> data, String successMessage) async {
+  Future<void> _renomearOrcamento(String nome) async {
+    await _updateOrcamento({
+      'nome': nome,
+    }, 'Orçamento atualizado com sucesso!');
+  }
+
+  Future<void> _updateOrcamento(Map<String, dynamic> data, String successMessage) async {
     final client = await MyHttpClient.create();
     final response = await client.patch(
       'orcamentos/${widget.orcamentoId}',
@@ -107,8 +118,9 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
     );
 
     if (response.statusCode == 200) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(successMessage)),
+      OrcamentosSnackBar.success(
+        context: context,
+        message: successMessage,
       );
       _loadOrcamentoData();
     } else {
@@ -124,12 +136,83 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
     );
 
     if (response.statusCode == 200) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Orçamento apagado com sucesso!')),
+      OrcamentosSnackBar.success(
+        context: context,
+        message: 'Orçamento apagado com sucesso!',
       );
       Navigator.pop(context, true);
     } else {
       throw Exception('Falha ao apagar o orçamento');
+    }
+  }
+
+  Future<List<dynamic>> fetchGastosFixos(String apiToken, int orcamentoId) async {
+    final client = await MyHttpClient.create();
+    final response = await client.get(
+      'orcamentos/$orcamentoId/gastos-fixos',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $apiToken',
+      },
+    );
+
+    if (response.statusCode >= 200 && response.statusCode <= 299) {
+      return jsonDecode(response.body);
+    } else {
+      print("Erro na API de orçamentos: ${response.statusCode}");
+      return [];
+    }
+  }
+
+  Future<List<dynamic>> fetchGastosVariaveis(String apiToken, int orcamentoId) async {
+    final client = await MyHttpClient.create();
+    final response = await client.get(
+      'orcamentos/$orcamentoId/gastos-variados',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $apiToken',
+      },
+    );
+
+    if (response.statusCode >= 200 && response.statusCode <= 299) {
+      var gastosVariaveis = jsonDecode(response.body);
+      print('gastos variaveis orcamento: $gastosVariaveis');
+      return gastosVariaveis;
+    } else {
+      print("Erro na API de orçamentos: ${response.statusCode}");
+      return [];
+    }
+  }
+
+  Future<Map<String, double>> _consolidarTotaisPorCategoria(String apiToken, int orcamentoId) async {
+    try {
+      final results = await Future.wait([
+        fetchGastosFixos(apiToken, orcamentoId),
+        fetchGastosVariaveis(apiToken, orcamentoId),
+      ]);
+
+      final gastosFixos = results[0];
+      final gastosVariaveis = results[1];
+
+      final Map<String, double> totaisPorCategoria = {};
+
+      void processarGasto(dynamic gasto) {
+        if (gasto is Map<String, dynamic>) {
+          final categoria = gasto['categoriaGasto']['nome']?.toString() ?? 'Sem Categoria';
+          final valor = double.tryParse(gasto['valor']?.toString() ?? '0') ?? 0.0;
+          
+          totaisPorCategoria[categoria] = (totaisPorCategoria[categoria] ?? 0.0) + valor;
+        }
+      }
+
+      gastosFixos.forEach(processarGasto);
+
+      gastosVariaveis.forEach(processarGasto);
+
+      return totaisPorCategoria;
+    } catch (e) {
+      print("Erro ao consolidar totais por categoria: $e");
+      return {};
     }
   }
 
@@ -172,6 +255,49 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
     );
     _loadOrcamentoData();
   }
+
+  void _showRenameDialog(BuildContext context) {
+    final nomeController = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Renomear Orçamento'),
+          content: TextFormField(
+            controller: nomeController,
+            decoration: const InputDecoration(
+              labelText: 'Novo nome',
+              border: OutlineInputBorder(),
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Por favor, insira um nome';
+              }
+              return null;
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () async {
+                if (nomeController.text.isNotEmpty) {
+                  await _renomearOrcamento(nomeController.text);
+                  Navigator.pop(context);
+                  setState(() {});
+                }
+              },
+              child: const Text('Salvar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
@@ -248,6 +374,39 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
     );
   }
 
+  Widget _buildGraficoCategorias() {
+    return FutureBuilder<Map<String, double>>(
+      future: _spendingData,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasError) {
+          return InfoStateWidget(
+            buttonForegroundColor: Colors.red,
+            buttonBackgroundColor: Colors.white,
+            icon: Icons.error,
+            iconColor: Colors.red,
+            message: snapshot.error is String ? snapshot.error as String : 'Erro desconhecido',
+          );
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return InfoStateWidget(
+            buttonForegroundColor: Colors.orange,
+            buttonBackgroundColor: Colors.white,
+            icon: Icons.warning_amber,
+            iconColor: Colors.orange,
+            message: 'Nenhum dado encontrado',
+          );
+        }
+        return GraficoGastoCategorias(
+          categoryData: snapshot.data!,
+          height: 400,
+          barWidth: 22,
+          title: 'Gastos por Categoria',
+        );
+      },
+    );
+  }
+
   Widget _buildActionButtons(bool isEncerrado) {
     return Column(
       children: [
@@ -261,7 +420,10 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
               title: 'Confirmar Encerramento',
               message: 'Você tem certeza que deseja encerrar este orçamento?',
               actionText: 'Encerrar',
-              action: _encerrarOrcamento,
+              action: () async {
+                await _encerrarOrcamento();
+                setState(() {});
+              },
             ),
           ),
           const SizedBox(height: 12),
@@ -274,7 +436,10 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
               title: 'Confirmar Exclusão',
               message: 'Você tem certeza que deseja apagar este orçamento?',
               actionText: 'Apagar',
-              action: _deleteOrcamento,
+              action: () async {
+                await _deleteOrcamento();
+                setState(() {});
+              },
             ),
           ),
         ] else
@@ -287,7 +452,10 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
               title: 'Confirmar Reativação',
               message: 'Você tem certeza que deseja reativar este orçamento?',
               actionText: 'Reativar',
-              action: _reativarOrcamento,
+              action: () async {
+                await _reativarOrcamento();
+                setState(() {});
+              },
             ),
           ),
       ],
@@ -338,13 +506,13 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
                     isEncerrado: isEncerrado,
                     dataEncerramento: orcamento['data_encerramento'],
                     onEditPressed: isEncerrado 
-                        ? null 
-                        : () => _navigateToEditValorInicial(
-                            double.parse(orcamento['valor_inicial'] ?? '0.0')),
+                      ? null 
+                      : () => _showRenameDialog(context),
                   ),
                   const SizedBox(height: 20),
                   _buildDashboardCards(orcamento),
-                  const SizedBox(height: 24),
+                  _buildGraficoCategorias(),
+                  const SizedBox(height: 20),
                   _buildActionButtons(isEncerrado),
                 ],
               ),

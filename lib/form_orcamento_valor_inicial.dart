@@ -1,93 +1,101 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
 import 'package:intl/intl.dart';
+import 'dart:convert';
 import 'package:orcamentos_app/http.dart';
 import 'package:orcamentos_app/formatters.dart';
+import 'package:orcamentos_app/refatorado/orcamentos_snackbar.dart';
 
 class FormOrcamentoValorInicialPage extends StatefulWidget {
   final String apiToken;
   final double valorInicial;
   final int orcamentoId;
 
-  const FormOrcamentoValorInicialPage({Key? key, required this.apiToken, required this.orcamentoId, required this.valorInicial}) : super(key: key);
+  const FormOrcamentoValorInicialPage({
+    Key? key,
+    required this.apiToken,
+    required this.orcamentoId,
+    required this.valorInicial,
+  }) : super(key: key);
 
   @override
-  _FormOrcamentoValorInicialPageState createState() =>
-      _FormOrcamentoValorInicialPageState();
+  _FormOrcamentoValorInicialPageState createState() => _FormOrcamentoValorInicialPageState();
 }
 
-class _FormOrcamentoValorInicialPageState
-    extends State<FormOrcamentoValorInicialPage> {
-  TextEditingController _valorController = TextEditingController();
+class _FormOrcamentoValorInicialPageState extends State<FormOrcamentoValorInicialPage> {
+  final _valorController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
   late double _valorInicial;
-
-  final _formKey = GlobalKey<FormState>(); // Para validar o formulário
   bool _isSubmitting = false;
+  final _focusNode = FocusNode();
+
+  final _formatador = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
   @override
   void initState() {
     super.initState();
-    _valorInicial = widget.valorInicial; // Inicializando com o valor recebido
+    _valorInicial = widget.valorInicial;
   }
 
-  final _formatador = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+  @override
+  void dispose() {
+    _valorController.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
 
   String _formatarValor(String value) {
-    // Remove todos os caracteres não numéricos, exceto o ponto
     String cleanedValue = value.replaceAll(RegExp(r'[^0-9]'), '');
-
-    // Converte para double e formata
     if (cleanedValue.isNotEmpty) {
       double parsedValue = double.tryParse(cleanedValue) ?? 0.0;
-      parsedValue = parsedValue / 100; // Converte centavos para reais
+      parsedValue = parsedValue / 100;
       return _formatador.format(parsedValue);
     }
     return '';
   }
 
-  String converterParaFormatoNumerico(String valorFormatado) {
-    // Remove o símbolo da moeda (R$) e espaços em branco
-    String valorSemSimbolo = valorFormatado.replaceAll('R\$', '').trim();
-
-    // Substitui a vírgula (separador decimal) por ponto
-    String valorComPonto = valorSemSimbolo.replaceAll('.', '').replaceAll(',', '.');
-
-    return valorComPonto;
+  String _converterParaFormatoNumerico(String valorFormatado) {
+    return valorFormatado
+        .replaceAll('R\$', '')
+        .trim()
+        .replaceAll('.', '')
+        .replaceAll(',', '.');
   }
 
-  void _updateValorInicial(orcamentoId, valorInicial) async {
-
-    print("valor inicial novo : $valorInicial");
-    final client = await MyHttpClient.create();
-
-    final response = await client.patch(
-      'orcamentos/$orcamentoId',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ${widget.apiToken}',  // Certifique-se de que o apiToken não é nulo
-      },
-      body: jsonEncode({
-        'valor_inicial': "$valorInicial",  // Corrigido para o nome correto da chave
-      }),
-    );
-
-    if (response.statusCode >= 200 && response.statusCode <= 299) {
-      // Se o orçamento for salvo com sucesso
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Orçamento salvo com sucesso!')),
+  Future<void> _updateValorInicial(int orcamentoId, double valorInicial) async {
+    setState(() => _isSubmitting = true);
+    
+    try {
+      final client = await MyHttpClient.create();
+      final response = await client.patch(
+        'orcamentos/$orcamentoId',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${widget.apiToken}',
+        },
+        body: jsonEncode({
+          'valor_inicial': valorInicial.toString(),
+        }),
       );
-      Navigator.pop(context, true); // Retorna à tela anterior
-    } else {
-      Navigator.pop(context, false);
-      print(response.body.toString());
-      // Se a requisição falhar
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Falha ao alterar o orçamento')),
+
+      if (response.statusCode >= 200 && response.statusCode <= 299) {
+        OrcamentosSnackBar.success(
+          context: context,
+          message: 'Valor inicial atualizado com sucesso!',
+        );
+        Navigator.pop(context, true);
+      } else {
+        throw Exception('Falha ao atualizar: ${response.statusCode}');
+      }
+    } catch (e) {
+      OrcamentosSnackBar.error(
+        context: context,
+        message: 'Erro: ${e.toString()}',
       );
+    } finally {
+      setState(() => _isSubmitting = false);
     }
   }
 
-  // Método para abrir o modal e executar a ação (somar, subtrair ou substituir)
   void _openValueDialog(String action) {
     showDialog(
       context: context,
@@ -103,7 +111,6 @@ class _FormOrcamentoValorInicialPageState
                 if (value == null || value.isEmpty) {
                   return 'Por favor, insira o valor';
                 }
-                // Remove a formatação para validar o número
                 String cleanedValue = value.replaceAll(RegExp(r'[^0-9]'), '');
                 if (double.tryParse(cleanedValue) == null) {
                   return 'Por favor, insira um valor válido';
@@ -111,7 +118,6 @@ class _FormOrcamentoValorInicialPageState
                 return null;
               },
               onChanged: (value) {
-                // Formata o valor enquanto o usuário digita
                 String formattedValue = _formatarValor(value);
                 _valorController.value = TextEditingValue(
                   text: formattedValue,
@@ -127,10 +133,17 @@ class _FormOrcamentoValorInicialPageState
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                // Verifica se a validação do formulário foi bem-sucedida
+                Navigator.pop(context, false);
+                _valorController.clear();
+              },
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () {
                 if (_formKey.currentState!.validate()) {
-                  double valor = double.tryParse(converterParaFormatoNumerico(_valorController.text)) ?? 0.0;
-                  print("valor controller: ${converterParaFormatoNumerico(_valorController.text)}");
+                  double valor = double.tryParse(
+                      _converterParaFormatoNumerico(_valorController.text)) ?? 0.0;
+                  
                   setState(() {
                     if (action == 'Inserir Novo Valor Inicial') {
                       _valorInicial = valor;
@@ -143,20 +156,10 @@ class _FormOrcamentoValorInicialPageState
 
                   _updateValorInicial(widget.orcamentoId, _valorInicial);
                   Navigator.pop(context, true);
-
-                  _valorController.clear(); // Limpa o campo de texto
-                } else {
-                  // Se o formulário não for válido, não faz nada e mantém o erro
+                  _valorController.clear();
                 }
               },
               child: const Text('Confirmar'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context, false); // Fecha o modal sem ação
-                _valorController.clear(); // Limpa o campo de texto
-              },
-              child: const Text('Cancelar'),
             ),
           ],
         );
@@ -164,41 +167,51 @@ class _FormOrcamentoValorInicialPageState
     );
   }
 
-  // Método para criar os cards com ícones
-  Widget _buildDashboardCard(String title, Color color, IconData icon, String action) {
+  Widget _buildActionCard(String title, Color color, IconData icon, String action) {
     return Card(
-      elevation: 5,
+      elevation: 4,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(12),
       ),
+      color: Colors.white,
       child: InkWell(
+        borderRadius: BorderRadius.circular(12),
         onTap: () => _openValueDialog(action),
-        child: Padding(
-          padding: const EdgeInsets.all(15.0),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [color.withOpacity(0.1), color.withOpacity(0.05)],
+            ),
+          ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(10.0),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1), // Cor de fundo do ícone
-                  borderRadius: BorderRadius.circular(50),
+                  color: color.withOpacity(0.2),
+                  shape: BoxShape.circle,
                 ),
                 child: Icon(
                   icon,
                   color: color,
-                  size: 30,
+                  size: 28,
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 16),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[800],
                 ),
+                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 5),
             ],
           ),
         ),
@@ -209,66 +222,138 @@ class _FormOrcamentoValorInicialPageState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blue[50], // Cor da AppBar
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        backgroundColor: Colors.blue[50], // Cor da AppBar
-        title: const Text('Formulário de Valor Inicial'),
+        title: const Text(
+          'Valor Inicial',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: Colors.indigo[700],
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Exibição do valor inicial
-            Text(
-              'Valor Inicial: ${formatarValor(_valorInicial)}',
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-
-            // Grid de Cards para interações (duas colunas)
-            Expanded(
-              child: GridView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                shrinkWrap: true,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2, // 2 colunas
-                  crossAxisSpacing: 20.0, // Espaço entre os cards
-                  mainAxisSpacing: 20.0, // Espaço entre os cards
-                  childAspectRatio: 1.0, // Tamanho igual para os cards
-                ),
-                itemCount: 3,
-                itemBuilder: (context, index) {
-                  switch (index) {
-                    case 0:
-                      return _buildDashboardCard(
-                        'Inserir Novo Valor Inicial',
-                        Colors.blue,
-                        Icons.input,
-                        'Inserir Novo Valor Inicial',
-                      );
-                    case 1:
-                      return _buildDashboardCard(
-                        'Somar ao Valor Inicial',
-                        Colors.green,
-                        Icons.add,
-                        'Somar ao Valor Inicial',
-                      );
-                    case 2:
-                      return _buildDashboardCard(
-                        'Subtrair do Valor Inicial',
-                        Colors.red,
-                        Icons.remove,
-                        'Subtrair do Valor Inicial',
-                      );
-                    default:
-                      return Container();
-                  }
-                },
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 10), // Ajuste sutil no padding inferior
+            child: Container(
+              padding: const EdgeInsets.all(18), // Padding interno aumentado em 2px
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14), // Bordas ligeiramente mais arredondadas
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1), // Sombra mais suave
+                    spreadRadius: 1,
+                    blurRadius: 6,
+                    offset: const Offset(0, 2), // Sombra mais próxima do card
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(14), // Container do ícone um pouco maior
+                    decoration: BoxDecoration(
+                      color: Colors.indigo[50],
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.indigo.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.account_balance_wallet,
+                      size: 30, // Ícone ligeiramente maior
+                      color: Colors.indigo[700],
+                    ),
+                  ),
+                  const SizedBox(width: 18), // Espaçamento aumentado
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'VALOR INICIAL',
+                          style: TextStyle(
+                            fontSize: 13, // Fonte um pouco menor
+                            fontWeight: FontWeight.w700, // Negrito mais forte
+                            color: Colors.grey[600],
+                            letterSpacing: 1.0, // Espaçamento entre letras aumentado
+                          ),
+                        ),
+                        const SizedBox(height: 6), // Espaçamento aumentado
+                        Text(
+                          formatarValor(_valorInicial),
+                          style: TextStyle(
+                            fontSize: 26, // Fonte um pouco maior
+                            fontWeight: FontWeight.bold,
+                            color: Colors.indigo[900], // Cor mais alinhada ao tema
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Ações disponíveis',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[700],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: GridView.count(
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 1.0,
+                children: [
+                  _buildActionCard(
+                    'Definir novo valor',
+                    Colors.blue,
+                    Icons.edit,
+                    'Inserir Novo Valor Inicial',
+                  ),
+                  _buildActionCard(
+                    'Adicionar valor',
+                    Colors.green,
+                    Icons.add,
+                    'Somar ao Valor Inicial',
+                  ),
+                  _buildActionCard(
+                    'Subtrair valor',
+                    Colors.red,
+                    Icons.remove,
+                    'Subtrair do Valor Inicial',
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

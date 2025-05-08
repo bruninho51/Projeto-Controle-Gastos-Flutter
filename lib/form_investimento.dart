@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:orcamentos_app/http.dart';
+import 'package:orcamentos_app/refatorado/orcamentos_snackbar.dart';
 
 class FormularioInvestimentoPage extends StatefulWidget {
   final String apiToken;
@@ -18,13 +19,12 @@ class _FormularioInvestimentoPageState extends State<FormularioInvestimentoPage>
   String _descricao = '';
   final _valorInicialController = TextEditingController();
 
-  int? _categoriaIdSelecionada;  // Para armazenar o ID da categoria
+  int? _categoriaIdSelecionada;
   String? _categoriaSelecionada;
-  List<Map<String, dynamic>> _categorias = []; // Lista de categorias (id e nome)
+  List<Map<String, dynamic>> _categorias = [];
 
   final _formatador = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
-  // Método para obter as categorias de gasto da API
   Future<void> _obterCategoriasGastos() async {
     final client = await MyHttpClient.create();
     final response = await client.get(
@@ -35,10 +35,8 @@ class _FormularioInvestimentoPageState extends State<FormularioInvestimentoPage>
     );
 
     if (response.statusCode >= 200 && response.statusCode <= 299) {
-      // Parseia o corpo da resposta para um formato JSON
       final List<dynamic> categoriasJson = jsonDecode(response.body);
 
-      // Converte para uma lista de Map<String, dynamic> (contendo id e nome)
       setState(() {
         _categorias = categoriasJson.map((categoria) {
           return {
@@ -53,23 +51,19 @@ class _FormularioInvestimentoPageState extends State<FormularioInvestimentoPage>
   }
 
   String _formatarValor(String value) {
-    // Remove todos os caracteres não numéricos, exceto o ponto
     String cleanedValue = value.replaceAll(RegExp(r'[^0-9]'), '');
 
-    // Converte para double e formata
     if (cleanedValue.isNotEmpty) {
       double parsedValue = double.tryParse(cleanedValue) ?? 0.0;
-      parsedValue = parsedValue / 100; // Converte centavos para reais
+      parsedValue = parsedValue / 100;
       return _formatador.format(parsedValue);
     }
     return '';
   }
 
   String converterParaFormatoNumerico(String valorFormatado) {
-    // Remove o símbolo da moeda (R$) e espaços em branco
     String valorSemSimbolo = valorFormatado.replaceAll('R\$', '').trim();
 
-    // Substitui a vírgula (separador decimal) por ponto
     String valorComPonto = valorSemSimbolo.replaceAll('.', '').replaceAll(',', '.');
 
     return valorComPonto;
@@ -84,7 +78,7 @@ class _FormularioInvestimentoPageState extends State<FormularioInvestimentoPage>
         'investimentos',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${widget.apiToken}',  // Certifique-se de que o apiToken não é nulo
+          'Authorization': 'Bearer ${widget.apiToken}',
         },
         body: jsonEncode({
           'nome': _nome,
@@ -94,17 +88,17 @@ class _FormularioInvestimentoPageState extends State<FormularioInvestimentoPage>
       );
 
       if (response.statusCode >= 200 && response.statusCode <= 299) {
-        // Se o orçamento for salvo com sucesso
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Orçamento salvo com sucesso!')),
+        OrcamentosSnackBar.success(
+          context: context,
+          message: 'Orçamento salvo com sucesso!',
         );
-        Navigator.pop(context, true); // Retorna à tela anterior
+        Navigator.pop(context, true);
       } else {
         Navigator.pop(context, false);
         print(response.body.toString());
-        // Se a requisição falhar
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Falha ao salvar o orçamento')),
+        OrcamentosSnackBar.error(
+          context: context,
+          message: 'Falha ao salvar o orçamento.',
         );
       }
     }
@@ -113,9 +107,9 @@ class _FormularioInvestimentoPageState extends State<FormularioInvestimentoPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blue[50], // Cor da AppBar
+      backgroundColor: Colors.blue[50],
       appBar: AppBar(
-        backgroundColor: Colors.blue[50], // Cor da AppBar
+        backgroundColor: Colors.blue[50],
         title: const Text('Formulário de Orçamento'),
       ),
       body: Padding(
@@ -124,7 +118,6 @@ class _FormularioInvestimentoPageState extends State<FormularioInvestimentoPage>
           key: _formKey,
           child: Column(
             children: [
-              // Campo Nome
               TextFormField(
                 decoration: const InputDecoration(
                   labelText: 'Nome do Investimento',
@@ -142,7 +135,6 @@ class _FormularioInvestimentoPageState extends State<FormularioInvestimentoPage>
               ),
               const SizedBox(height: 16),
 
-              // Campo Descrição
               TextFormField(
                 decoration: const InputDecoration(
                   labelText: 'Descrição (Opcional)',
@@ -154,19 +146,18 @@ class _FormularioInvestimentoPageState extends State<FormularioInvestimentoPage>
               ),
               const SizedBox(height: 16),
 
-              // Categoria (Dropdown)
               _categorias.isEmpty
-                  ? const CircularProgressIndicator() // Exibe um carregando enquanto as categorias são carregadas
+                  ? const CircularProgressIndicator()
                   : DropdownButtonFormField<int>(
                       value: _categoriaIdSelecionada,
-                      isExpanded: true,  // Garante que o campo do dropdown ocupe toda a largura disponível
+                      isExpanded: true,
                       items: _categorias.map((categoria) {
                         return DropdownMenuItem<int>(
                           value: categoria['id'],
                           child: Text(
                             categoria['nome'],
-                            overflow: TextOverflow.ellipsis,  // Caso o nome da categoria seja muito longo, ele será truncado
-                            softWrap: true,  // Permite que o texto quebre em várias linhas, se necessário
+                            overflow: TextOverflow.ellipsis,
+                            softWrap: true,
                           ),
                         );
                       }).toList(),
@@ -191,7 +182,6 @@ class _FormularioInvestimentoPageState extends State<FormularioInvestimentoPage>
 
                     const SizedBox(height: 16),
               
-              // Campo Valor Inicial
               TextFormField(
               decoration: const InputDecoration(
                 labelText: 'Valor Inicial',
@@ -203,7 +193,6 @@ class _FormularioInvestimentoPageState extends State<FormularioInvestimentoPage>
                 if (value == null || value.isEmpty) {
                   return 'Por favor, insira o valor inicial';
                 }
-                // Remove a formatação para validar o número
                 String cleanedValue = value.replaceAll(RegExp(r'[^0-9]'), '');
                 if (double.tryParse(cleanedValue) == null) {
                   return 'Por favor, insira um valor válido';
@@ -211,7 +200,6 @@ class _FormularioInvestimentoPageState extends State<FormularioInvestimentoPage>
                 return null;
               },
               onChanged: (value) {
-                // Formata o valor enquanto o usuário digita
                 String formattedValue = _formatarValor(value);
                 _valorInicialController.value = TextEditingValue(
                   text: formattedValue,
@@ -221,7 +209,6 @@ class _FormularioInvestimentoPageState extends State<FormularioInvestimentoPage>
             ),
               const SizedBox(height: 20),
 
-              // Botão de Salvar
               ElevatedButton(
                 onPressed: _saveForm,
                 child: const Text('Salvar Investimento'),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:orcamentos_app/http.dart';
+import 'package:orcamentos_app/refatorado/orcamentos_snackbar.dart';
 
 class CriacaoGastoFixoPage extends StatefulWidget {
   final int orcamentoId;
@@ -19,68 +20,100 @@ class CriacaoGastoFixoPage extends StatefulWidget {
 
 class _CriacaoGastoFixoPageState extends State<CriacaoGastoFixoPage> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _descricaoController = TextEditingController();
-  final TextEditingController _valorPrevistoController = TextEditingController();
-  final TextEditingController _observacoesController = TextEditingController();
+  final _descricaoController = TextEditingController();
+  final _valorPrevistoController = TextEditingController();
+  final _observacoesController = TextEditingController();
+  final _descricaoFocusNode = FocusNode();
+  final _valorFocusNode = FocusNode();
+  final _observacoesFocusNode = FocusNode();
 
-  int? _categoriaIdSelecionada;  // Para armazenar o ID da categoria
-  List<Map<String, dynamic>> _categorias = []; // Lista de categorias (id e nome)
+  int? _categoriaIdSelecionada;
+  List<Map<String, dynamic>> _categorias = [];
+  bool _isLoading = false;
+  bool _isLoadingCategories = false;
 
   final _formatador = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
-  // Formata o valor inserido pelo usuário
+  @override
+  void initState() {
+    super.initState();
+    _obterCategoriasGastos();
+  }
+
+  @override
+  void dispose() {
+    _descricaoController.dispose();
+    _valorPrevistoController.dispose();
+    _observacoesController.dispose();
+    _descricaoFocusNode.dispose();
+    _valorFocusNode.dispose();
+    _observacoesFocusNode.dispose();
+    super.dispose();
+  }
+
   String _formatarValor(String value) {
-    String cleanedValue = value.replaceAll(RegExp(r'[^0-9]'), ''); // Remove caracteres não numéricos
+    String cleanedValue = value.replaceAll(RegExp(r'[^0-9]'), '');
     if (cleanedValue.isNotEmpty) {
       double parsedValue = double.tryParse(cleanedValue) ?? 0.0;
-      parsedValue = parsedValue / 100; // Converte centavos para reais
+      parsedValue = parsedValue / 100;
       return _formatador.format(parsedValue);
     }
     return '';
   }
 
-  // Converte o valor formatado para o formato numérico
-  String converterParaFormatoNumerico(String valorFormatado) {
-    String valorSemSimbolo = valorFormatado.replaceAll('R\$', '').trim();
-    String valorComPonto = valorSemSimbolo.replaceAll('.', '').replaceAll(',', '.');
-    return valorComPonto;
+  String _converterParaFormatoNumerico(String valorFormatado) {
+    return valorFormatado
+        .replaceAll('R\$', '')
+        .trim()
+        .replaceAll('.', '')
+        .replaceAll(',', '.');
   }
 
-  // Método para obter as categorias de gasto da API
   Future<void> _obterCategoriasGastos() async {
-    final client = await MyHttpClient.create();
+    setState(() => _isLoadingCategories = true);
     
-    final response = await client.get(
-      'categorias-gastos',
-      headers: {
-        'Authorization': 'Bearer ${widget.apiToken}',
-      },
-    );
+    try {
+      final client = await MyHttpClient.create();
+      final response = await client.get(
+        'categorias-gastos',
+        headers: {
+          'Authorization': 'Bearer ${widget.apiToken}',
+        },
+      );
 
-    if (response.statusCode >= 200 && response.statusCode <= 299) {
-      // Parseia o corpo da resposta para um formato JSON
-      final List<dynamic> categoriasJson = jsonDecode(response.body);
+      if (response.statusCode >= 200 && response.statusCode <= 299) {
+        final List<dynamic> categoriasJson = jsonDecode(response.body);
 
-      // Converte para uma lista de Map<String, dynamic> (contendo id e nome)
-      setState(() {
-        _categorias = categoriasJson.map((categoria) {
-          return {
-            'id': categoria['id'],
-            'nome': categoria['nome'],
-          };
-        }).toList();
-      });
-    } else {
-      throw Exception('Falha ao carregar categorias de gastos');
+        setState(() {
+          _categorias = categoriasJson.map((categoria) {
+            return {
+              'id': categoria['id'],
+              'nome': categoria['nome'],
+            };
+          }).toList();
+          _isLoadingCategories = false;
+        });
+      } else {
+        throw Exception('Falha ao carregar categorias de gastos');
+      }
+    } catch (e) {
+      setState(() => _isLoadingCategories = false);
+      OrcamentosSnackBar.error(
+        context: context,
+        message: 'Erro ao carregar categorias: ${e.toString()}',
+      );
     }
   }
 
-  // Método para salvar o gasto fixo
   Future<void> _salvarGastoFixo() async {
-    if (_formKey.currentState?.validate() ?? false) {
-      final valorPrevisto = converterParaFormatoNumerico(_valorPrevistoController.text);
+    if (!(_formKey.currentState?.validate() ?? false)) return;
 
-final client = await MyHttpClient.create();
+    setState(() => _isLoading = true);
+    
+    try {
+      final valorPrevisto = _converterParaFormatoNumerico(_valorPrevistoController.text);
+
+      final client = await MyHttpClient.create();
       final response = await client.post(
         'orcamentos/${widget.orcamentoId}/gastos-fixos',
         headers: {
@@ -90,136 +123,229 @@ final client = await MyHttpClient.create();
         body: jsonEncode({
           'descricao': _descricaoController.text,
           'previsto': valorPrevisto,
-          'categoria_id': _categoriaIdSelecionada,  // Usando o id da categoria selecionada
+          'categoria_id': _categoriaIdSelecionada,
           'observacoes': _observacoesController.text,
         }),
       );
 
       if (response.statusCode >= 200 && response.statusCode <= 299) {
-        // Se o gasto fixo for salvo com sucesso
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Gasto fixo criado com sucesso!')),
+        OrcamentosSnackBar.success(
+          context: context,
+          message: 'Gasto fixo criado com sucesso!',
         );
-        Navigator.pop(context, true); // Volta para a tela anterior
+        Navigator.pop(context, true);
       } else {
-        // Se a requisição falhar
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Falha ao criar o gasto fixo')),
-        );
-        print(response.body.toString());
+        throw Exception('Falha ao criar gasto fixo: ${response.statusCode}');
       }
+    } catch (e) {
+      OrcamentosSnackBar.error(
+        context: context,
+        message: 'Erro: ${e.toString()}',
+      );
+    } finally {
+      setState(() => _isLoading = false);
     }
   }
 
   @override
-  void initState() {
-    super.initState();
-    _obterCategoriasGastos(); // Carrega as categorias assim que a tela é aberta
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.blue[50], // Cor da AppBar
-      appBar: AppBar(
-        backgroundColor: Colors.blue[50], // Cor da AppBar
-        title: Text('Criar Gasto Fixo'),
+    return Theme(
+      data: Theme.of(context).copyWith(
+        inputDecorationTheme: InputDecorationTheme(
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: Colors.grey[400]!),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(color: Colors.grey[400]!),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Colors.indigo, width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Colors.red),
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
+        ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Descrição
-              TextFormField(
-                controller: _descricaoController,
-                decoration: const InputDecoration(
-                  labelText: 'Descrição',
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor, insira uma descrição';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Valor Previsto
-              TextFormField(
-                controller: _valorPrevistoController,
-                decoration: const InputDecoration(
-                  labelText: 'Valor Previsto',
-                ),
-                keyboardType: TextInputType.number,
-                onChanged: (value) {
-                  String formattedValue = _formatarValor(value);
-                  _valorPrevistoController.value = TextEditingValue(
-                    text: formattedValue,
-                    selection: TextSelection.collapsed(offset: formattedValue.length),
-                  );
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Por favor, insira o valor previsto';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Categoria (Dropdown)
-              _categorias.isEmpty
-                  ? const CircularProgressIndicator() // Exibe um carregando enquanto as categorias são carregadas
-                  : DropdownButtonFormField<int>(
-                      value: _categoriaIdSelecionada,
-                      isExpanded: true,  // Garante que o campo do dropdown ocupe toda a largura disponível
-                      items: _categorias.map((categoria) {
-                        return DropdownMenuItem<int>(
-                          value: categoria['id'],
-                          child: Text(
-                            categoria['nome'],
-                            overflow: TextOverflow.ellipsis,  // Caso o nome da categoria seja muito longo, ele será truncado
-                            softWrap: true,  // Permite que o texto quebre em várias linhas, se necessário
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _categoriaIdSelecionada = value;
-                        });
-                      },
-                      decoration: const InputDecoration(
-                        labelText: 'Categoria',
+      child: Scaffold(
+        backgroundColor: Colors.grey[50],
+        appBar: AppBar(
+          title: const Text(
+            'Novo Gasto Fixo',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          centerTitle: true,
+          elevation: 0,
+          backgroundColor: Colors.indigo[700],
+          iconTheme: const IconThemeData(color: Colors.white),
+          toolbarTextStyle: const TextStyle(color: Colors.white),
+          titleTextStyle: const TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const SizedBox(height: 20),
+                Text(
+                  'Preencha os dados do novo gasto fixo',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Colors.grey[700],
                       ),
-                      validator: (value) {
-                        if (value == null) {
-                          return 'Por favor, selecione uma categoria';
-                        }
-                        return null;
-                      },
-                    ),
-
-              const SizedBox(height: 16),
-
-              // Observações (opcional)
-              TextFormField(
-                controller: _observacoesController,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Observações (Opcional)',
+                  textAlign: TextAlign.center,
                 ),
-              ),
-              const SizedBox(height: 32),
-
-              // Botão de envio
-              ElevatedButton(
-                onPressed: _salvarGastoFixo,
-                child: const Text('Criar Gasto Fixo'),
-              ),
-            ],
+                const SizedBox(height: 30),
+                
+                // Campo Descrição
+                TextFormField(
+                  controller: _descricaoController,
+                  focusNode: _descricaoFocusNode,
+                  decoration: const InputDecoration(
+                    labelText: 'Descrição',
+                    prefixIcon: Icon(Icons.description),
+                    floatingLabelBehavior: FloatingLabelBehavior.auto,
+                  ),
+                  textInputAction: TextInputAction.next,
+                  onFieldSubmitted: (_) => FocusScope.of(context).requestFocus(_valorFocusNode),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Por favor, insira uma descrição';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+                
+                // Campo Valor Previsto
+                TextFormField(
+                  controller: _valorPrevistoController,
+                  focusNode: _valorFocusNode,
+                  decoration: const InputDecoration(
+                    labelText: 'Valor Previsto',
+                    prefixIcon: Icon(Icons.attach_money),
+                    floatingLabelBehavior: FloatingLabelBehavior.auto,
+                  ),
+                  keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.next,
+                  onFieldSubmitted: (_) => FocusScope.of(context).requestFocus(_observacoesFocusNode),
+                  onChanged: (value) {
+                    String formattedValue = _formatarValor(value);
+                    _valorPrevistoController.value = TextEditingValue(
+                      text: formattedValue,
+                      selection: TextSelection.collapsed(offset: formattedValue.length),
+                    );
+                  },
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Por favor, insira o valor previsto';
+                    }
+                    String cleanedValue = value.replaceAll(RegExp(r'[^0-9]'), '');
+                    if (double.tryParse(cleanedValue) == null || cleanedValue.length < 2) {
+                      return 'Por favor, insira um valor válido';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+                
+                // Campo Categoria
+                _isLoadingCategories
+                    ? const Center(child: CircularProgressIndicator())
+                    : DropdownButtonFormField<int>(
+                        value: _categoriaIdSelecionada,
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Categoria',
+                          prefixIcon: Icon(Icons.category),
+                          floatingLabelBehavior: FloatingLabelBehavior.auto,
+                          border: OutlineInputBorder(),
+                        ),
+                        items: _categorias.map((categoria) {
+                          return DropdownMenuItem<int>(
+                            value: categoria['id'],
+                            child: Text(
+                              categoria['nome'],
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _categoriaIdSelecionada = value;
+                          });
+                        },
+                        validator: (value) {
+                          if (value == null) {
+                            return 'Por favor, selecione uma categoria';
+                          }
+                          return null;
+                        },
+                      ),
+                const SizedBox(height: 20),
+                
+                // Campo Observações
+                TextFormField(
+                  controller: _observacoesController,
+                  focusNode: _observacoesFocusNode,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'Observações (Opcional)',
+                    prefixIcon: Icon(Icons.note),
+                    floatingLabelBehavior: FloatingLabelBehavior.auto,
+                    alignLabelWithHint: true,
+                  ),
+                  textInputAction: TextInputAction.done,
+                ),
+                const SizedBox(height: 40),
+                
+                // Botão de Salvar
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _salvarGastoFixo,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.indigo[700],
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    elevation: 2,
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'SALVAR GASTO FIXO',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

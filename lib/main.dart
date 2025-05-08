@@ -4,8 +4,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:orcamentos_app/gastos_variados_page/auth_provider.dart';
 import 'package:provider/provider.dart';
 
-import 'main_app_scaffold.dart';
-import 'login_page.dart';
+import 'refatorado/main_app_scaffold.dart';
+import 'refatorado/login_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

@@ -3,6 +3,7 @@ import 'package:orcamentos_app/form_gasto_fixo_page.dart';
 import 'package:orcamentos_app/gasto_fixo_detalhes_page.dart';
 import 'dart:convert';
 import 'package:orcamentos_app/http.dart';
+import 'package:orcamentos_app/refatorado/orcamentos_snackbar.dart';
 import 'formatters.dart';
 
 class GastosFixosPage extends StatefulWidget {
@@ -18,18 +19,15 @@ class GastosFixosPage extends StatefulWidget {
 class _GastosFixosPageState extends State<GastosFixosPage> {
   late Future<List<Map<String, dynamic>>> _gastosFixos;
 
-  // Filtros ativos
   String _filtroNome = '';
   String? _filtroStatus;
   DateTime? _filtroData;
 
-  // Filtros temporários (para o modal)
   String _tempFiltroNome = '';
   String? _tempFiltroStatus;
   DateTime? _tempFiltroData;
 
-  // Ordenação
-  String _ordenacaoCampo = 'descricao'; // 'descricao' ou 'data_pgto'
+  String _ordenacaoCampo = 'descricao';
   bool _ordenacaoAscendente = true;
 
   @override
@@ -50,8 +48,9 @@ class _GastosFixosPageState extends State<GastosFixosPage> {
     if (response.statusCode >= 200 && response.statusCode <= 299) {
       return jsonDecode(response.body);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Falha ao carregar os dados do gasto.')),
+      OrcamentosSnackBar.error(
+        context: context,
+        message: 'Falha ao carregar os dados do gasto.',
       );
       return {};
     }
@@ -83,16 +82,16 @@ class _GastosFixosPageState extends State<GastosFixosPage> {
       
       if (_ordenacaoCampo == 'descricao') {
         comparacao = a['descricao'].toString().compareTo(b['descricao'].toString());
-      } else { // 'data_pgto'
+      } else {
         final dataA = a['data_pgto'] != null ? DateTime.tryParse(a['data_pgto']) : null;
         final dataB = b['data_pgto'] != null ? DateTime.tryParse(b['data_pgto']) : null;
         
         if (dataA == null && dataB == null) {
           comparacao = 0;
         } else if (dataA == null) {
-          comparacao = 1; // Itens sem data vão para o final
+          comparacao = 1;
         } else if (dataB == null) {
-          comparacao = -1; // Itens sem data vão para o final
+          comparacao = -1;
         } else {
           comparacao = dataA.compareTo(dataB);
         }
