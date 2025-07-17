@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:orcamentos_app/gastos_variados_page/auth_provider.dart';
+import 'package:orcamentos_app/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 
-import 'refatorado/main_app_scaffold.dart';
-import 'refatorado/login_page.dart';
+import 'firebase_options.dart'; // <-- Adiciona este import
+import 'components/common/main_app_scaffold.dart';
+import 'components/login_page/login_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  
+  // Inicializa o Firebase com as opções corretas
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   runApp(const MyApp());
 }
 
