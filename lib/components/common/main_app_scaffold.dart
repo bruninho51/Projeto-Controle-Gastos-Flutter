@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:orcamentos_app/components/investimentos_page/investimentos_page.dart';
 import 'package:orcamentos_app/components/orcamentos_page/orcamentos_page.dart';
 import '../dashboard_page/dashboard_page.dart';
 import '../perfil_page/perfil_page.dart';
@@ -29,6 +30,7 @@ class _MainAppScaffoldState extends State<MainAppScaffold> {
         children: [
           DashboardPage(),
           OrcamentosPage(),
+          InvestimentosPage(),
           PerfilPage(),
         ],
       ),
@@ -65,6 +67,11 @@ class _MainAppScaffoldState extends State<MainAppScaffold> {
                 icon: Icon(Icons.account_balance_outlined),
                 activeIcon: Icon(Icons.account_balance),
                 label: 'Orçamentos',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.savings_outlined),
+                activeIcon: Icon(Icons.savings),
+                label: 'Investimentos',
               ),
               BottomNavigationBarItem(
                 icon: Icon(Icons.person_outline),

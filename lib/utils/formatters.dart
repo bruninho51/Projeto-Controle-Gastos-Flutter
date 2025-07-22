@@ -32,3 +32,11 @@ Color getProgressColor(double progress) {
   if (progress > 0.7) return Colors.orange[400]!;
   return Colors.green[400]!;
 }
+
+Color getArrowSavingColor(double progress) {
+  if (progress > 0) {
+    return Colors.green[400]!;
+  } else {
+    return Colors.red[400]!;
+  }
+}
