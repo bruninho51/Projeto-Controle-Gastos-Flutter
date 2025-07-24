@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:orcamentos_app/components/categorias_investimentos_page/categorias_investimentos_page.dart';
 import 'package:orcamentos_app/components/common/orcamentos_snackbar.dart';
+import 'package:orcamentos_app/components/form_investimento_page/form_investimento_page.dart';
 import 'package:provider/provider.dart';
 
 import 'package:orcamentos_app/components/form_orcamento_page/form_orcamento_page.dart';
@@ -53,7 +54,7 @@ class InvestimentosPageState extends State<InvestimentosPage> {
       if (response.statusCode == 200) {
         setState(() {
           _investimentos = (json.decode(response.body) as List)
-              .where((investimento) => investimento['data_encerramento'] == null)
+              .where((investimento) => investimento['data_inatividade'] == null)
               .toList();
           _isLoading = false;
         });
@@ -73,7 +74,7 @@ class InvestimentosPageState extends State<InvestimentosPage> {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => FormularioOrcamentoPage(apiToken: apiToken),
+        builder: (context) => FormularioInvestimentoPage(apiToken: apiToken),
       ),
     );
     if (result == true) _fetchApiData(apiToken);

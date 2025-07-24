@@ -53,7 +53,7 @@ class OrcamentosFAB extends StatelessWidget {
             ),
           ),
         FloatingActionButton(
-          heroTag: 'btnMain',
+          heroTag: 'btnOrcamentosPage',
           onPressed: onToggle,
           backgroundColor: Colors.indigo[700],
           child: Icon(isMenuOpen ? Icons.close : Icons.add, color: Colors.white),

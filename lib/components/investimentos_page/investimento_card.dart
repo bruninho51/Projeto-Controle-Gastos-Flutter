@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:orcamentos_app/components/investimento_detalhes_page/investimento_detalhes_page.dart';
 import 'package:orcamentos_app/utils/formatters.dart';
 import '../orcamento_detalhes_page/orcamento_detalhes_page.dart';
 
@@ -31,8 +32,8 @@ class InvestimentoCard extends StatelessWidget {
           await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => OrcamentoDetalhesPage(
-                orcamentoId: investimento['id'],
+              builder: (context) => InvestimentoDetalhesPage(
+                investimentoId: investimento['id'],
               ),
             ),
           );

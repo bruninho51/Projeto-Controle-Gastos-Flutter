@@ -53,7 +53,7 @@ class InvestimentosFAB extends StatelessWidget {
             ),
           ),
         FloatingActionButton(
-          heroTag: 'btnMain',
+          heroTag: 'btnInvestimentosPage',
           onPressed: onToggle,
           backgroundColor: Colors.indigo[700],
           child: Icon(isMenuOpen ? Icons.close : Icons.add, color: Colors.white),

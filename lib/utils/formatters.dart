@@ -40,3 +40,10 @@ Color getArrowSavingColor(double progress) {
     return Colors.red[400]!;
   }
 }
+
+String capitalizeWords(String s) {
+  if (s.isEmpty) return s;
+  return s.split(' ').map((word) => word.isNotEmpty 
+      ? word[0].toUpperCase() + word.substring(1).toLowerCase()
+      : word).join(' ');
+}
