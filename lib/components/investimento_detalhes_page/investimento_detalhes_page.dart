@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:orcamentos_app/components/common/confirmation_dialog.dart';
 import 'package:orcamentos_app/components/common/orcamentos_snackbar.dart';
+import 'package:orcamentos_app/components/investimento_detalhes_page/investimento_detalhes_fab.dart';
 import 'package:orcamentos_app/utils/formatters.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:orcamentos_app/providers/auth_provider.dart';
@@ -44,6 +45,22 @@ class _InvestimentoDetalhesPageState extends State<InvestimentoDetalhesPage> {
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  final formatador = NumberFormat.currency(
+    locale: 'pt_BR',
+    symbol: 'R\$ ',
+    decimalDigits: 2,
+  );
+
+  String _formatarValor(String value) {
+    String cleanedValue = value.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cleanedValue.isNotEmpty) {
+      double parsedValue = double.tryParse(cleanedValue) ?? 0.0;
+      parsedValue = parsedValue / 100;
+      return formatador.format(parsedValue);
+    }
+    return '';
   }
 
   Future<Map<String, dynamic>> _buscarInvestimento(String apiToken) async {
@@ -97,9 +114,6 @@ class _InvestimentoDetalhesPageState extends State<InvestimentoDetalhesPage> {
       body: jsonEncode(data),
     );
 
-    print(response.body);
-    print(response.statusCode);
-
     if (response.statusCode == 200) {
       OrcamentosSnackBar.success(
         context: context,
@@ -134,11 +148,170 @@ class _InvestimentoDetalhesPageState extends State<InvestimentoDetalhesPage> {
     }
   }
 
+  Future<void> _deleteItemLinhaDoTempo(int linhaDoTempoId) async {
+    final client = await MyHttpClient.create();
+    final response = await client.delete(
+      'investimentos/${widget.investimentoId}/linha-do-tempo/$linhaDoTempoId',
+      headers: _buildHeaders(),
+    );
+
+    if (response.statusCode == 200) {
+      OrcamentosSnackBar.success(
+        context: context,
+        message: 'Entrada apagada com sucesso!',
+      );
+    } else {
+      throw Exception('Falha ao apagar a entrada na linha do tempo');
+    }
+  }
+
   Future<void> _reativarInvestimento() async {
     await _updateInvestimento({
       'data_inatividade': null,
     }, 'Investimento reativado com sucesso!');
   }
+
+  String _converterParaFormatoNumerico(String valorFormatado) {
+    return valorFormatado
+        .replaceAll('R\$', '')
+        .trim()
+        .replaceAll('.', '')
+        .replaceAll(',', '.');
+  }
+
+  Future<void> _createNewItemLinhaDoTempo(DateTime selectedDate, String valor) async {
+    final client = await MyHttpClient.create();
+    final response = await client.post(
+      'investimentos/${widget.investimentoId}/linha-do-tempo',
+      headers: _buildHeaders(),
+      body: jsonEncode({
+        'data_registro': selectedDate.toIso8601String(),
+        'valor': valor,
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      OrcamentosSnackBar.success(
+        context: context,
+        message: 'Investimento atualizado com sucesso!',
+      );
+    } else {
+      print(response.statusCode);
+      print(response.body);
+      throw Exception('Falha ao atualizar o investimento');
+    }
+  }
+
+void _showCreateItemLinhaDoTempoDialog() {
+  final valorController = TextEditingController();
+  final dataController = TextEditingController();
+  final formKey = GlobalKey<FormState>();
+  DateTime? selectedDate;
+
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Adicionar Entrada na Linha do Tempo'),
+        content: SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: dataController,
+                    decoration: InputDecoration(
+                      labelText: 'Data',
+                      prefixIcon: const Icon(Icons.calendar_today),
+                      border: const OutlineInputBorder(),
+                      floatingLabelBehavior: FloatingLabelBehavior.auto,
+                    ),
+                    readOnly: true,
+                    onTap: () async {
+                      final date = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
+                      );
+                      if (date != null) {
+                        selectedDate = date;
+                        dataController.text = 
+                          DateFormat('dd/MM/yyyy').format(date);
+                      }
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Selecione uma data';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: valorController,
+                    decoration: const InputDecoration(
+                      labelText: 'Valor',
+                      prefixIcon: Icon(Icons.attach_money),
+                      border: OutlineInputBorder(),
+                      floatingLabelBehavior: FloatingLabelBehavior.auto,
+                    ),
+                    keyboardType: TextInputType.number,
+                    onChanged: (value) {
+                      String formattedValue = _formatarValor(value);
+                      valorController.value = TextEditingValue(
+                        text: formattedValue,
+                        selection: TextSelection.collapsed(
+                          offset: formattedValue.length,
+                        ),
+                      );
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Por favor, insira o valor';
+                      }
+                      String cleanedValue = value.replaceAll(
+                        RegExp(r'[^0-9]'), '');
+                      if (double.tryParse(cleanedValue) == null || 
+                          cleanedValue.length < 2) {
+                        return 'Por favor, insira um valor válido';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (formKey.currentState!.validate() && selectedDate != null) {
+                
+                await _createNewItemLinhaDoTempo(
+                  selectedDate!, 
+                  _converterParaFormatoNumerico(valorController.text)
+                );
+                _carregarDados();
+                
+                Navigator.of(context).pop();
+              }
+            },
+            child: const Text('Salvar'),
+          ),
+        ],
+      );
+    },
+  );
+}
 
   Future<void> _carregarDados() async {
     if (_isLoading) return;
@@ -304,17 +477,58 @@ class _InvestimentoDetalhesPageState extends State<InvestimentoDetalhesPage> {
                   final valor = double.parse(lancamento['valor'].toString());
                   final formatadorData = DateFormat('dd/MM/yyyy');
                   final formatadorMoeda = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-                  return ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                    title: Text(formatadorData.format(data)),
-                    trailing: Text(
-                      formatadorMoeda.format(valor),
-                      style: TextStyle(
-                        color: valor >= 0 ? Colors.green : Colors.red,
-                        fontWeight: FontWeight.bold,
+
+                  ListTile buildListTile() {
+                    return ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                      title: Text(formatadorData.format(data)),
+                      trailing: Text(
+                        formatadorMoeda.format(valor),
+                        style: TextStyle(
+                          color: valor >= 0 ? Colors.green : Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                  );
+                    );
+                  }
+
+                  return lancamento['id'] != null
+                  ? Dismissible(
+                      key: Key(lancamento['id'].toString()),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        color: Colors.red,
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 20),
+                        child: const Icon(Icons.delete, color: Colors.white),
+                      ),
+                      confirmDismiss: (direction) async {
+                        final bool confirm = await showDialog(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Confirmar Remoção'),
+                            content: const Text('Você tem certeza que deseja apagar esta entrada?'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(context).pop(false),
+                                child: const Text('Cancelar'),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.of(context).pop(true),
+                                child: const Text('Apagar'),
+                              ),
+                            ],
+                          ),
+                        );
+                        return confirm;
+                      },
+                      onDismissed: (direction) async {
+                        await _deleteItemLinhaDoTempo(lancamento['id']);
+                        _carregarDados();
+                      },
+                      child: buildListTile(),
+                    )
+                  : buildListTile();
                 },
               ),
             ),
@@ -369,7 +583,6 @@ class _InvestimentoDetalhesPageState extends State<InvestimentoDetalhesPage> {
                     e.date.day == date.day
                   );
 
-                  // Dia formatado para exibição no eixo X
                   final dayMonth = '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}';
                   
                   return ChartAxisLabel(
@@ -464,6 +677,11 @@ class _InvestimentoDetalhesPageState extends State<InvestimentoDetalhesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: InvestimentoDetalhesFAB(
+        onAddItemLinhaDoTempo: () {
+          _showCreateItemLinhaDoTempoDialog();
+        },
+      ),
       appBar: AppBar(
         title: const Text('Detalhes do Investimento'),
         centerTitle: true,
