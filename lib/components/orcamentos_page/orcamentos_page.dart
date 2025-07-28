@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:orcamentos_app/components/common/orcamentos_snackbar.dart';
 import 'package:provider/provider.dart';
-
 import 'package:orcamentos_app/components/categorias_gastos_page/categorias_gastos_page.dart';
 import 'package:orcamentos_app/components/form_orcamento_page/form_orcamento_page.dart';
 import 'package:orcamentos_app/utils/http.dart';
@@ -129,12 +129,19 @@ class OrcamentosPageState extends State<OrcamentosPage> {
               : RefreshIndicator(
                   onRefresh: () => _fetchApiData(_auth.apiToken),
                   child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(kIsWeb ? 24.0 : 16.0),
                     itemCount: _orcamentos.length,
-                    itemBuilder: (context, index) => OrcamentoCard(
-                      orcamento: _orcamentos[index],
-                      apiToken: _auth.apiToken,
-                      onRefresh: () => _fetchApiData(_auth.apiToken),
+                    itemBuilder: (context, index) => Padding(
+                      padding: EdgeInsets.only(
+                        bottom: kIsWeb ? 16.0 : 12.0,
+                        left: kIsWeb ? 24.0 : 0,
+                        right: kIsWeb ? 24.0 : 0,
+                      ),
+                      child: OrcamentoCard(
+                        orcamento: _orcamentos[index],
+                        apiToken: _auth.apiToken,
+                        onRefresh: () => _fetchApiData(_auth.apiToken),
+                      ),
                     ),
                   ),
                 ),

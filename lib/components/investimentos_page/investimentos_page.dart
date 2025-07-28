@@ -1,11 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb; // Adicionado
 import 'package:orcamentos_app/components/categorias_investimentos_page/categorias_investimentos_page.dart';
 import 'package:orcamentos_app/components/common/orcamentos_snackbar.dart';
 import 'package:orcamentos_app/components/form_investimento_page/form_investimento_page.dart';
 import 'package:provider/provider.dart';
-
-import 'package:orcamentos_app/components/form_orcamento_page/form_orcamento_page.dart';
 import 'package:orcamentos_app/utils/http.dart';
 import 'package:orcamentos_app/components/investimentos_page/investimento_card.dart';
 import 'package:orcamentos_app/components/investimentos_page/investimentos_page_empty_state.dart';
@@ -130,12 +129,19 @@ class InvestimentosPageState extends State<InvestimentosPage> {
               : RefreshIndicator(
                   onRefresh: () => _fetchApiData(_auth.apiToken),
                   child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(kIsWeb ? 24.0 : 16.0), // Ajuste para web
                     itemCount: _investimentos.length,
-                    itemBuilder: (context, index) => InvestimentoCard(
-                      investimento: _investimentos[index],
-                      apiToken: _auth.apiToken,
-                      onRefresh: () => _fetchApiData(_auth.apiToken),
+                    itemBuilder: (context, index) => Padding(
+                      padding: EdgeInsets.only(
+                        bottom: kIsWeb ? 16.0 : 12.0, // Espaçamento maior na web
+                        left: kIsWeb ? 24.0 : 0,    // Padding lateral na web
+                        right: kIsWeb ? 24.0 : 0,
+                      ),
+                      child: InvestimentoCard(
+                        investimento: _investimentos[index],
+                        apiToken: _auth.apiToken,
+                        onRefresh: () => _fetchApiData(_auth.apiToken),
+                      ),
                     ),
                   ),
                 ),

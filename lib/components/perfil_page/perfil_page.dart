@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class PerfilPage extends StatelessWidget {
   const PerfilPage({super.key});
@@ -8,6 +9,7 @@ class PerfilPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
+    final bool isWeb = kIsWeb;
     
     return Container(
       decoration: BoxDecoration(
@@ -23,14 +25,19 @@ class PerfilPage extends StatelessWidget {
       child: Center(
         child: SingleChildScrollView(
           child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildAppLogo(),
-                const SizedBox(height: 40),
-                _buildProfileCard(auth),
-              ],
+            padding: EdgeInsets.all(isWeb ? 40.0 : 24.0), // Aumenta padding na web
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: isWeb ? 600 : double.infinity, // Limita largura na web
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildAppLogo(), // Passa a flag isWeb
+                  SizedBox(height: isWeb ? 60 : 40), // Maior espaçamento na web
+                  _buildProfileCard(auth), // Passa a flag isWeb
+                ],
+              ),
             ),
           ),
         ),
@@ -54,8 +61,8 @@ class PerfilPage extends StatelessWidget {
       ),
       child: Image.asset(
         'assets/icon.png',
-        width: 120,
-        height: 120,
+        width: kIsWeb ? 150 : 120, // Ícone maior na web
+        height: kIsWeb ? 150 : 120,
       ),
     );
   }
@@ -67,15 +74,15 @@ class PerfilPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        padding: EdgeInsets.all(kIsWeb ? 32.0 : 24.0), // Mais padding na web
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildUserAvatar(auth),
-            const SizedBox(height: 24),
-            _buildUserInfo(auth),
-            const SizedBox(height: 32),
-            _buildLogoutButton(auth),
+            _buildUserAvatar(auth), // Passa a flag
+            SizedBox(height: kIsWeb ? 32 : 24), // Espaçamento maior
+            _buildUserInfo(auth), // Passa a flag
+            SizedBox(height: kIsWeb ? 40 : 32),
+            _buildLogoutButton(auth), // Passa a flag
           ],
         ),
       ),
@@ -85,16 +92,16 @@ class PerfilPage extends StatelessWidget {
   Widget _buildUserAvatar(AuthProvider auth) {
     return auth.user?.photoURL != null
         ? CircleAvatar(
-            radius: 60,
+            radius: kIsWeb ? 80 : 60, // Avatar maior na web
             backgroundColor: Colors.indigo[100],
             backgroundImage: NetworkImage(auth.user!.photoURL!),
           )
         : CircleAvatar(
-            radius: 60,
+            radius: kIsWeb ? 80 : 60,
             backgroundColor: Colors.indigo[100],
-            child: const Icon(
+            child: Icon(
               Icons.person,
-              size: 60,
+              size: kIsWeb ? 80 : 60,
               color: Colors.indigo,
             ),
           );
@@ -105,8 +112,8 @@ class PerfilPage extends StatelessWidget {
       children: [
         Text(
           auth.user?.displayName ?? 'Usuário',
-          style: const TextStyle(
-            fontSize: 24,
+          style: TextStyle(
+            fontSize: kIsWeb ? 28 : 24, // Fonte maior
             fontWeight: FontWeight.bold,
             color: Colors.indigo,
           ),
@@ -115,7 +122,7 @@ class PerfilPage extends StatelessWidget {
         Text(
           auth.user?.email ?? '',
           style: TextStyle(
-            fontSize: 16,
+            fontSize: kIsWeb ? 18 : 16, // Fonte maior
             color: Colors.grey[700],
           ),
         ),
@@ -130,17 +137,20 @@ class PerfilPage extends StatelessWidget {
         onPressed: auth.logout,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.indigo[700],
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          padding: EdgeInsets.symmetric(
+            vertical: kIsWeb ? 18 : 16, // Botão mais alto
+            horizontal: kIsWeb ? 24 : 16,
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
         ),
-        icon: const Icon(Icons.logout, color: Colors.white),
-        label: const Text(
+        icon: Icon(Icons.logout, color: Colors.white),
+        label: Text(
           'Sair da conta',
           style: TextStyle(
             color: Colors.white,
-            fontSize: 16,
+            fontSize: kIsWeb ? 18 : 16, // Texto maior
           ),
         ),
       ),

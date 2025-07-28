@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:convert';
 import 'package:orcamentos_app/components/form_orcamento_valor_inicial_page/form_orcamento_valor_inicial_page.dart';
 import 'package:orcamentos_app/components/gastos_fixos_page/gastos_fixos_page.dart';
@@ -206,7 +207,6 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
       }
 
       gastosFixos.forEach(processarGasto);
-
       gastosVariaveis.forEach(processarGasto);
 
       return totaisPorCategoria;
@@ -298,7 +298,6 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
     );
   }
 
-
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       backgroundColor: Colors.indigo[700],
@@ -324,10 +323,10 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
     return GridView.count(
       physics: const NeverScrollableScrollPhysics(),
       shrinkWrap: true,
-      crossAxisCount: 2,
-      crossAxisSpacing: 12.0,
-      mainAxisSpacing: 12.0,
-      childAspectRatio: 1.2,
+      crossAxisCount: kIsWeb ? 3 : 2, // 3 colunas na web, 2 no mobile
+      crossAxisSpacing: kIsWeb ? 16.0 : 12.0,
+      mainAxisSpacing: kIsWeb ? 16.0 : 12.0,
+      childAspectRatio: kIsWeb ? 1.5 : 1.2, // Proporção ajustada para web
       children: [
         OrcamentoDetalhesCard(
           title: 'Valor Inicial',
@@ -399,8 +398,8 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
         }
         return GraficoGastoCategorias(
           categoryData: snapshot.data!,
-          height: 400,
-          barWidth: 22,
+          height: kIsWeb ? 450 : 400, // Altura maior na web
+          barWidth: kIsWeb ? 28 : 22, // Barras mais largas na web
           title: 'Gastos por Categoria',
         );
       },
@@ -426,7 +425,7 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
               },
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: kIsWeb ? 16 : 12),
           ActionButton(
             text: 'Apagar Orçamento',
             icon: Icons.delete,
@@ -468,7 +467,7 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
       backgroundColor: Colors.grey[50],
       appBar: _buildAppBar(),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(kIsWeb ? 24.0 : 16.0), // Padding maior na web
         child: FutureBuilder<Map<String, dynamic>>(
           future: _orcamentoDetalhes,
           builder: (context, snapshot) {
@@ -509,10 +508,11 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
                       ? null 
                       : () => _showRenameDialog(context),
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: kIsWeb ? 24 : 20),
                   _buildDashboardCards(orcamento),
+                  SizedBox(height: kIsWeb ? 24 : 20),
                   _buildGraficoCategorias(),
-                  const SizedBox(height: 20),
+                  SizedBox(height: kIsWeb ? 24 : 20),
                   _buildActionButtons(isEncerrado),
                 ],
               ),

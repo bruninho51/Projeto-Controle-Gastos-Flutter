@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class OrcamentoDetalhesCard extends StatelessWidget {
   final String title;
@@ -28,56 +29,76 @@ class OrcamentoDetalhesCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: color.withAlpha(25),
-                      borderRadius: BorderRadius.circular(8),
+    final bool isWeb = kIsWeb;
+    final double webScaleFactor = 1.2; // Fator de escala para web
+
+    return MouseRegion(
+      cursor: onTap != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Card(
+          elevation: isWeb ? 4 : 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: EdgeInsets.all(isWeb ? 20.0 : 16.0),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: isWeb ? Border.all(color: Colors.grey[200]!) : null,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: color.withAlpha(isWeb ? 40 : 25),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        icon, 
+                        color: color, 
+                        size: isWeb ? iconSize * webScaleFactor : iconSize,
+                      ),
                     ),
-                    child: Icon(icon, color: color, size: iconSize),
-                  ),
-                  if (onTap != null && showChevron)
-                    Icon(Icons.chevron_right, color: Colors.grey[400]),
-                ],
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: titleFontSize,
-                      color: titleColor ?? Colors.grey[600],
+                    if (onTap != null && showChevron)
+                      Icon(
+                        Icons.chevron_right, 
+                        color: Colors.grey[400],
+                        size: isWeb ? 28 : 24,
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: isWeb ? titleFontSize * webScaleFactor : titleFontSize,
+                        color: titleColor ?? Colors.grey[600],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    value,
-                    style: TextStyle(
-                      fontSize: valueFontSize,
-                      fontWeight: FontWeight.bold,
-                      color: color,
+                    const SizedBox(height: 6),
+                    Text(
+                      value,
+                      style: TextStyle(
+                        fontSize: isWeb ? valueFontSize * webScaleFactor * 1.1 : valueFontSize,
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

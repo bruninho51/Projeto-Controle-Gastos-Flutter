@@ -7,6 +7,8 @@ import 'package:orcamentos_app/utils/http.dart';
 import 'package:orcamentos_app/components/orcamento_detalhes_page/info_state_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:orcamentos_app/components/orcamento_detalhes_page/orcamento_detalhes_card.dart';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -31,62 +33,84 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   }
 
   Widget _buildDashboardCards(Map<String, dynamic> data) {
-    return GridView.count(
-      shrinkWrap: true,
-      crossAxisCount: 2,
-      crossAxisSpacing: 12.0,
-      mainAxisSpacing: 12.0,
-      childAspectRatio: 1.2,
-      children: [
-        OrcamentoDetalhesCard(
-            title: 'Orçamentos Ativos',
-            value: data['qtdOrcamentosAtivos'].toString(),
-            color: Colors.teal[600]!,
-            icon: Icons.list_alt_rounded,
-          ),
-          OrcamentoDetalhesCard(
-            title: 'Orçamentos Encerrados',
-            value: data['qtdOrcamentosEncerrados'].toString(),
-            color: Colors.orange[600]!,
-            icon: Icons.check_circle_outline,
-          ),
-          OrcamentoDetalhesCard(
-            title: 'Valor Total',
-            value: formatarValorDynamic(data['valorInicialAtivos']),
-            color: Colors.green[700]!,
-            icon: Icons.attach_money_rounded,
-          ),
-          OrcamentoDetalhesCard(
-            title: 'Valor Livre',
-            value: formatarValorDynamic(data['valorLivreAtivos']),
-            color: Colors.purple[600]!,
-            icon: Icons.account_balance_wallet_rounded,
-          ),
-          OrcamentoDetalhesCard(
-            title: 'Valor Atual',
-            value: formatarValorDynamic(data['valorAtualAtivos']),
-            color: Colors.blue[600]!,
-            icon: Icons.pie_chart_rounded,
-          ),
-          OrcamentoDetalhesCard(
-            title: 'Gastos Fixos',
-            value: formatarValorDynamic(data['gastosFixosAtivos']),
-            color: Colors.red[600]!,
-            icon: Icons.receipt_long_rounded,
-          ),
-          OrcamentoDetalhesCard(
-            title: 'Gastos Variáveis',
-            value: formatarValorDynamic(data['gastosVariaveisAtivos']),
-            color: Colors.amber[700]!,
-            icon: Icons.trending_up_rounded,
-          ),
-          OrcamentoDetalhesCard(
-            title: 'Valor Poupado',
-            value: formatarValorDynamic(data['gastosFixosValorPoupado']),
-            color: Colors.indigo[600]!,
-            icon: Icons.savings_rounded,
-          ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Defina o número de colunas com base no tamanho da tela
+        int crossAxisCount;
+        
+        if (kIsWeb) {
+          // Para web, ajustamos dinamicamente
+          if (constraints.maxWidth > 1200) {
+            crossAxisCount = 4; // Telas muito grandes
+          } else if (constraints.maxWidth > 800) {
+            crossAxisCount = 3; // Telas médias
+          } else {
+            crossAxisCount = 2; // Telas pequenas (mobile web)
+          }
+        } else {
+          // Para mobile (Android/iOS), mantemos 2 colunas
+          crossAxisCount = 2;
+        }
+        
+        return GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: crossAxisCount,
+          crossAxisSpacing: 12.0,
+          mainAxisSpacing: 12.0,
+          childAspectRatio: kIsWeb && constraints.maxWidth > 800 ? 1.5 : 1.2,
+          children: [
+            OrcamentoDetalhesCard(
+              title: 'Orçamentos Ativos',
+              value: data['qtdOrcamentosAtivos'].toString(),
+              color: Colors.teal[600]!,
+              icon: Icons.list_alt_rounded,
+            ),
+            OrcamentoDetalhesCard(
+              title: 'Orçamentos Encerrados',
+              value: data['qtdOrcamentosEncerrados'].toString(),
+              color: Colors.orange[600]!,
+              icon: Icons.check_circle_outline,
+            ),
+            OrcamentoDetalhesCard(
+              title: 'Valor Total',
+              value: formatarValorDynamic(data['valorInicialAtivos']),
+              color: Colors.green[700]!,
+              icon: Icons.attach_money_rounded,
+            ),
+            OrcamentoDetalhesCard(
+              title: 'Valor Livre',
+              value: formatarValorDynamic(data['valorLivreAtivos']),
+              color: Colors.purple[600]!,
+              icon: Icons.account_balance_wallet_rounded,
+            ),
+            OrcamentoDetalhesCard(
+              title: 'Valor Atual',
+              value: formatarValorDynamic(data['valorAtualAtivos']),
+              color: Colors.blue[600]!,
+              icon: Icons.pie_chart_rounded,
+            ),
+            OrcamentoDetalhesCard(
+              title: 'Gastos Fixos',
+              value: formatarValorDynamic(data['gastosFixosAtivos']),
+              color: Colors.red[600]!,
+              icon: Icons.receipt_long_rounded,
+            ),
+            OrcamentoDetalhesCard(
+              title: 'Gastos Variáveis',
+              value: formatarValorDynamic(data['gastosVariaveisAtivos']),
+              color: Colors.amber[700]!,
+              icon: Icons.trending_up_rounded,
+            ),
+            OrcamentoDetalhesCard(
+              title: 'Valor Poupado',
+              value: formatarValorDynamic(data['gastosFixosValorPoupado']),
+              color: Colors.indigo[600]!,
+              icon: Icons.savings_rounded,
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -169,7 +193,10 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                     ],
                   ),
                 ),
-                child: _buildDashboardCards(data)
+                constraints: kIsWeb 
+                    ? const BoxConstraints(maxWidth: 1400) // Limita a largura máxima na web
+                    : null, // No mobile não limitamos
+                child: _buildDashboardCards(data),
               );
             },
           ),
