@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: orcamentos-web
-          image: registry.gitlab.com/bruninho51/projeto-controle-gastos-flutter:v1.0.0
+          image: registry.gitlab.com/bruninho51/projeto-controle-gastos-flutter:v1.0.1
           imagePullPolicy: Always
           ports:
             - containerPort: 80

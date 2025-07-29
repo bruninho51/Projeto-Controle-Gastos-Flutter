@@ -1,3 +1,10 @@
+## [1.0.1](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.0.0...v1.0.1) (2025-07-29)
+
+
+### Bug Fixes
+
+* altera porta do deployment ([a58716b](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/a58716b08695e7ecde42e23f439648df3259042f))
+
 # 1.0.0 (2025-07-29)
 
 
