@@ -22,9 +22,6 @@ deploy:
   script:
     # Executa semantic-release que chama automaticamente o build.sh
     - npm run release
-  needs:
-    - job: test
-      artifacts: false
   only:
     refs:
       - main
