@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orcamentos-web-deployment
+  namespace: orcamentos-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: orcamentos-web
+  template:
+    metadata:
+      labels:
+        app: orcamentos-web
+    spec:
+      containers:
+        - name: orcamentos-web
+          image: registry.gitlab.com/bruninho51/projeto-controle-gastos-flutter:v1.0.0
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+      imagePullSecrets:
+        - name: gitlab-registry-secret
