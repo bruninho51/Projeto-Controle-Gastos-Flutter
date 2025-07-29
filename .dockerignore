@@ -6,3 +6,4 @@ build
 .pub-cache
 test
 *.iml
+node_modules

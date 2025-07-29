@@ -1,0 +1,27 @@
+{
+    "name": "orcamentos-web",
+    "version": "1.0.0",
+    "description": "Frontend do sistema de controle de orçamentos pessoais.",
+    "author": "Bruno Mendes Pimenta<bruno.mendes44@gmail.com>",
+    "private": true,
+    "license": "UNLICENSED",
+    "repository": {
+      "type": "git",
+      "url": "https://gitlab.com/bruninho51/projeto-controle-gastos-flutter.git"
+    },
+    "engines": {
+      "node": ">=20.18.1"
+    },
+    "scripts": {
+      "release": "semantic-release"
+    },
+    "devDependencies": {
+      "@semantic-release/changelog": "^6.0.3",
+      "@semantic-release/commit-analyzer": "^13.0.1",
+      "@semantic-release/exec": "^7.1.0",
+      "@semantic-release/git": "^10.0.1",
+      "@semantic-release/gitlab": "^13.2.6",
+      "@semantic-release/release-notes-generator": "^14.0.3",
+      "semantic-release": "^24.2.6"
+    }
+}
