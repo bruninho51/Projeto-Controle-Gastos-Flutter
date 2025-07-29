@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: orcamentos-web-ingress
+  namespace: orcamentos-app
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  tls:
+    - hosts:
+        - web.orcamentos.app
+      secretName: orcamentos-web-tls
+  rules:
+    - host: web.orcamentos.app
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: orcamentos-web-service
+                port:
+                  number: 80

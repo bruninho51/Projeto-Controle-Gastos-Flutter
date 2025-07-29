@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: orcamentos-web
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'git@gitlab.com:bruninho51/projeto-controle-gastos-flutter.git'
+    targetRevision: main
+    path: 'k8s'
+    kustomize: {}
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: orcamentos-app
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: orcamentos-web-service
+  namespace: orcamentos-app
+  labels:
+    app: orcamentos-web
+spec:
+  type: ClusterIP
+  selector:
+    app: orcamentos-web
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
