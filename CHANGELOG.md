@@ -1,3 +1,10 @@
+# [1.1.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.0.1...v1.1.0) (2025-08-18)
+
+
+### Features
+
+* refatora cards de orçamento para listagem na web ([9139f39](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/9139f390f5dd1e8aeb7e0e91b0cbab2266f3b72b))
+
 ## [1.0.1](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.0.0...v1.0.1) (2025-07-29)
 
 
