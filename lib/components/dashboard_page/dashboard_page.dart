@@ -19,15 +19,26 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  int _currentTabIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 1, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(_handleTabSelection);
+  }
+
+  void _handleTabSelection() {
+    if (_tabController.indexIsChanging) {
+      setState(() {
+        _currentTabIndex = _tabController.index;
+      });
+    }
   }
 
   @override
   void dispose() {
+    _tabController.removeListener(_handleTabSelection);
     _tabController.dispose();
     super.dispose();
   }
@@ -35,92 +46,85 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   Widget _buildDashboardCards(Map<String, dynamic> data) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Defina o número de colunas com base no tamanho da tela
-        int crossAxisCount;
+        // Define o número de colunas baseado na largura da tela
+        int crossAxisCount = constraints.maxWidth > 1200 ? 4 : 
+                          constraints.maxWidth > 800 ? 3 : 2;
         
-        if (kIsWeb) {
-          // Para web, ajustamos dinamicamente
-          if (constraints.maxWidth > 1200) {
-            crossAxisCount = 4; // Telas muito grandes
-          } else if (constraints.maxWidth > 800) {
-            crossAxisCount = 3; // Telas médias
-          } else {
-            crossAxisCount = 2; // Telas pequenas (mobile web)
-          }
-        } else {
-          // Para mobile (Android/iOS), mantemos 2 colunas
-          crossAxisCount = 2;
-        }
+        // Define o aspect ratio dos cards
+        double childAspectRatio = constraints.maxWidth > 800 ? 1.5 : 0.9;
         
-        return GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: crossAxisCount,
-          crossAxisSpacing: 12.0,
-          mainAxisSpacing: 12.0,
-          childAspectRatio: kIsWeb && constraints.maxWidth > 800 ? 1.5 : 1.2,
-          children: [
-            OrcamentoDetalhesCard(
-              title: 'Orçamentos Ativos',
-              value: data['qtdOrcamentosAtivos'].toString(),
-              color: Colors.teal[600]!,
-              icon: Icons.list_alt_rounded,
+        return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Padding(
+            padding: const EdgeInsets.all(5),
+            child: GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: crossAxisCount,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: childAspectRatio,
+              children: [
+                OrcamentoDetalhesCard(
+                  title: 'Orçamentos Ativos',
+                  value: data['qtdOrcamentosAtivos'].toString(),
+                  color: Colors.teal[600]!,
+                  icon: Icons.list_alt_rounded,
+                ),
+                OrcamentoDetalhesCard(
+                  title: 'Orçamentos Encerrados',
+                  value: data['qtdOrcamentosEncerrados'].toString(),
+                  color: Colors.orange[600]!,
+                  icon: Icons.check_circle_outline,
+                ),
+                OrcamentoDetalhesCard(
+                  title: 'Valor Total',
+                  value: formatarValorDynamic(data['valorInicialAtivos']),
+                  color: Colors.green[700]!,
+                  icon: Icons.attach_money_rounded,
+                ),
+                OrcamentoDetalhesCard(
+                  title: 'Valor Livre',
+                  value: formatarValorDynamic(data['valorLivreAtivos']),
+                  color: Colors.purple[600]!,
+                  icon: Icons.account_balance_wallet_rounded,
+                ),
+                OrcamentoDetalhesCard(
+                  title: 'Valor Atual',
+                  value: formatarValorDynamic(data['valorAtualAtivos']),
+                  color: Colors.blue[600]!,
+                  icon: Icons.pie_chart_rounded,
+                ),
+                OrcamentoDetalhesCard(
+                  title: 'Gastos Fixos',
+                  value: formatarValorDynamic(data['gastosFixosAtivos']),
+                  color: Colors.red[600]!,
+                  icon: Icons.receipt_long_rounded,
+                ),
+                OrcamentoDetalhesCard(
+                  title: 'Gastos Variáveis',
+                  value: formatarValorDynamic(data['gastosVariaveisAtivos']),
+                  color: Colors.amber[700]!,
+                  icon: Icons.trending_up_rounded,
+                ),
+                OrcamentoDetalhesCard(
+                  title: 'Valor Poupado',
+                  value: formatarValorDynamic(data['gastosFixosValorPoupado']),
+                  color: Colors.indigo[600]!,
+                  icon: Icons.savings_rounded,
+                ),
+              ],
             ),
-            OrcamentoDetalhesCard(
-              title: 'Orçamentos Encerrados',
-              value: data['qtdOrcamentosEncerrados'].toString(),
-              color: Colors.orange[600]!,
-              icon: Icons.check_circle_outline,
-            ),
-            OrcamentoDetalhesCard(
-              title: 'Valor Total',
-              value: formatarValorDynamic(data['valorInicialAtivos']),
-              color: Colors.green[700]!,
-              icon: Icons.attach_money_rounded,
-            ),
-            OrcamentoDetalhesCard(
-              title: 'Valor Livre',
-              value: formatarValorDynamic(data['valorLivreAtivos']),
-              color: Colors.purple[600]!,
-              icon: Icons.account_balance_wallet_rounded,
-            ),
-            OrcamentoDetalhesCard(
-              title: 'Valor Atual',
-              value: formatarValorDynamic(data['valorAtualAtivos']),
-              color: Colors.blue[600]!,
-              icon: Icons.pie_chart_rounded,
-            ),
-            OrcamentoDetalhesCard(
-              title: 'Gastos Fixos',
-              value: formatarValorDynamic(data['gastosFixosAtivos']),
-              color: Colors.red[600]!,
-              icon: Icons.receipt_long_rounded,
-            ),
-            OrcamentoDetalhesCard(
-              title: 'Gastos Variáveis',
-              value: formatarValorDynamic(data['gastosVariaveisAtivos']),
-              color: Colors.amber[700]!,
-              icon: Icons.trending_up_rounded,
-            ),
-            OrcamentoDetalhesCard(
-              title: 'Valor Poupado',
-              value: formatarValorDynamic(data['gastosFixosValorPoupado']),
-              color: Colors.indigo[600]!,
-              icon: Icons.savings_rounded,
-            ),
-          ],
+          ),
         );
       },
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final auth = Provider.of<AuthProvider>(context);
-    
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
+  Widget _buildAppBar() {
+    if (!kIsWeb) {
+      // AppBar original para mobile
+      return AppBar(
         backgroundColor: Colors.indigo[700],
         elevation: 4,
         title: const Text(
@@ -144,16 +148,130 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
               indicatorSize: TabBarIndicatorSize.label,
               tabs: const [
                 Tab(text: 'Métricas Orçamentos'),
-                /*Tab(text: 'Métricas Investimentos'),*/
+                Tab(text: 'Métricas Investimentos'),
               ],
             ),
           ),
         ),
+      );
+    } else {
+      // AppBar aprimorada para web
+      final auth = Provider.of<AuthProvider>(context);
+      return AppBar(
+        backgroundColor: Colors.white,
+        elevation: 1,
+        title: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Row(
+            children: [
+              Text(
+                'Orçamentos App',
+                style: TextStyle(
+                  color: Colors.indigo[700],
+                  fontWeight: FontWeight.bold,
+                  fontSize: 20,
+                ),
+              ),
+              const Spacer(),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  /*_WebNavItem(
+                    icon: Icons.dashboard,
+                    label: 'Dashboard',
+                    isSelected: true,
+                    onTap: () {},
+                  ),
+                  _WebNavItem(
+                    icon: Icons.list_alt,
+                    label: 'Orçamentos',
+                    onTap: () {},
+                  ),
+                  _WebNavItem(
+                    icon: Icons.trending_up,
+                    label: 'Investimentos',
+                    onTap: () {},
+                  ),
+                  _WebNavItem(
+                    icon: Icons.settings,
+                    label: 'Configurações',
+                    onTap: () {},
+                  ),*/
+                ],
+              ),
+              const SizedBox(width: 24),
+              CircleAvatar(
+                backgroundColor: Colors.indigo[100],
+                radius: 20, // Tamanho padrão recomendado
+                child: ClipOval(
+                  child: auth.user?.photoURL != null
+                    ? Image.network(
+                        auth.user!.photoURL!,
+                        width: 40, // Dobro do radius para preencher todo o CircleAvatar
+                        height: 40,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return CircularProgressIndicator(
+                            value: loadingProgress.expectedTotalBytes != null
+                                ? loadingProgress.cumulativeBytesLoaded / 
+                                  loadingProgress.expectedTotalBytes!
+                                : null,
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return Icon(Icons.person, color: Colors.indigo[700]);
+                        },
+                      )
+                    : Icon(Icons.person, color: Colors.indigo[700]),
+                ),
+              )
+            ],
+          ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: Colors.grey[200]!,
+                  width: 1,
+                ),
+              ),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: TabBar(
+              controller: _tabController,
+              labelColor: Colors.indigo[700],
+              unselectedLabelColor: Colors.grey[600],
+              indicatorColor: Colors.indigo[700],
+              indicatorWeight: 3,
+              indicatorPadding: const EdgeInsets.symmetric(horizontal: 24),
+              tabs: const [
+                Tab(text: 'Métricas Orçamentos'),
+                Tab(text: 'Métricas Investimentos'),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = Provider.of<AuthProvider>(context);
+    
+    return Scaffold(
+      backgroundColor: Colors.grey[100],
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(100),
+        child: _buildAppBar(),
       ),
       body: TabBarView(
         controller: _tabController,
         children: [
-          // Página de orçamentos
           FutureBuilder<Map<String, dynamic>>(
             future: _fetchDashboardData(auth),
             builder: (context, snapshot) {
@@ -194,18 +312,40 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                   ),
                 ),
                 constraints: kIsWeb 
-                    ? const BoxConstraints(maxWidth: 1400) // Limita a largura máxima na web
-                    : null, // No mobile não limitamos
+                    ? const BoxConstraints(maxWidth: 1400)
+                    : null,
                 child: _buildDashboardCards(data),
               );
             },
           ),
-
-          // Página de investimentos (comentada)
-          /*Container(
-            alignment: Alignment.center,
-            child: const Text('Em desenvolvimento', style: TextStyle(fontSize: 18)),
-          ),*/
+          Container(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.construction, size: 60, color: Colors.amber[600]),
+                const SizedBox(height: 20),
+                Text(
+                  'Módulo em Desenvolvimento',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Em breve você poderá acompanhar seus investimentos aqui',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -381,5 +521,56 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     data['gastosVariaveisAtivos'] = await _fetchTotalGastosVariaveisOrcamentosAtivos(auth.apiToken);
     data['gastosFixosValorPoupado'] = await _fetchValorPoupadoGastosFixosOrcamentosAtivos(auth.apiToken);
     return data;
+  }
+}
+
+class _WebNavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _WebNavItem({
+    required this.icon,
+    required this.label,
+    this.isSelected = false,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      hoverColor: Colors.transparent,
+      splashColor: Colors.transparent,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          border: isSelected
+              ? Border(
+                  bottom: BorderSide(
+                    color: Colors.indigo[700]!,
+                    width: 2,
+                  ),
+                )
+              : null,
+        ),
+        child: Row(
+          children: [
+            Icon(icon,
+                size: 20,
+                color: isSelected ? Colors.indigo[700] : Colors.grey[600]),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.indigo[700] : Colors.grey[600],
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
