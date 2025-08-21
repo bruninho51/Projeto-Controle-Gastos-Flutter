@@ -1,3 +1,10 @@
+# [1.2.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.1.0...v1.2.0) (2025-08-21)
+
+
+### Features
+
+* implementa alterações de responsividade e visuais ([6282d5f](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/6282d5f48ebde2cad8c52a6f97931b7ca69403b2))
+
 # [1.1.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.0.1...v1.1.0) (2025-08-18)
 
 
