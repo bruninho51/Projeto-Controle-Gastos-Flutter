@@ -7,7 +7,6 @@ import 'package:orcamentos_app/utils/formatters.dart';
 import 'package:orcamentos_app/utils/http.dart';
 import '../orcamento_detalhes_page/orcamento_detalhes_page.dart';
 import 'dart:convert';
-import 'package:flutter/foundation.dart' show kIsWeb;
 
 class OrcamentoCard extends StatefulWidget {
   final Map<String, dynamic> orcamento;
@@ -93,7 +92,7 @@ class _OrcamentoCardState extends State<OrcamentoCard> {
     final progresso = valorInicial > 0 ? ((valorInicial - valorAtual) / valorInicial).clamp(0.0, 1.0) : 0;
 
     return Card(
-      elevation: kIsWeb ? 0 : 2,
+      elevation: (kIsWeb && MediaQuery.of(context).size.width > 1024) ? 0 : 2,
       margin: EdgeInsets.only(bottom: kIsWeb ? 0 : 16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
@@ -310,9 +309,13 @@ class _OrcamentoCardState extends State<OrcamentoCard> {
 
   @override
   Widget build(BuildContext context) {
-    return kIsWeb
-        ? _orcamentoCardWeb(context)
-        : _orcamentoCard(context);
+    final isSmallScreen = MediaQuery.of(context).size.width < 1024;
+
+    if (kIsWeb && !isSmallScreen) {
+      return _orcamentoCardWeb(context);
+    } else {
+      return _orcamentoCard(context);
+    }
   }
 
   Color getProgressColor(double value) {

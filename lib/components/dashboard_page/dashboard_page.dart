@@ -7,7 +7,7 @@ import 'package:orcamentos_app/utils/http.dart';
 import 'package:orcamentos_app/components/orcamento_detalhes_page/info_state_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:orcamentos_app/components/orcamento_detalhes_page/orcamento_detalhes_card.dart';
-import 'dart:io' show Platform;
+import 'package:orcamentos_app/components/common/orcamentos_appbar.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class DashboardPage extends StatefulWidget {
@@ -122,141 +122,45 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   }
 
   Widget _buildAppBar() {
-    if (!kIsWeb) {
-      // AppBar original para mobile
-      return AppBar(
-        backgroundColor: Colors.indigo[700],
-        elevation: 4,
-        title: const Text(
-          'Dashboard',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-          ),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
-          child: Container(
-            color: Colors.indigo[700],
-            child: TabBar(
-              controller: _tabController,
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white70,
-              indicatorColor: Colors.amber[400],
-              indicatorWeight: 4,
-              indicatorSize: TabBarIndicatorSize.label,
-              tabs: const [
-                Tab(text: 'Métricas Orçamentos'),
-                Tab(text: 'Métricas Investimentos'),
-              ],
-            ),
-          ),
-        ),
-      );
-    } else {
-      // AppBar aprimorada para web
-      final auth = Provider.of<AuthProvider>(context);
-      return AppBar(
-        backgroundColor: Colors.white,
-        elevation: 1,
-        title: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Row(
-            children: [
-              Text(
-                'Orçamentos App',
-                style: TextStyle(
-                  color: Colors.indigo[700],
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                ),
-              ),
-              const Spacer(),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  /*_WebNavItem(
-                    icon: Icons.dashboard,
-                    label: 'Dashboard',
-                    isSelected: true,
-                    onTap: () {},
-                  ),
-                  _WebNavItem(
-                    icon: Icons.list_alt,
-                    label: 'Orçamentos',
-                    onTap: () {},
-                  ),
-                  _WebNavItem(
-                    icon: Icons.trending_up,
-                    label: 'Investimentos',
-                    onTap: () {},
-                  ),
-                  _WebNavItem(
-                    icon: Icons.settings,
-                    label: 'Configurações',
-                    onTap: () {},
-                  ),*/
-                ],
-              ),
-              const SizedBox(width: 24),
-              CircleAvatar(
+    final auth = Provider.of<AuthProvider>(context);
+
+    return OrcamentosAppBar(
+        tabController: _tabController,
+        tabs: const [
+          Tab(text: 'Métricas Orçamentos'),
+          Tab(text: 'Métricas Investimentos'),
+        ],
+        isWeb: kIsWeb,
+        userAvatar: kIsWeb
+            ? CircleAvatar(
                 backgroundColor: Colors.indigo[100],
-                radius: 20, // Tamanho padrão recomendado
-                child: ClipOval(
-                  child: auth.user?.photoURL != null
-                    ? Image.network(
-                        auth.user!.photoURL!,
-                        width: 40, // Dobro do radius para preencher todo o CircleAvatar
-                        height: 40,
-                        fit: BoxFit.cover,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return CircularProgressIndicator(
-                            value: loadingProgress.expectedTotalBytes != null
-                                ? loadingProgress.cumulativeBytesLoaded / 
-                                  loadingProgress.expectedTotalBytes!
-                                : null,
-                          );
-                        },
-                        errorBuilder: (context, error, stackTrace) {
-                          return Icon(Icons.person, color: Colors.indigo[700]);
-                        },
+                radius: 20,
+                child: auth.user?.photoURL != null
+                    ? ClipOval(
+                        child: Image.network(
+                          auth.user!.photoURL!,
+                          width: 40,
+                          height: 40,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                      loadingProgress.expectedTotalBytes!
+                                  : null,
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return Icon(Icons.person, color: Colors.indigo[700]);
+                          },
+                        ),
                       )
                     : Icon(Icons.person, color: Colors.indigo[700]),
-                ),
               )
-            ],
-          ),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(
-                  color: Colors.grey[200]!,
-                  width: 1,
-                ),
-              ),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: TabBar(
-              controller: _tabController,
-              labelColor: Colors.indigo[700],
-              unselectedLabelColor: Colors.grey[600],
-              indicatorColor: Colors.indigo[700],
-              indicatorWeight: 3,
-              indicatorPadding: const EdgeInsets.symmetric(horizontal: 24),
-              tabs: const [
-                Tab(text: 'Métricas Orçamentos'),
-                Tab(text: 'Métricas Investimentos'),
-              ],
-            ),
-          ),
-        ),
+            : null,
+        webNavItems: []
       );
-    }
   }
 
   @override

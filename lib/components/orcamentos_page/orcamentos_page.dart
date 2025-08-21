@@ -11,6 +11,7 @@ import 'package:orcamentos_app/components/orcamentos_page/orcamentos_page_empty_
 import 'package:orcamentos_app/components/orcamentos_encerrados_page/orcamentos_encerrados_page.dart';
 import 'package:orcamentos_app/providers/auth_provider.dart';
 import 'package:orcamentos_app/components/orcamentos_page/orcamentos_fab.dart';
+import 'package:orcamentos_app/components/common/orcamentos_appbar.dart';
 
 class OrcamentosPage extends StatefulWidget {
   const OrcamentosPage({super.key});
@@ -98,28 +99,61 @@ class OrcamentosPageState extends State<OrcamentosPage> {
     _fetchApiData(apiToken);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        backgroundColor: Colors.indigo[700],
-        title: const Text('Orçamentos', style: TextStyle(color: Colors.white)),
-        centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.white),
+  PreferredSizeWidget _buildAppBar() {
+    final auth = Provider.of<AuthProvider>(context);
+
+    return OrcamentosAppBar(
+        appTitle: "Orçamentos Ativos",
+        isWeb: kIsWeb,
+        userAvatar: kIsWeb
+            ? CircleAvatar(
+                backgroundColor: Colors.indigo[100],
+                radius: 20,
+                child: auth.user?.photoURL != null
+                    ? ClipOval(
+                        child: Image.network(
+                          auth.user!.photoURL!,
+                          width: 40,
+                          height: 40,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                      loadingProgress.expectedTotalBytes!
+                                  : null,
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return Icon(Icons.person, color: Colors.indigo[700]);
+                          },
+                        ),
+                      )
+                    : Icon(Icons.person, color: Colors.indigo[700]),
+              )
+            : null,
         actions: [
           IconButton(
-            icon: const Icon(Icons.archive, color: Colors.white),
+            icon: Icon(Icons.archive, color: Colors.indigo[700]),
             tooltip: 'Orçamentos encerrados',
             onPressed: () => _navigateToArquivados(_auth.apiToken),
           ),
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
+            icon: Icon(Icons.refresh, color: Colors.indigo[700]),
             tooltip: 'Recarregar',
             onPressed: () => _fetchApiData(_auth.apiToken),
           ),
         ],
-      ),
+        webNavItems: []
+      );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      appBar: _buildAppBar(),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _orcamentos.isEmpty

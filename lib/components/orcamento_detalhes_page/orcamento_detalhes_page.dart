@@ -15,6 +15,7 @@ import 'package:orcamentos_app/utils/http.dart';
 import 'package:orcamentos_app/components/common/orcamentos_snackbar.dart';
 import 'package:provider/provider.dart';
 import 'package:orcamentos_app/components/common/confirmation_dialog.dart';
+import 'package:orcamentos_app/components/common/orcamentos_appbar.dart';
 
 class OrcamentoDetalhesPage extends StatefulWidget {
   final int orcamentoId;
@@ -299,18 +300,47 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      backgroundColor: Colors.indigo[700],
-      title: const Text('Detalhes do Orçamento', style: TextStyle(color: Colors.white)),
-      centerTitle: true,
-      iconTheme: const IconThemeData(color: Colors.white),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.refresh, color: Colors.white),
-          onPressed: _loadOrcamentoData,
-        ),
-      ],
-    );
+    final auth = Provider.of<AuthProvider>(context);
+
+    return OrcamentosAppBar(
+        appTitle: "Detalhes do Orçamento",
+        isWeb: kIsWeb,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.refresh, color: Colors.indigo[700]),
+            onPressed: _loadOrcamentoData,
+          ),
+        ],
+        userAvatar: kIsWeb
+            ? CircleAvatar(
+                backgroundColor: Colors.indigo[100],
+                radius: 20,
+                child: auth.user?.photoURL != null
+                    ? ClipOval(
+                        child: Image.network(
+                          auth.user!.photoURL!,
+                          width: 40,
+                          height: 40,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded /
+                                      loadingProgress.expectedTotalBytes!
+                                  : null,
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return Icon(Icons.person, color: Colors.indigo[700]);
+                          },
+                        ),
+                      )
+                    : Icon(Icons.person, color: Colors.indigo[700]),
+              )
+            : null,
+        webNavItems: []
+      );
   }
 
   Widget _buildDashboardCards(Map<String, dynamic> orcamento) {
@@ -320,56 +350,85 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
     final valorAtual = double.parse(orcamento['valor_atual'] ?? '0.0');
     final valorLivre = double.parse(orcamento['valor_livre'] ?? '0.0');
 
-    return GridView.count(
+
+    final cards = [
+      Expanded(
+            child: OrcamentoDetalhesCard(
+              title: 'Valor Inicial',
+              value: formatarValorDouble(valorInicial),
+              color: Colors.indigo,
+              icon: Icons.account_balance,
+              onTap: isEncerrado ? null : () => _navigateToEditValorInicial(valorInicial),
+              margin: const EdgeInsets.only(right: 8.0),
+            ),
+          ),
+          Expanded(
+            child: OrcamentoDetalhesCard(
+              title: 'Valor Atual',
+              value: formatarValorDouble(valorAtual),
+              color: Colors.teal,
+              icon: Icons.bar_chart,
+              margin: const EdgeInsets.symmetric(horizontal: 4.0),
+            ),
+          ),
+          Expanded(
+            child: OrcamentoDetalhesCard(
+              title: 'Valor Livre',
+              value: formatarValorDouble(valorLivre),
+              color: Colors.orange,
+              icon: Icons.account_balance_wallet,
+              margin: const EdgeInsets.symmetric(horizontal: 4.0),
+            ),
+          ),
+          Expanded(
+            child: OrcamentoDetalhesCard(
+              title: 'Gastos Fixos',
+              value: '${orcamento['gastos_fixos']} itens',
+              color: Colors.blue,
+              icon: Icons.attach_money,
+              onTap: _navigateToGastosFixos,
+              margin: const EdgeInsets.symmetric(horizontal: 4.0),
+            ),
+          ),
+          Expanded(
+            child: OrcamentoDetalhesCard(
+              title: 'Gastos Variados',
+              value: '${orcamento['gastos_variados']} itens',
+              color: Colors.purple,
+              icon: Icons.shopping_cart,
+              onTap: _navigateToGastosVariados,
+              margin: const EdgeInsets.symmetric(horizontal: 4.0),
+            ),
+          ),
+          Expanded(
+            child: OrcamentoDetalhesCard(
+              title: 'Criado em',
+              value: orcamento['data_criacao'] != null 
+                  ? formatarData(dataCriacao)
+                  : 'Desconhecida',
+              color: Colors.grey,
+              icon: Icons.calendar_today,
+              margin: const EdgeInsets.only(left: 8.0),
+            ),
+          ),
+    ];
+
+    return (kIsWeb && MediaQuery.of(context).size.width > 800)
+      ? SizedBox(
+          height: 180,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: cards
+          ),
+        )
+      : GridView.count(
       physics: const NeverScrollableScrollPhysics(),
       shrinkWrap: true,
       crossAxisCount: kIsWeb ? 3 : 2, // 3 colunas na web, 2 no mobile
       crossAxisSpacing: kIsWeb ? 16.0 : 12.0,
       mainAxisSpacing: kIsWeb ? 16.0 : 12.0,
       childAspectRatio: kIsWeb ? 1.5 : 1.2, // Proporção ajustada para web
-      children: [
-        OrcamentoDetalhesCard(
-          title: 'Valor Inicial',
-          value: formatarValorDouble(valorInicial),
-          color: Colors.indigo,
-          icon: Icons.account_balance,
-          onTap: isEncerrado ? null : () => _navigateToEditValorInicial(valorInicial),
-        ),
-        OrcamentoDetalhesCard(
-          title: 'Valor Atual',
-          value: formatarValorDouble(valorAtual),
-          color: Colors.teal,
-          icon: Icons.bar_chart,
-        ),
-        OrcamentoDetalhesCard(
-          title: 'Valor Livre',
-          value: formatarValorDouble(valorLivre),
-          color: Colors.orange,
-          icon: Icons.account_balance_wallet,
-        ),
-        OrcamentoDetalhesCard(
-          title: 'Gastos Fixos',
-          value: '${orcamento['gastos_fixos']} itens',
-          color: Colors.blue,
-          icon: Icons.attach_money,
-          onTap: _navigateToGastosFixos,
-        ),
-        OrcamentoDetalhesCard(
-          title: 'Gastos Variados',
-          value: '${orcamento['gastos_variados']} itens',
-          color: Colors.purple,
-          icon: Icons.shopping_cart,
-          onTap: _navigateToGastosVariados,
-        ),
-        OrcamentoDetalhesCard(
-          title: 'Criado em',
-          value: orcamento['data_criacao'] != null 
-              ? formatarData(dataCriacao)
-              : 'Desconhecida',
-          color: Colors.grey,
-          icon: Icons.calendar_today,
-        ),
-      ],
+      children: cards
     );
   }
 
@@ -407,57 +466,74 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
   }
 
   Widget _buildActionButtons(bool isEncerrado) {
-    return Column(
-      children: [
-        if (!isEncerrado) ...[
-          ActionButton(
-            text: 'Encerrar Orçamento',
-            icon: Icons.lock_clock,
-            color: Colors.blueGrey,
-            onPressed: () => ConfirmationDialog.confirmAction(
-              context: context,
-              title: 'Confirmar Encerramento',
-              message: 'Você tem certeza que deseja encerrar este orçamento?',
-              actionText: 'Encerrar',
-              action: () async {
-                await _encerrarOrcamento();
-                setState(() {});
-              },
-            ),
-          ),
-          SizedBox(height: kIsWeb ? 16 : 12),
-          ActionButton(
-            text: 'Apagar Orçamento',
-            icon: Icons.delete,
-            color: Colors.red,
-            onPressed: () => ConfirmationDialog.confirmAction(
-              context: context,
-              title: 'Confirmar Exclusão',
-              message: 'Você tem certeza que deseja apagar este orçamento?',
-              actionText: 'Apagar',
-              action: () async {
-                await _deleteOrcamento();
-                setState(() {});
-              },
-            ),
-          ),
-        ] else
-          ActionButton(
-            text: 'Reativar Orçamento',
-            icon: Icons.lock_open,
-            color: Colors.orange,
-            onPressed: () => ConfirmationDialog.confirmAction(
-              context: context,
-              title: 'Confirmar Reativação',
-              message: 'Você tem certeza que deseja reativar este orçamento?',
-              actionText: 'Reativar',
-              action: () async {
-                await _reativarOrcamento();
-                setState(() {});
-              },
-            ),
-          ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final shouldCenter = constraints.maxWidth > 800;
+        final widget = Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (!isEncerrado) ...[
+              SizedBox(
+                width: shouldCenter ? 400 : null,
+                child: ActionButton(
+                  text: 'Encerrar Orçamento',
+                  icon: Icons.lock_clock,
+                  color: Colors.blueGrey,
+                  onPressed: () => ConfirmationDialog.confirmAction(
+                    context: context,
+                    title: 'Confirmar Encerramento',
+                    message: 'Você tem certeza que deseja encerrar este orçamento?',
+                    actionText: 'Encerrar',
+                    action: () async {
+                      await _encerrarOrcamento();
+                      setState(() {});
+                    },
+                  ),
+                ),
+              ),
+              SizedBox(height: kIsWeb ? 16 : 12),
+              SizedBox(
+                width: shouldCenter ? 400 : null,
+                child: ActionButton(
+                  text: 'Apagar Orçamento',
+                  icon: Icons.delete,
+                  color: Colors.red,
+                  onPressed: () => ConfirmationDialog.confirmAction(
+                    context: context,
+                    title: 'Confirmar Exclusão',
+                    message: 'Você tem certeza que deseja apagar este orçamento?',
+                    actionText: 'Apagar',
+                    action: () async {
+                      await _deleteOrcamento();
+                      setState(() {});
+                    },
+                  ),
+                ),
+              ),
+            ] else
+              SizedBox(
+                width: shouldCenter ? 400 : null,
+                child: ActionButton(
+                  text: 'Reativar Orçamento',
+                  icon: Icons.lock_open,
+                  color: Colors.orange,
+                  onPressed: () => ConfirmationDialog.confirmAction(
+                    context: context,
+                    title: 'Confirmar Reativação',
+                    message: 'Você tem certeza que deseja reativar este orçamento?',
+                    actionText: 'Reativar',
+                    action: () async {
+                      await _reativarOrcamento();
+                      setState(() {});
+                    },
+                  ),
+                ),
+              ),
+          ],
+        );
+
+        return shouldCenter ? Center(child: widget) : widget;
+      },
     );
   }
 
