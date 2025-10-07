@@ -1,3 +1,10 @@
+# [1.3.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.2.0...v1.3.0) (2025-10-07)
+
+
+### Features
+
+* adiciona data de vencimento nos gastos fixos ([41d5bae](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/41d5bae77a2d75af3c372272d8a786c63a87d144))
+
 # [1.2.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.1.0...v1.2.0) (2025-08-21)
 
 
