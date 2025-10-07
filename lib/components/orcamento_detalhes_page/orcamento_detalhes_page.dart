@@ -38,8 +38,11 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
   }
 
   void _loadOrcamentoData() {
-    _orcamentoDetalhes = _fetchOrcamentoDetalhes(widget.orcamentoId);
+    setState(() {
+      _orcamentoDetalhes = _fetchOrcamentoDetalhes(widget.orcamentoId);
     _spendingData = _consolidarTotaisPorCategoria(_auth.apiToken, widget.orcamentoId);
+    });
+    
   }
 
   Future<Map<String, dynamic>> _fetchOrcamentoDetalhes(int orcamentoId) async {
@@ -53,6 +56,7 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
       var detalhes = jsonDecode(response.body);
       detalhes['gastos_fixos'] = (await _fetchQtdGastosFixos(orcamentoId)).toString();
       detalhes['gastos_variados'] = (await _fetchQtdGastosVariados(orcamentoId)).toString();
+      detalhes['gastos_vencidos'] = (await _fetchQtdGastosFixosVencidos(orcamentoId)).toString();
 
       return detalhes;
     } else {
@@ -67,6 +71,35 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
       headers: _buildHeaders(),
     );
     return _handleCountResponse(response, 'gastos fixos');
+  }
+
+  Future<int> _fetchQtdGastosFixosVencidos(int orcamentoId) async {
+    final client = await MyHttpClient.create();
+    final response = await client.get(
+      'orcamentos/$orcamentoId/gastos-fixos',
+      headers: _buildHeaders(),
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+
+      final DateTime hoje = DateTime.now();
+      final DateTime hojeSemHora = DateTime(hoje.year, hoje.month, hoje.day);
+
+      final int vencidos = data.where((gasto) {
+        if (gasto['data_pgto'] != null) return false; // já pago
+        if (gasto['data_venc'] == null) return false;
+
+        final dataVenc = DateTime.parse(gasto['data_venc']).toLocal();
+        final dataVencSemHora = DateTime(dataVenc.year, dataVenc.month, dataVenc.day);
+
+        return dataVencSemHora.isBefore(hojeSemHora);
+      }).length;
+
+      return vencidos;
+    } else {
+      throw Exception('Falha ao carregar os gastos fixos vencidos');
+    }
   }
 
   Future<int> _fetchQtdGastosVariados(int orcamentoId) async {
@@ -307,7 +340,7 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
         isWeb: kIsWeb,
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh, color: Colors.indigo[700]),
+            icon: Icon(Icons.refresh, color: kIsWeb ? Colors.indigo[700] : Colors.white),
             onPressed: _loadOrcamentoData,
           ),
         ],
@@ -349,88 +382,82 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
     final valorInicial = double.parse(orcamento['valor_inicial'] ?? '0.0');
     final valorAtual = double.parse(orcamento['valor_atual'] ?? '0.0');
     final valorLivre = double.parse(orcamento['valor_livre'] ?? '0.0');
-
+    final gastosVencidos = int.parse(orcamento['gastos_vencidos']);
 
     final cards = [
-      Expanded(
-            child: OrcamentoDetalhesCard(
-              title: 'Valor Inicial',
-              value: formatarValorDouble(valorInicial),
-              color: Colors.indigo,
-              icon: Icons.account_balance,
-              onTap: isEncerrado ? null : () => _navigateToEditValorInicial(valorInicial),
-              margin: const EdgeInsets.only(right: 8.0),
-            ),
-          ),
-          Expanded(
-            child: OrcamentoDetalhesCard(
-              title: 'Valor Atual',
-              value: formatarValorDouble(valorAtual),
-              color: Colors.teal,
-              icon: Icons.bar_chart,
-              margin: const EdgeInsets.symmetric(horizontal: 4.0),
-            ),
-          ),
-          Expanded(
-            child: OrcamentoDetalhesCard(
-              title: 'Valor Livre',
-              value: formatarValorDouble(valorLivre),
-              color: Colors.orange,
-              icon: Icons.account_balance_wallet,
-              margin: const EdgeInsets.symmetric(horizontal: 4.0),
-            ),
-          ),
-          Expanded(
-            child: OrcamentoDetalhesCard(
-              title: 'Gastos Fixos',
-              value: '${orcamento['gastos_fixos']} itens',
-              color: Colors.blue,
-              icon: Icons.attach_money,
-              onTap: _navigateToGastosFixos,
-              margin: const EdgeInsets.symmetric(horizontal: 4.0),
-            ),
-          ),
-          Expanded(
-            child: OrcamentoDetalhesCard(
-              title: 'Gastos Variados',
-              value: '${orcamento['gastos_variados']} itens',
-              color: Colors.purple,
-              icon: Icons.shopping_cart,
-              onTap: _navigateToGastosVariados,
-              margin: const EdgeInsets.symmetric(horizontal: 4.0),
-            ),
-          ),
-          Expanded(
-            child: OrcamentoDetalhesCard(
-              title: 'Criado em',
-              value: orcamento['data_criacao'] != null 
-                  ? formatarData(dataCriacao)
-                  : 'Desconhecida',
-              color: Colors.grey,
-              icon: Icons.calendar_today,
-              margin: const EdgeInsets.only(left: 8.0),
-            ),
-          ),
+      OrcamentoDetalhesCard(
+        title: 'Valor Inicial',
+        value: formatarValorDouble(valorInicial),
+        color: Colors.indigo,
+        icon: Icons.account_balance,
+        onTap: isEncerrado ? null : () => _navigateToEditValorInicial(valorInicial),
+      ),
+      OrcamentoDetalhesCard(
+        title: 'Valor Atual',
+        value: formatarValorDouble(valorAtual),
+        color: Colors.teal,
+        icon: Icons.bar_chart,
+      ),
+      OrcamentoDetalhesCard(
+        title: 'Valor Livre',
+        value: formatarValorDouble(valorLivre),
+        color: Colors.orange,
+        icon: Icons.account_balance_wallet,
+      ),
+      OrcamentoDetalhesCard(
+        title: 'Gastos Fixos',
+        value: '${orcamento['gastos_fixos']} itens',
+        color: Colors.blue,
+        icon: Icons.attach_money,
+        onTap: _navigateToGastosFixos,
+      ),
+      OrcamentoDetalhesCard(
+        title: 'Gastos Variados',
+        value: '${orcamento['gastos_variados']} itens',
+        color: Colors.purple,
+        icon: Icons.shopping_cart,
+        onTap: _navigateToGastosVariados,
+      ),
+      OrcamentoDetalhesCard(
+        title: 'Vencidos',
+        value: '$gastosVencidos itens',
+        color: gastosVencidos > 0 ? Colors.redAccent : Colors.green,
+        icon: Icons.warning_amber_rounded,
+      ),
     ];
 
-    return (kIsWeb && MediaQuery.of(context).size.width > 800)
-      ? SizedBox(
-          height: 180,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: cards
-          ),
-        )
-      : GridView.count(
+    // Web (largura > 800) usa Row com Flexible
+    if (kIsWeb && MediaQuery.of(context).size.width > 800) {
+      return SizedBox(
+        height: 180,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: cards
+              .map((card) => Flexible(
+                    fit: FlexFit.tight,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                      child: card,
+                    ),
+                  ))
+              .toList(),
+        ),
+      );
+    }
+
+    // Mobile ou web pequeno: GridView
+    return GridView.count(
       physics: const NeverScrollableScrollPhysics(),
       shrinkWrap: true,
-      crossAxisCount: kIsWeb ? 3 : 2, // 3 colunas na web, 2 no mobile
+      crossAxisCount: kIsWeb ? 3 : 2,
       crossAxisSpacing: kIsWeb ? 16.0 : 12.0,
       mainAxisSpacing: kIsWeb ? 16.0 : 12.0,
-      childAspectRatio: kIsWeb ? 1.5 : 1.2, // Proporção ajustada para web
-      children: cards
+      childAspectRatio: kIsWeb ? 1.5 : 1.2,
+      children: cards,
     );
   }
+
+
 
   Widget _buildGraficoCategorias() {
     return FutureBuilder<Map<String, double>>(
@@ -580,6 +607,7 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
                     nome: orcamento['nome'],
                     isEncerrado: isEncerrado,
                     dataEncerramento: orcamento['data_encerramento'],
+                    dataCriacao: orcamento['data_criacao'],
                     onEditPressed: isEncerrado 
                       ? null 
                       : () => _showRenameDialog(context),

@@ -37,6 +37,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage> {
   final _updateValorFormKey = GlobalKey<FormState>();
   final _updateCategoriaFormKey = GlobalKey<FormState>();
   final _updateDataPagamentoFormKey = GlobalKey<FormState>();
+  final _updateDataVencimentoFormKey = GlobalKey<FormState>();
   final _updateObservacoesFormKey = GlobalKey<FormState>();
   final _updatePaymentFormKey = GlobalKey<FormState>();
 
@@ -319,7 +320,7 @@ final client = await MyHttpClient.create();
     DateFormat inputFormat = DateFormat('dd/MM/yyyy');
     DateTime parsedDate = inputFormat.parse(dataPgto);
 
-final client = await MyHttpClient.create();
+    final client = await MyHttpClient.create();
     final response = await client.patch(
       'orcamentos/$orcamentoId/gastos-fixos/$gastoId',
       headers: {
@@ -328,6 +329,39 @@ final client = await MyHttpClient.create();
       },
       body: jsonEncode({
         'data_pgto': parsedDate.toIso8601String(),
+      }),
+    );
+
+    if (response.statusCode >= 200 && response.statusCode <= 299) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pagamento atualizado com sucesso!')),
+      );
+
+      _getGasto(gastoId);
+
+    } else {
+      print(response.body.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Falha ao atualizar o pagamento.')),
+      );
+    }
+  }
+
+  Future<void> _updateDataVencimento(int gastoId, String dataVenc) async {
+    final orcamentoId = widget.orcamentoId;
+
+    DateFormat inputFormat = DateFormat('dd/MM/yyyy');
+    DateTime parsedDate = inputFormat.parse(dataVenc);
+
+    final client = await MyHttpClient.create();
+    final response = await client.patch(
+      'orcamentos/$orcamentoId/gastos-fixos/$gastoId',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${widget.apiToken}',
+      },
+      body: jsonEncode({
+        'data_venc': parsedDate.toIso8601String(),
       }),
     );
 
@@ -663,6 +697,75 @@ final client = await MyHttpClient.create();
     );
   }
 
+  void _openDataVencimentoDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Data de Vencimento'),
+          content: Form(
+            key: _updateDataVencimentoFormKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 10),
+                // Campo de data
+                TextFormField(
+                  controller: _dataController,
+                  decoration: const InputDecoration(
+                    labelText: 'Data de Vencimento',
+                    border: OutlineInputBorder(),
+                  ),
+                  readOnly: true,
+                  validator: (value) {
+                    print('valor data: $value');
+                    if (value != null && value.isEmpty) {
+                      return 'Por favor, selecione uma data';
+                    }
+                    return null;
+                  },
+                  onTap: () async {
+                    DateTime? pickedDate = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2101),
+                    );
+                    if (pickedDate != null) {
+                      _dataController.text = DateFormat('dd/MM/yyyy').format(pickedDate);
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                String dataVenc = _dataController.text;
+
+                if (_updateDataVencimentoFormKey.currentState?.validate() ?? false) {
+                  _updateDataVencimento(gasto['id'], dataVenc);
+                  _getGasto(widget.gastoId);
+                  _dataController.text = '';
+                  Navigator.pop(context, true);
+                }
+              },
+              child: const Text('Confirmar'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _dataController.text = '';
+              },
+              child: const Text('Cancelar'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _openObservacoesDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -853,6 +956,7 @@ final client = await MyHttpClient.create();
                             }: null
                           ),
                         ),
+                        
                         const SizedBox(width: 10),
                         Expanded(
                           child: _buildDetailCard(
@@ -908,6 +1012,30 @@ final client = await MyHttpClient.create();
                       onTap: orcamento['data_encerramento'] == null ? () {
                         _openCategoriaDialog(context);
                       }: null
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    _buildDetailCard(
+                      title: 'Vencimento',
+                      value: (() {
+                        final dataStr = gasto['data_venc'];
+                        if (dataStr == null) return 'Não definido';
+
+                        try {
+                          final data = DateTime.parse(dataStr);
+                          return '${data.day.toString().padLeft(2, '0')}/${data.month.toString().padLeft(2, '0')}/${data.year}';
+                        } catch (e) {
+                          return dataStr; // fallback se a string não for uma data válida
+                        }
+                      })(),
+                      color: Colors.red,
+                      icon: Icons.date_range,
+                      onTap: orcamento['data_venc'] == null
+                          ? () {
+                              _openDataVencimentoDialog(context);
+                            }
+                          : null,
                     ),
 
                     const SizedBox(height: 20),

@@ -26,6 +26,7 @@ class _CriacaoGastoFixoPageState extends State<CriacaoGastoFixoPage> {
   final _descricaoFocusNode = FocusNode();
   final _valorFocusNode = FocusNode();
   final _observacoesFocusNode = FocusNode();
+  final _dataVencimentoController = TextEditingController();
 
   int? _categoriaIdSelecionada;
   List<Map<String, dynamic>> _categorias = [];
@@ -48,6 +49,7 @@ class _CriacaoGastoFixoPageState extends State<CriacaoGastoFixoPage> {
     _descricaoFocusNode.dispose();
     _valorFocusNode.dispose();
     _observacoesFocusNode.dispose();
+    _dataVencimentoController.dispose();
     super.dispose();
   }
 
@@ -125,6 +127,9 @@ class _CriacaoGastoFixoPageState extends State<CriacaoGastoFixoPage> {
           'previsto': valorPrevisto,
           'categoria_id': _categoriaIdSelecionada,
           'observacoes': _observacoesController.text,
+          'data_venc': _dataVencimentoController.text.isNotEmpty
+              ? DateFormat('dd/MM/yyyy').parse(_dataVencimentoController.text).toIso8601String()
+              : null,
         }),
       );
 
@@ -312,6 +317,27 @@ class _CriacaoGastoFixoPageState extends State<CriacaoGastoFixoPage> {
                     alignLabelWithHint: true,
                   ),
                   textInputAction: TextInputAction.done,
+                ),
+                const SizedBox(height: 20),
+
+                TextFormField(
+                  controller: _dataVencimentoController,
+                  decoration: const InputDecoration(
+                    labelText: 'Data de Vencimento (Opcional)',
+                    border: OutlineInputBorder(),
+                  ),
+                  readOnly: true,
+                  onTap: () async {
+                    DateTime? pickedDate = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2101),
+                    );
+                    if (pickedDate != null) {
+                      _dataVencimentoController.text = DateFormat('dd/MM/yyyy').format(pickedDate);
+                    }
+                  },
                 ),
                 const SizedBox(height: 40),
                 

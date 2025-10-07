@@ -5,6 +5,7 @@ class OrcamentoTitulo extends StatelessWidget {
   final String nome;
   final bool isEncerrado;
   final String? dataEncerramento;
+  final String? dataCriacao;
   final VoidCallback? onEditPressed;
   final Color? activeColor;
   final Color? inactiveColor;
@@ -14,6 +15,7 @@ class OrcamentoTitulo extends StatelessWidget {
     required this.nome,
     required this.isEncerrado,
     this.dataEncerramento,
+    this.dataCriacao,
     this.onEditPressed,
     this.activeColor,
     this.inactiveColor,
@@ -92,6 +94,15 @@ class OrcamentoTitulo extends StatelessWidget {
                         ),
                       ),
                     ],
+                    if (!isEncerrado && dataCriacao != null) ...[
+                      const SizedBox(width: 10),
+                      Text('Criado em ${_formatDate(dataCriacao!)}',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 12,
+                            letterSpacing: 0.2,
+                          ))
+                    ]
                   ],
                 ),
               ],

@@ -134,13 +134,13 @@ class InvestimentosPageState extends State<InvestimentosPage> {
               )
             : null,
         actions: [
-          IconButton(
-            icon: Icon(Icons.archive, color:Colors.indigo[700]),
+          /*IconButton(
+            icon: Icon(Icons.archive, color: kIsWeb ? Colors.indigo[700] : Colors.white),
             tooltip: 'Investimentos encerrados',
             onPressed: () => _navigateToArquivados(_auth.apiToken),
-          ),
+          ),*/
           IconButton(
-            icon: Icon(Icons.refresh, color: Colors.indigo[700]),
+            icon: Icon(Icons.refresh, color: kIsWeb ? Colors.indigo[700] : Colors.white),
             tooltip: 'Recarregar',
             onPressed: () => _fetchApiData(_auth.apiToken),
           ),

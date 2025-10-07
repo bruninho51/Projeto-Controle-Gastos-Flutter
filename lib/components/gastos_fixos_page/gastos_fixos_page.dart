@@ -321,6 +321,7 @@ class _GastosFixosPageState extends State<GastosFixosPage> {
             final gastosFiltrados = gastosFixos.where((gasto) {
               final descricao = gasto['descricao'].toString().toLowerCase();
               final status = gasto['valor'] != null ? 'PAGO' : 'NÃO PAGO';
+              
               final dataPagamento = gasto['data_pgto'];
 
               final correspondeNome = descricao.contains(_filtroNome.toLowerCase());
@@ -401,14 +402,34 @@ class _GastosFixosPageState extends State<GastosFixosPage> {
                             Container(
                               padding: const EdgeInsets.all(12.0),
                               decoration: BoxDecoration(
-                                color: isPago 
-                                    ? Colors.green[50] 
-                                    : Colors.orange[50],
+                                color: () {
+                                        if (isPago) {
+                                          return Colors.green[50];
+                                        }
+
+                                        final dataVenc = DateTime.tryParse(gasto['data_venc'] ?? '');
+                                        if (dataVenc != null && dataVenc.isBefore(DateTime.now())) {
+                                          return Colors.red[50]; // cor de vencido
+                                        }
+
+                                        return Colors.orange[50]; // cor de pendente
+                                      }(),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Icon(
                                 isPago ? Icons.check_circle : Icons.pending,
-                                color: isPago ? Colors.green : Colors.orange,
+                                color: () {
+                                        if (isPago) {
+                                          return Colors.green;
+                                        }
+
+                                        final dataVenc = DateTime.tryParse(gasto['data_venc'] ?? '');
+                                        if (dataVenc != null && dataVenc.isBefore(DateTime.now())) {
+                                          return Colors.red; // cor de vencido
+                                        }
+
+                                        return Colors.orange; // cor de pendente
+                                      }(),
                                 size: 28,
                               ),
                             ),
@@ -454,17 +475,46 @@ class _GastosFixosPageState extends State<GastosFixosPage> {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 12, vertical: 6),
                                   decoration: BoxDecoration(
-                                    color: isPago
-                                        ? Colors.green[50]
-                                        : Colors.orange[50],
+                                    color: () {
+                                        if (isPago) {
+                                          return Colors.green[50];
+                                        }
+
+                                        final dataVenc = DateTime.tryParse(gasto['data_venc'] ?? '');
+                                        if (dataVenc != null && dataVenc.isBefore(DateTime.now())) {
+                                          return Colors.red[50]; // cor de vencido
+                                        }
+
+                                        return Colors.orange[50]; // cor de pendente
+                                      }(),
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: Text(
-                                    isPago ? 'PAGO' : 'PENDENTE',
+                                    () {
+                                      if (isPago) {
+                                        return 'PAGO';
+                                      }
+
+                                      final dataVenc = DateTime.tryParse(gasto['data_venc'] ?? '');
+                                      if (dataVenc != null && dataVenc.isBefore(DateTime.now())) {
+                                        return 'VENCIDO';
+                                      }
+
+                                      return 'PENDENTE';
+                                    }(),
                                     style: TextStyle(
-                                      color: isPago 
-                                          ? Colors.green[800] 
-                                          : Colors.orange[800],
+                                      color: () {
+                                        if (isPago) {
+                                          return Colors.green[800];
+                                        }
+
+                                        final dataVenc = DateTime.tryParse(gasto['data_venc'] ?? '');
+                                        if (dataVenc != null && dataVenc.isBefore(DateTime.now())) {
+                                          return Colors.red[800]; // cor de vencido
+                                        }
+
+                                        return Colors.orange[800]; // cor de pendente
+                                      }(),
                                       fontWeight: FontWeight.bold,
                                       fontSize: 12,
                                     ),

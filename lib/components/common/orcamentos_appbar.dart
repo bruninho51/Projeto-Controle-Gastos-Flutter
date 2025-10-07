@@ -25,7 +25,7 @@ class OrcamentosAppBar extends StatelessWidget implements PreferredSizeWidget {
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 48);
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 0);
 
   @override
   Widget build(BuildContext context) {
@@ -37,8 +37,12 @@ class OrcamentosAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   AppBar _buildMobileAppBar() {
+    final hasTabs = tabs != null && tabs!.isNotEmpty && tabController != null;
+
     return AppBar(
       backgroundColor: mobileBackgroundColor,
+      iconTheme: const IconThemeData(color: Colors.white),
+      actions: [...?actions, const SizedBox(width: 8)],
       elevation: 4,
       title: Text(
         appTitle,
@@ -48,23 +52,26 @@ class OrcamentosAppBar extends StatelessWidget implements PreferredSizeWidget {
           fontSize: 22,
         ),
       ),
-      bottom: PreferredSize(
-        preferredSize: const Size.fromHeight(48),
-        child: Container(
-          color: mobileBackgroundColor,
-          child: TabBar(
-            controller: tabController,
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            indicatorColor: Colors.amber[400],
-            indicatorWeight: 4,
-            indicatorSize: TabBarIndicatorSize.label,
-            tabs: tabs ?? [],
-          ),
-        ),
-      ),
+      bottom: hasTabs
+          ? PreferredSize(
+              preferredSize: const Size.fromHeight(48),
+              child: Container(
+                color: mobileBackgroundColor,
+                child: TabBar(
+                  controller: tabController,
+                  labelColor: Colors.white,
+                  unselectedLabelColor: Colors.white70,
+                  indicatorColor: Colors.amber[400],
+                  indicatorWeight: 4,
+                  indicatorSize: TabBarIndicatorSize.label,
+                  tabs: tabs!,
+                ),
+              ),
+            )
+          : null, // 👈 se não tiver tabs, o AppBar volta ao tamanho normal
     );
   }
+
 
   AppBar _buildWebAppBar(BuildContext context) {
     final avatarWidget = userAvatar ??
