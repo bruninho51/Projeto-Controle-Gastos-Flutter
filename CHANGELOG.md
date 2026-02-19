@@ -1,3 +1,11 @@
+# [1.4.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.3.0...v1.4.0) (2026-02-19)
+
+
+### Features
+
+* atualiza flutter para a versão 3.41.1 ([b13e06c](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/b13e06c2e374ec9774cd971bdf27b15a0d2337a1))
+* implementa comunicação com o analytics ([9122c75](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/9122c75482be51345c1119c9e7fb339c934aa31b))
+
 # [1.3.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.2.0...v1.3.0) (2025-10-07)
 
 
