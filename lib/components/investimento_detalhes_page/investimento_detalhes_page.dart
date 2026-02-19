@@ -572,8 +572,8 @@ void _showCreateItemLinhaDoTempoDialog() {
               labelRotation: 45,
               edgeLabelPlacement: EdgeLabelPlacement.shift,
               rangePadding: ChartRangePadding.additional,
-              visibleMinimum: DateTime(entries.first.date.year, entries.first.date.month, 1).subtract(const Duration(hours: 6)),
-              visibleMaximum: DateTime(entries.first.date.year, entries.first.date.month + 1, 0).add(const Duration(hours: 6)),
+              //visibleMinimum: DateTime(entries.first.date.year, entries.first.date.month, 1).subtract(const Duration(hours: 6)),
+              //visibleMaximum: DateTime(entries.first.date.year, entries.first.date.month + 1, 0).add(const Duration(hours: 6)),
               axisLabelFormatter: (AxisLabelRenderDetails details) {
                 try {
                   final date = parseChartDate(details.value);

@@ -4,6 +4,7 @@ import 'package:orcamentos_app/providers/auth_provider.dart';
 import 'package:orcamentos_app/utils/formatters.dart';
 import 'dart:convert';
 import 'package:orcamentos_app/utils/http.dart';
+import 'package:orcamentos_app/utils/graphql.dart';
 import 'package:orcamentos_app/components/orcamento_detalhes_page/info_state_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:orcamentos_app/components/orcamento_detalhes_page/orcamento_detalhes_card.dart';
@@ -324,106 +325,38 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     return orcamentosAtivos.length;
   }
 
-  Future<double> _fetchValorInicialAtivos(String apiToken) async {
-    List<dynamic> orcamentos = await _fetchOrcamentos(apiToken);
-    List<dynamic> orcamentosAtivos = orcamentos.where((orcamento) => orcamento['data_encerramento'] == null).toList();
-    double totalValue = orcamentosAtivos.fold(0.0, (previousValue, element) {
-      double valorTotal = double.tryParse(element['valor_inicial'].toString()) ?? 0.0;
-      return previousValue + valorTotal;
-    });
-    return totalValue;
-  }
-
-  Future<double> _fetchValorLivreAtivos(String apiToken) async {
-    List<dynamic> orcamentos = await _fetchOrcamentos(apiToken);
-    List<dynamic> orcamentosAtivos = orcamentos.where((orcamento) => orcamento['data_encerramento'] == null).toList();
-    double totalValue = orcamentosAtivos.fold(0.0, (previousValue, element) {
-      double valorTotal = double.tryParse(element['valor_livre'].toString()) ?? 0.0;
-      return previousValue + valorTotal;
-    });
-    return totalValue;
-  }
-
-  Future<double> _fetchValorAtualAtivos(String apiToken) async {
-    List<dynamic> orcamentos = await _fetchOrcamentos(apiToken);
-    List<dynamic> orcamentosAtivos = orcamentos.where((orcamento) => orcamento['data_encerramento'] == null).toList();
-    double totalValue = orcamentosAtivos.fold(0.0, (previousValue, element) {
-      double valorTotal = double.tryParse(element['valor_atual'].toString()) ?? 0.0;
-      return previousValue + valorTotal;
-    });
-    return totalValue;
-  }
-
-  Future<double> _fetchTotalGastosFixosOrcamento(String apiToken, orcamentoId) async {
-    List<dynamic> gastos = await fetchGastosFixos(apiToken, orcamentoId);
-    double totalValue = gastos.fold(0.0, (previousValue, element) {
-      double valorTotal = double.tryParse((element['valor'] ?? element['previsto']).toString()) ?? 0.0;
-      return previousValue + valorTotal;
-    });
-    return totalValue;
-  }
-
-  Future<double> _fetchValorPoupadoGastosFixosOrcamento(String apiToken, orcamentoId) async {
-    List<dynamic> gastos = await fetchGastosFixos(apiToken, orcamentoId);
-    double totalValue = gastos.fold(0.0, (previousValue, element) {
-      double valorTotal = double.tryParse(element['diferenca'].toString()) ?? 0.0;
-      return previousValue + valorTotal;
-    });
-    return totalValue;
-  }
-
-  Future<double> _fetchTotalGastosVariaveisOrcamento(String apiToken, orcamentoId) async {
-    List<dynamic> gastos = await fetchGastosVariaveis(apiToken, orcamentoId);
-    double totalValue = gastos.fold(0.0, (previousValue, element) {
-      double valorTotal = double.tryParse(element['valor'].toString()) ?? 0.0;
-      return previousValue + valorTotal;
-    });
-    return totalValue;
-  }
-
-  Future<double> _fetchTotalGastosFixosOrcamentosAtivos(String apiToken) async {
-    List<dynamic> orcamentos = await _fetchOrcamentos(apiToken);
-    List<dynamic> orcamentosAtivos = orcamentos.where((orcamento) => orcamento['data_encerramento'] == null).toList();
-    double totalValue = 0.0;
-    for (var orcamento in orcamentosAtivos) {
-      double valorTotal = double.tryParse((await _fetchTotalGastosFixosOrcamento(apiToken, orcamento['id'])).toString()) ?? 0.0;
-      totalValue += valorTotal;
-    }
-    return totalValue;
-  }
-
-  Future<double> _fetchTotalGastosVariaveisOrcamentosAtivos(String apiToken) async {
-    List<dynamic> orcamentos = await _fetchOrcamentos(apiToken);
-    List<dynamic> orcamentosAtivos = orcamentos.where((orcamento) => orcamento['data_encerramento'] == null).toList();
-    double totalValue = 0.0;
-    for (var orcamento in orcamentosAtivos) {
-      double valorTotal = double.tryParse((await _fetchTotalGastosVariaveisOrcamento(apiToken, orcamento['id'])).toString()) ?? 0.0;
-      totalValue += valorTotal;
-    }
-    return totalValue;
-  }
-
-  Future<double> _fetchValorPoupadoGastosFixosOrcamentosAtivos(String apiToken) async {
-    List<dynamic> orcamentos = await _fetchOrcamentos(apiToken);
-    List<dynamic> orcamentosAtivos = orcamentos.where((orcamento) => orcamento['data_encerramento'] == null).toList();
-    double totalValue = 0.0;
-    for (var orcamento in orcamentosAtivos) {
-      double valorTotal = double.tryParse((await _fetchValorPoupadoGastosFixosOrcamento(apiToken, orcamento['id'])).toString()) ?? 0.0;
-      totalValue += valorTotal;
-    }
-    return totalValue;
-  }
-
   Future<Map<String, dynamic>> _fetchDashboardData(AuthProvider auth) async {
     Map<String, dynamic> data = {};
+
+    final graphql = await MyGraphQLClient.create(token: auth.apiToken);
+
+    final consolidadoQuery = """
+      query {
+        consolidadoOrcamentos(filter: { encerrado: false }) {
+          valorTotal,
+          valorLivre,
+          valorAtual,
+          gastosFixosComprometidos,
+          quantidadeGastosFixos,
+          gastosVariadosRealizados,
+          quantidadeGastosVariados,
+          valorPoupado
+        }
+      }
+    """;
+
+    final consolidadoResult = await graphql.query(consolidadoQuery);
+
+    final consolidado = consolidadoResult['consolidadoOrcamentos'] as Map<String, dynamic>;
+
     data['qtdOrcamentosAtivos'] = await _fetchOrcamentosAtivos(auth.apiToken);
     data['qtdOrcamentosEncerrados'] = await _fetchOrcamentosEncerrados(auth.apiToken);
-    data['valorInicialAtivos'] = await _fetchValorInicialAtivos(auth.apiToken);
-    data['valorLivreAtivos'] = await _fetchValorLivreAtivos(auth.apiToken);
-    data['valorAtualAtivos'] = await _fetchValorAtualAtivos(auth.apiToken);
-    data['gastosFixosAtivos'] = await _fetchTotalGastosFixosOrcamentosAtivos(auth.apiToken);
-    data['gastosVariaveisAtivos'] = await _fetchTotalGastosVariaveisOrcamentosAtivos(auth.apiToken);
-    data['gastosFixosValorPoupado'] = await _fetchValorPoupadoGastosFixosOrcamentosAtivos(auth.apiToken);
+    data['valorInicialAtivos'] = consolidado['valorTotal'];
+    data['valorLivreAtivos'] = consolidado['valorLivre'];
+    data['valorAtualAtivos'] = consolidado['valorAtual'];
+    data['gastosFixosAtivos'] = consolidado['gastosFixosComprometidos'];
+    data['gastosVariaveisAtivos'] = consolidado['gastosVariadosRealizados'];
+    data['gastosFixosValorPoupado'] = consolidado['valorPoupado'];
     return data;
   }
 }

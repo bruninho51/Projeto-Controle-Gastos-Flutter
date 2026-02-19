@@ -12,6 +12,7 @@ import 'package:orcamentos_app/components/orcamento_detalhes_page/orcamento_titu
 import 'package:orcamentos_app/components/orcamento_detalhes_page/orcamento_detalhes_card.dart';
 import 'package:orcamentos_app/components/orcamento_detalhes_page/action_button.dart';
 import 'package:orcamentos_app/utils/http.dart';
+import 'package:orcamentos_app/utils/graphql.dart';
 import 'package:orcamentos_app/components/common/orcamentos_snackbar.dart';
 import 'package:provider/provider.dart';
 import 'package:orcamentos_app/components/common/confirmation_dialog.dart';
@@ -46,69 +47,41 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
   }
 
   Future<Map<String, dynamic>> _fetchOrcamentoDetalhes(int orcamentoId) async {
-    final client = await MyHttpClient.create();
-    final response = await client.get(
+    final graphql = await MyGraphQLClient.create(token: _auth.apiToken);
+    final consolidadoQuery = """
+      query ConsolidadoOrcamento(\$ids: [Int!]!) {
+        consolidadoOrcamentos(filter: { orcamentoIds: \$ids }) {
+          quantidadeGastosFixos,
+          quantidadeGastosVariados,
+          quantidadeGastosFixosVencidos
+        }
+      }
+    """;
+
+    final consolidadoResult = await graphql.query(
+      consolidadoQuery,
+      variables: {'ids': [orcamentoId]},
+    );
+
+    final consolidado = consolidadoResult['consolidadoOrcamentos'] as Map<String, dynamic>;
+
+    final httpClient = await MyHttpClient.create();
+    final response = await httpClient.get(
       'orcamentos/$orcamentoId',
       headers: _buildHeaders(),
     );
 
-    if (response.statusCode == 200) {
-      var detalhes = jsonDecode(response.body);
-      detalhes['gastos_fixos'] = (await _fetchQtdGastosFixos(orcamentoId)).toString();
-      detalhes['gastos_variados'] = (await _fetchQtdGastosVariados(orcamentoId)).toString();
-      detalhes['gastos_vencidos'] = (await _fetchQtdGastosFixosVencidos(orcamentoId)).toString();
-
-      return detalhes;
-    } else {
+    if (response.statusCode != 200) {
       throw Exception('Falha ao carregar os detalhes do orçamento');
     }
-  }
 
-  Future<int> _fetchQtdGastosFixos(int orcamentoId) async {
-    final client = await MyHttpClient.create();
-    final response = await client.get(
-      'orcamentos/$orcamentoId/gastos-fixos',
-      headers: _buildHeaders(),
-    );
-    return _handleCountResponse(response, 'gastos fixos');
-  }
+    final detalhes = jsonDecode(response.body);
 
-  Future<int> _fetchQtdGastosFixosVencidos(int orcamentoId) async {
-    final client = await MyHttpClient.create();
-    final response = await client.get(
-      'orcamentos/$orcamentoId/gastos-fixos',
-      headers: _buildHeaders(),
-    );
+    detalhes['gastos_fixos'] = consolidado['quantidadeGastosFixos'].toString();
+    detalhes['gastos_variados'] = consolidado['quantidadeGastosVariados'].toString();
+    detalhes['gastos_vencidos'] = consolidado['quantidadeGastosFixosVencidos'].toString();
 
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-
-      final DateTime hoje = DateTime.now();
-      final DateTime hojeSemHora = DateTime(hoje.year, hoje.month, hoje.day);
-
-      final int vencidos = data.where((gasto) {
-        if (gasto['data_pgto'] != null) return false; // já pago
-        if (gasto['data_venc'] == null) return false;
-
-        final dataVenc = DateTime.parse(gasto['data_venc']).toLocal();
-        final dataVencSemHora = DateTime(dataVenc.year, dataVenc.month, dataVenc.day);
-
-        return dataVencSemHora.isBefore(hojeSemHora);
-      }).length;
-
-      return vencidos;
-    } else {
-      throw Exception('Falha ao carregar os gastos fixos vencidos');
-    }
-  }
-
-  Future<int> _fetchQtdGastosVariados(int orcamentoId) async {
-    final client = await MyHttpClient.create();
-    final response = await client.get(
-      'orcamentos/$orcamentoId/gastos-variados',
-      headers: _buildHeaders(),
-    );
-    return _handleCountResponse(response, 'gastos variados');
+    return detalhes;
   }
 
   Map<String, String> _buildHeaders() {
@@ -116,14 +89,6 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage> {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer ${_auth.apiToken}',
     };
-  }
-
-  int _handleCountResponse(response, String type) {
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body).length;
-    } else {
-      throw Exception('Falha ao carregar a quantidade de $type');
-    }
   }
 
   Future<void> _encerrarOrcamento() async {
