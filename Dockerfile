@@ -1,4 +1,4 @@
-FROM ghcr.io/cirruslabs/flutter:3.27.2 as builder
+FROM ghcr.io/cirruslabs/flutter:3.41.1 AS builder
 
 WORKDIR /app
 
