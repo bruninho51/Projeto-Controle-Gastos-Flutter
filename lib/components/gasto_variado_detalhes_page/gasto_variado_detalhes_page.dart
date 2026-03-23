@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:orcamentos_app/utils/formatters.dart';
 import 'dart:convert';
 import 'package:orcamentos_app/utils/http.dart';
+import 'package:orcamentos_app/components/common/orcamentos_snackbar.dart';
+import 'package:orcamentos_app/components/common/confirmation_dialog.dart';
 
 class DetalhesGastoVariadoPage extends StatefulWidget {
   final int gastoId;
@@ -17,752 +19,975 @@ class DetalhesGastoVariadoPage extends StatefulWidget {
   });
 
   @override
-  _DetalhesGastoVariadoPageState createState() => _DetalhesGastoVariadoPageState();
+  _DetalhesGastoVariadoPageState createState() =>
+      _DetalhesGastoVariadoPageState();
 }
 
-class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage> {
-  Map<String, dynamic> gasto = {}; // Inicializa com um mapa vazio
-  Map<String, dynamic> orcamento = {}; 
-  bool isLoading = true; // Controla o estado de carregamento
+class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
+    with SingleTickerProviderStateMixin {
+  Map<String, dynamic> gasto = {};
+  Map<String, dynamic> orcamento = {};
+  List<Map<String, dynamic>> _categorias = [];
 
   final TextEditingController _valorController = TextEditingController();
   final TextEditingController _dataController = TextEditingController();
+  final TextEditingController _obsController = TextEditingController();
+  int? _categoriaIdSelecionada;
 
-  int? _categoriaIdSelecionada;  // Para armazenar o ID da categoria
-  List<Map<String, dynamic>> _categorias = []; // Lista de categorias (id e nome)
+  final _formValorKey = GlobalKey<FormState>();
+  final _formCategoriaKey = GlobalKey<FormState>();
+  final _formDataKey = GlobalKey<FormState>();
+  final _formObsKey = GlobalKey<FormState>();
 
-  final _updateValorFormKey = GlobalKey<FormState>();
-  final _updateCategoriaFormKey = GlobalKey<FormState>();
-  final _updateDataPagamentoFormKey = GlobalKey<FormState>();
-  final _updateObservacoesFormKey = GlobalKey<FormState>();
+  late AnimationController _refreshCtrl;
+  bool _isRefreshing = false;
+
+  final _fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
   @override
   void initState() {
     super.initState();
-    _getGasto(widget.gastoId);
-    _obterCategoriasGastos();
-    _getOrcamento(widget.orcamentoId);
-  }
-
-  // Método para obter as categorias de gasto da API
-  Future<void> _obterCategoriasGastos() async {
-    final client = await MyHttpClient.create();
-    final response = await client.get(
-      'categorias-gastos',
-      headers: {
-        'Authorization': 'Bearer ${widget.apiToken}',
-      },
-    );
-
-    if (response.statusCode >= 200 && response.statusCode <= 299) {
-      // Parseia o corpo da resposta para um formato JSON
-      final List<dynamic> categoriasJson = jsonDecode(response.body);
-
-      // Converte para uma lista de Map<String, dynamic> (contendo id e nome)
-      setState(() {
-        _categorias = categoriasJson.map((categoria) {
-          return {
-            'id': categoria['id'],
-            'nome': categoria['nome'],
-          };
-        }).toList();
-      });
-    } else {
-      throw Exception('Falha ao carregar categorias de gastos');
-    }
-  }
-
-  Future<void> deleteGastoVariado(int gastoVariadoId) async {
-    final client = await MyHttpClient.create();
-    final response = await client.delete(
-      'orcamentos/${widget.orcamentoId}/gastos-variados/$gastoVariadoId',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ${widget.apiToken ?? ''}',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      // Apagar foi bem-sucedido
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gasto variado apagado com sucesso!')),
-      );
-      Navigator.pop(context, true); // Retorna à tela anterior
-    } else {
-      throw Exception('Falha ao apagar o gasto variado');
-    }
-  }
-
-  Future<void> _getOrcamento(int orcamentoId) async {
-final client = await MyHttpClient.create();
-    final response = await client.get(
-      'orcamentos/${widget.orcamentoId}',
-      headers: {
-        'Authorization': 'Bearer ${widget.apiToken}',
-      },
-    );
-
-    if (response.statusCode >= 200 && response.statusCode <= 299) {
-      Map<String, dynamic> result = jsonDecode(response.body);
-      setState(() {
-        print('orcamento ${result}');
-        orcamento = result; 
-      });
-    } else {
-      print('orcamento: ${response.body}');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Falha ao carregar os dados do gasto.')),
-      );
-      
-    }
-  }
-
-
-  // Função para buscar o gasto atualizado via API
-  Future<void> _getGasto(int gastoId) async {
-final client = await MyHttpClient.create();
-    final response = await client.get(
-      'orcamentos/${widget.orcamentoId}/gastos-variados/${widget.gastoId}',
-      headers: {
-        'Authorization': 'Bearer ${widget.apiToken}',
-      },
-    );
-
-    if (response.statusCode >= 200 && response.statusCode <= 299) {
-      setState(() {
-        gasto = jsonDecode(response.body); 
-        _valorController.text = gasto['observacoes'] ?? '';
-        print('gasto: ${gasto.isNotEmpty}');
-        
-      });
-    } else {
-      print(response.body.toString());
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Falha ao carregar os dados do gasto.')),
-      );
-      
-    }
-  }
-
-  // Método para formatar a data no formato DD/MM/YYYY
-  String formatDate(String isoDate) {
-    print('iso date string: ${isoDate}');
-    DateTime dateTime = DateTime.parse(isoDate);
-    return DateFormat('dd/MM/yyyy').format(dateTime);
-  }
-
-  final _formatador = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-
-  String _formatarValor(String value) {
-    // Remove todos os caracteres não numéricos, exceto o ponto
-    String cleanedValue = value.replaceAll(RegExp(r'[^0-9]'), '');
-
-    print('cleaned value: $cleanedValue');
-
-    // Converte para double e formata
-    if (cleanedValue.isNotEmpty) {
-      double parsedValue = double.tryParse(cleanedValue) ?? 0.0;
-
-      print('parsed value: ${parsedValue}');
-
-      parsedValue = parsedValue / 100; // Converte centavos para reais
-      final formated = _formatador.format(parsedValue);
-
-      print('formated: $formated');
-
-      return formated;
-    }
-    return '';
-  }
-
-  String converterParaFormatoNumerico(String valorFormatado) {
-    // Remove o símbolo da moeda (R$) e espaços em branco
-    String valorSemSimbolo = valorFormatado.replaceAll('R\$', '').trim();
-
-    // Substitui a vírgula (separador decimal) por ponto
-    String valorComPonto = valorSemSimbolo.replaceAll('.', '').replaceAll(',', '.');
-
-    return valorComPonto;
-  }
-
-  Future<void> _updateObservacoes(int gastoId, String observacoes) async {
-    final orcamentoId = widget.orcamentoId;
-
-final client = await MyHttpClient.create();
-    final response = await client.patch(
-      'orcamentos/$orcamentoId/gastos-variados/$gastoId',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ${widget.apiToken}',
-      },
-      body: jsonEncode({
-        'observacoes': observacoes,
-      }),
-    );
-
-    if (response.statusCode >= 200 && response.statusCode <= 299) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pagamento atualizado com sucesso!')),
-      );
-
-      _getGasto(gastoId);
-
-    } else {
-      print(response.body.toString());
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Falha ao atualizar o pagamento.')),
-      );
-    }
-  }
-
-
-  Future<void> _updateCategoria(int gastoId, int categoriaId) async {
-    final orcamentoId = widget.orcamentoId;
-
-final client = await MyHttpClient.create();
-    final response = await client.patch(
-      'orcamentos/$orcamentoId/gastos-variados/$gastoId',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ${widget.apiToken}',
-      },
-      body: jsonEncode({
-        'categoria_id': categoriaId,
-      }),
-    );
-
-    if (response.statusCode >= 200 && response.statusCode <= 299) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pagamento atualizado com sucesso!')),
-      );
-
-      _getGasto(gastoId);
-
-    } else {
-      print(response.body.toString());
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Falha ao atualizar o pagamento.')),
-      );
-    }
-  }
-
-  Future<void> _updateValor(int gastoId, String valor) async {
-    final orcamentoId = widget.orcamentoId;
-
-final client = await MyHttpClient.create();
-    final response = await client.patch(
-      'orcamentos/$orcamentoId/gastos-variados/$gastoId',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ${widget.apiToken}',
-      },
-      body: jsonEncode({
-        'valor': valor,
-      }),
-    );
-
-    if (response.statusCode >= 200 && response.statusCode <= 299) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pagamento atualizado com sucesso!')),
-      );
-
-      _getGasto(gastoId);
-
-    } else {
-      print(response.body.toString());
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Falha ao atualizar o pagamento.')),
-      );
-    }
-  }
-
-  Future<void> _updateDataPagamento(int gastoId, String dataPgto) async {
-    final orcamentoId = widget.orcamentoId;
-
-    DateFormat inputFormat = DateFormat('dd/MM/yyyy');
-    DateTime parsedDate = inputFormat.parse(dataPgto);
-
-final client = await MyHttpClient.create();
-    final response = await client.patch(
-      'orcamentos/$orcamentoId/gastos-variados/$gastoId',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ${widget.apiToken}',
-      },
-      body: jsonEncode({
-        'data_pgto': parsedDate.toIso8601String(),
-      }),
-    );
-
-    if (response.statusCode >= 200 && response.statusCode <= 299) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pagamento atualizado com sucesso!')),
-      );
-
-      _getGasto(gastoId);
-
-    } else {
-      print(response.body.toString());
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Falha ao atualizar o pagamento.')),
-      );
-    }
-  }
-
-  void _openValorDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Valor'),
-          content: Form(
-            key: _updateValorFormKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Campo de valor
-                TextFormField(
-                  controller: _valorController,
-                  keyboardType: TextInputType.numberWithOptions(decimal: true),
-                  decoration: const InputDecoration(
-                    labelText: 'Valor',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    print('rodando o validator');
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor, insira o valor';
-                    }
-                    // Remove a formatação para validar o número
-                    String cleanedValue = value.replaceAll(RegExp(r'[^0-9]'), '');
-                    if (double.tryParse(cleanedValue) == null) {
-                      return 'Por favor, insira um valor válido';
-                    }
-                    return null;
-                  },
-                  onChanged: (value) {
-                    // Formata o valor enquanto o usuário digita
-                    String formattedValue = _formatarValor(value);
-                    _valorController.value = TextEditingValue(
-                      text: formattedValue,
-                      selection: TextSelection.collapsed(offset: formattedValue.length),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                String valor = converterParaFormatoNumerico(_valorController.text);
-                  if (_updateValorFormKey.currentState?.validate() ?? false) {
-                    _updateValor(gasto['id'], valor);
-                    _getGasto(widget.gastoId);
-
-                    _valorController.text = '';
-
-                    Navigator.pop(context, true);
-                  }
-              },
-              child: const Text('Confirmar'),
-            ),
-            TextButton(
-              onPressed: () {
-                _valorController.text = '';
-                Navigator.pop(context);
-              },
-              child: const Text('Cancelar'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _openCategoriaDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Categoria'),
-          content: Form(
-            key: _updateCategoriaFormKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _categorias.isEmpty
-                  ? const CircularProgressIndicator() // Exibe um carregando enquanto as categorias são carregadas
-                  : DropdownButtonFormField<int>(
-                      value: _categoriaIdSelecionada,
-                      isExpanded: true,  // Faz o DropdownButton ocupar toda a largura disponível
-                      items: _categorias.map((categoria) {
-                        return DropdownMenuItem<int>(
-                          value: categoria['id'],
-                          child: Text(
-                            categoria['nome'],
-                            overflow: TextOverflow.ellipsis,  // Adiciona elipses se o texto for muito grande
-                            softWrap: true,  // Permite que o texto quebre para a linha seguinte se necessário
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _categoriaIdSelecionada = value;
-                        });
-                      },
-                      decoration: const InputDecoration(
-                        labelText: 'Categoria',
-                      ),
-                      validator: (value) {
-                        if (value == null) {
-                          return 'Por favor, selecione uma categoria';
-                        }
-                        return null;
-                      },
-                    ),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                if (_updateCategoriaFormKey.currentState?.validate() ?? false) {
-                  _updateCategoria(gasto['id'], _categoriaIdSelecionada ?? 0);
-                  _categoriaIdSelecionada = null;
-                  Navigator.pop(context, true);
-                }
-              },
-              child: const Text('Confirmar'),
-            ),
-            TextButton(
-              onPressed: () {
-                _categoriaIdSelecionada = null;
-                Navigator.pop(context);
-              },
-              child: const Text('Cancelar'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _openDataPagamentoDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Data de Pagamento'),
-          content: Form(
-            key: _updateDataPagamentoFormKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 10),
-                // Campo de data
-                TextFormField(
-                  controller: _dataController,
-                  decoration: const InputDecoration(
-                    labelText: 'Data de Pagamento',
-                    border: OutlineInputBorder(),
-                  ),
-                  readOnly: true,
-                  validator: (value) {
-                    print('valor data: $value');
-                    if (value != null && value.isEmpty) {
-                      return 'Por favor, selecione uma data';
-                    }
-                    return null;
-                  },
-                  onTap: () async {
-                    DateTime? pickedDate = await showDatePicker(
-                      context: context,
-                      initialDate: DateTime.now(),
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime(2101),
-                    );
-                    if (pickedDate != null) {
-                      _dataController.text = DateFormat('dd/MM/yyyy').format(pickedDate);
-                    }
-                  },
-                ),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                String dataPgto = _dataController.text;
-
-                if (_updateDataPagamentoFormKey.currentState?.validate() ?? false) {
-                  _updateDataPagamento(gasto['id'], dataPgto);
-                  _getGasto(widget.gastoId);
-                  _dataController.text = '';
-                  Navigator.pop(context, true);
-                }
-              },
-              child: const Text('Confirmar'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _dataController.text = '';
-              },
-              child: const Text('Cancelar'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _openObservacoesDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Observações'),
-          content: Form(
-            key: _updateObservacoesFormKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Campo de valor
-                TextFormField(
-                  controller: _valorController,
-                  keyboardType: TextInputType.multiline,
-                  decoration: const InputDecoration(
-                    labelText: 'Observações',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor, insira a observação';
-                    }
-                    return null;
-                  },
-                  onChanged: (value) {
-                    _valorController.value = TextEditingValue(
-                      text: value,
-                      selection: TextSelection.collapsed(offset: value.length),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                String observacoes = _valorController.text;
-                if (_updateObservacoesFormKey.currentState?.validate() ?? false) {
-                  _updateObservacoes(gasto['id'], observacoes);
-                  _getGasto(widget.gastoId);
-                  _valorController.text = '';
-                  Navigator.pop(context, true);
-                }
-              },
-              child: const Text('Confirmar'),
-            ),
-            TextButton(
-              onPressed: () {
-                _valorController.text = '';
-                Navigator.pop(context);
-              },
-              child: const Text('Cancelar'),
-            ),
-          ],
-        );
-      },
-    );
+    _refreshCtrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 700));
+    _loadAll();
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.blue[50], // Cor da AppBar
-      appBar: AppBar(
-        backgroundColor: Colors.blue[50], // Cor da AppBar
-        title: Text(gasto.isNotEmpty && gasto['descricao'] != null ? gasto['descricao'] : 'Não especificado'),
-      ),
-      body: gasto.isEmpty || orcamento.isEmpty
-          ? const Center(child: CircularProgressIndicator()) // Exibe o progress bar se estiver carregando
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Linha com dois cards (Valor Previsto e Valor Pago)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: _buildDetailCard(
-                            title: 'Valor Pago',
-                            value: gasto['valor'] != null
-                                ? formatarValorDynamic(gasto['valor'])
-                                : 'Não pago',
-                            color: gasto['valor'] != null ? Colors.black : Colors.red,
-                            icon: gasto['valor'] != null ? Icons.check_circle : Icons.cancel,
-                            onTap: gasto['valor'] != null && orcamento['data_encerramento'] == null ? () {
-                                _openValorDialog(context);
-                            } : null
-                          ),
-                        ),
-                      ],
-                    ),
+  void dispose() {
+    _valorController.dispose();
+    _dataController.dispose();
+    _obsController.dispose();
+    _refreshCtrl.dispose();
+    super.dispose();
+  }
 
+  Future<void> _loadAll() async {
+    await Future.wait([
+      _getGasto(),
+      _getOrcamento(),
+      _obterCategorias(),
+    ]);
+  }
 
-                    
+  void _handleRefresh() async {
+    if (_isRefreshing) return;
+    setState(() => _isRefreshing = true);
+    _refreshCtrl.repeat();
+    await _loadAll();
+    _refreshCtrl.stop();
+    _refreshCtrl.reset();
+    if (mounted) setState(() => _isRefreshing = false);
+  }
 
-                    const SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: _buildDetailCard(
-                              title: 'Pago em',
-                              value: formatDate(gasto['data_pgto']),
-                              color: Colors.blueGrey,
-                              icon: Icons.calendar_today,
-                              onTap: orcamento['data_encerramento'] == null ? () {
-                                _openDataPagamentoDialog(context);
-                              } : null
-                            ),
-                          ),
-                        ],
+  Future<void> _getGasto() async {
+    final client = await MyHttpClient.create();
+    final response = await client.get(
+      'orcamentos/${widget.orcamentoId}/gastos-variados/${widget.gastoId}',
+      headers: {'Authorization': 'Bearer ${widget.apiToken}'},
+    );
+    if (response.statusCode >= 200 && response.statusCode <= 299) {
+      if (mounted) setState(() => gasto = jsonDecode(response.body));
+    }
+  }
+
+  Future<void> _getOrcamento() async {
+    final client = await MyHttpClient.create();
+    final response = await client.get(
+      'orcamentos/${widget.orcamentoId}',
+      headers: {'Authorization': 'Bearer ${widget.apiToken}'},
+    );
+    if (response.statusCode >= 200 && response.statusCode <= 299) {
+      if (mounted) setState(() => orcamento = jsonDecode(response.body));
+    }
+  }
+
+  Future<void> _obterCategorias() async {
+    final client = await MyHttpClient.create();
+    final response = await client.get(
+      'categorias-gastos',
+      headers: {'Authorization': 'Bearer ${widget.apiToken}'},
+    );
+    if (response.statusCode >= 200 && response.statusCode <= 299) {
+      final List<dynamic> json = jsonDecode(response.body);
+      if (mounted) {
+        setState(() => _categorias =
+            json.map((c) => {'id': c['id'], 'nome': c['nome']}).toList());
+      }
+    }
+  }
+
+  // ─── Updates ────────────────────────────────────────────────────────────────
+  Future<void> _patch(Map<String, dynamic> body, String msg) async {
+    final client = await MyHttpClient.create();
+    final response = await client.patch(
+      'orcamentos/${widget.orcamentoId}/gastos-variados/${widget.gastoId}',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${widget.apiToken}',
+      },
+      body: jsonEncode(body),
+    );
+    if (response.statusCode >= 200 && response.statusCode <= 299) {
+      OrcamentosSnackBar.success(context: context, message: msg);
+      await _getGasto();
+    } else {
+      OrcamentosSnackBar.error(context: context, message: 'Falha ao atualizar.');
+    }
+  }
+
+  Future<void> _delete() async {
+    final client = await MyHttpClient.create();
+    final response = await client.delete(
+      'orcamentos/${widget.orcamentoId}/gastos-variados/${widget.gastoId}',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ${widget.apiToken}',
+      },
+    );
+    if (response.statusCode == 200) {
+      OrcamentosSnackBar.success(
+          context: context, message: 'Gasto apagado com sucesso!');
+      Navigator.pop(context, true);
+    } else {
+      OrcamentosSnackBar.error(context: context, message: 'Falha ao apagar.');
+    }
+  }
+
+  // ─── Formatação ──────────────────────────────────────────────────────────────
+  String _formatarValorInput(String value) {
+    final cleaned = value.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cleaned.isEmpty) return '';
+    return _fmt.format(double.parse(cleaned) / 100);
+  }
+
+  String _toNumeric(String formatted) => formatted
+      .replaceAll('R\$', '')
+      .trim()
+      .replaceAll('.', '')
+      .replaceAll(',', '.');
+
+  String _formatDate(String? iso) {
+    if (iso == null) return 'Não informado';
+    try {
+      return DateFormat('dd/MM/yyyy').format(DateTime.parse(iso));
+    } catch (_) {
+      return 'Data inválida';
+    }
+  }
+
+  // ─── Dialogs estilizados ─────────────────────────────────────────────────────
+  void _showEditDialog({
+    required String title,
+    required IconData icon,
+    required Widget content,
+    required GlobalKey<FormState> formKey,
+    required VoidCallback onConfirm,
+  }) {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.purple.withOpacity(0.15),
+                  blurRadius: 30,
+                  offset: const Offset(0, 10)),
+            ],
+          ),
+          child: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                        color: Colors.purple[50],
+                        borderRadius: BorderRadius.circular(12)),
+                    child: Icon(icon, color: Colors.purple[700], size: 22),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(title,
+                      style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.purple[900])),
+                ]),
+                const SizedBox(height: 20),
+                content,
+                const SizedBox(height: 24),
+                Row(children: [
+                  Expanded(
+                    child: TextButton(
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(color: Colors.grey[200]!)),
                       ),
-                      const SizedBox(height: 20),
-                    // Card para Categoria (com largura total e ícone)
-                    _buildDetailCard(
-                      title: 'Categoria',
-                      value: gasto['categoriaGasto']['nome'],
-                      color: Colors.deepPurple,
-                      icon: Icons.category,
-                      onTap: orcamento['data_encerramento'] == null ? () {
-                        _openCategoriaDialog(context);
-                      }: null
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text('Cancelar',
+                          style: TextStyle(
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w600)),
                     ),
-
-                    const SizedBox(height: 20),
-                    // Card para Observações
-                    _buildDetailCard(
-                      title: 'Observações',
-                      value: gasto['observacoes'] ?? 'Nenhuma observação',
-                      color: Colors.grey,
-                      icon: Icons.note,
-                      onTap: orcamento['data_encerramento'] == null ? () {
-                        _openObservacoesDialog(context);
-                      } : null
-                    ),
-
-                    orcamento['data_encerramento'] == null ? Column(
-                      children: [
-                        const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: () async {
-                        bool? confirmDelete = await showDialog<bool>(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text('Confirmar Exclusão'),
-                            content: const Text('Você tem certeza que deseja apagar este gasto variado?'),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context, false); // Não apaga
-                                },
-                                child: const Text('Cancelar'),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context, true); // Apaga o orçamento
-                                },
-                                child: const Text('Apagar'),
-                              ),
-                            ],
-                          ),
-                        );
-
-                        if (confirmDelete == true) {
-                          await deleteGastoVariado(widget.gastoId);
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.purple[700],
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () {
+                        if (formKey.currentState?.validate() ?? false) {
+                          Navigator.of(context).pop();
+                          onConfirm();
                         }
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red, // Cor vermelha
-                        padding: const EdgeInsets.symmetric(vertical: 15), // Maior altura
-                        minimumSize: Size(double.infinity, 50), // Ocupa toda a largura
-                      ),
-                      child: const Text(
-                        'Apagar Gasto Variado',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
+                      child: const Text('Salvar',
+                          style: TextStyle(fontWeight: FontWeight.w700)),
                     ),
-                      ],
-                    ) : Container(),
-
-                    
-                  ],
-                ),
-              ),
+                  ),
+                ]),
+              ],
             ),
+          ),
+        ),
+      ),
     );
   }
 
-  Widget _buildDetailCard({
-    required String title,
-    required String value,
-    required Color color,
-    required IconData icon,
-    VoidCallback? onTap, // Novo parâmetro para definir uma ação ao tocar no card
-  }) {
-    return Card(
-      elevation: 5,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
+  InputDecoration _inputDecoration(String hint, IconData prefixIcon) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+      prefixIcon: Icon(prefixIcon, color: Colors.purple[400], size: 20),
+      filled: true,
+      fillColor: Colors.grey[50],
+      contentPadding:
+      const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey[200]!)),
+      enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey[200]!)),
+      focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide:
+          BorderSide(color: Colors.purple[400]!, width: 1.5)),
+    );
+  }
+
+  void _editNome() {
+    final nomeController = TextEditingController(
+        text: gasto['descricao']?.toString() ?? '');
+    final formKey = GlobalKey<FormState>();
+    _showEditDialog(
+      title: 'Editar Nome',
+      icon: Icons.label_outline_rounded,
+      formKey: formKey,
+      content: TextFormField(
+        controller: nomeController,
+        autofocus: true,
+        style: const TextStyle(fontSize: 15),
+        decoration:
+        _inputDecoration('Nome do gasto', Icons.label_outline_rounded),
+        validator: (v) =>
+        (v == null || v.trim().isEmpty) ? 'Insira um nome' : null,
       ),
-      child: InkWell(
-        onTap: onTap, // Dispara a ação quando o card é tocado
-        child: Padding(
-          padding: const EdgeInsets.all(15.0),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10.0),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(50),
-                ),
-                child: Icon(
-                  icon,
-                  color: color,
-                  size: 30,
-                ),
+      onConfirm: () =>
+          _patch({'descricao': nomeController.text.trim()}, 'Nome atualizado!'),
+    );
+  }
+
+  void _editValor() {
+    _valorController.clear();
+    _showEditDialog(
+      title: 'Editar Valor',
+      icon: Icons.attach_money_rounded,
+      formKey: _formValorKey,
+      content: TextFormField(
+        controller: _valorController,
+        autofocus: true,
+        keyboardType: TextInputType.numberWithOptions(decimal: true),
+        style: const TextStyle(fontSize: 15),
+        decoration: _inputDecoration('R\$ 0,00', Icons.attach_money_rounded),
+        onChanged: (v) {
+          final formatted = _formatarValorInput(v);
+          _valorController.value = TextEditingValue(
+              text: formatted,
+              selection:
+              TextSelection.collapsed(offset: formatted.length));
+        },
+        validator: (v) {
+          if (v == null || v.isEmpty) return 'Insira um valor';
+          return null;
+        },
+      ),
+      onConfirm: () =>
+          _patch({'valor': _toNumeric(_valorController.text)}, 'Valor atualizado!'),
+    );
+  }
+
+  void _editData() {
+    _dataController.clear();
+    _showEditDialog(
+      title: 'Data de Pagamento',
+      icon: Icons.calendar_today_rounded,
+      formKey: _formDataKey,
+      content: TextFormField(
+        controller: _dataController,
+        readOnly: true,
+        style: const TextStyle(fontSize: 15),
+        decoration:
+        _inputDecoration('Selecione a data', Icons.calendar_today_rounded),
+        onTap: () async {
+          final picked = await showDatePicker(
+            context: context,
+            initialDate: DateTime.now(),
+            firstDate: DateTime(2000),
+            lastDate: DateTime(2101),
+            builder: (context, child) => Theme(
+              data: Theme.of(context).copyWith(
+                colorScheme: ColorScheme.light(primary: Colors.purple[700]!),
               ),
-              const SizedBox(width: 15),
+              child: child!,
+            ),
+          );
+          if (picked != null) {
+            _dataController.text = DateFormat('dd/MM/yyyy').format(picked);
+          }
+        },
+        validator: (v) => (v == null || v.isEmpty) ? 'Selecione uma data' : null,
+      ),
+      onConfirm: () async {
+        final parsed = DateFormat('dd/MM/yyyy').parse(_dataController.text);
+        await _patch(
+            {'data_pgto': parsed.toIso8601String()}, 'Data atualizada!');
+      },
+    );
+  }
+
+  void _editCategoria() {
+    _categoriaIdSelecionada = null;
+    _showEditDialog(
+      title: 'Categoria',
+      icon: Icons.category_rounded,
+      formKey: _formCategoriaKey,
+      content: StatefulBuilder(builder: (context, setLocal) {
+        return _categorias.isEmpty
+            ? Center(
+            child: CircularProgressIndicator(color: Colors.purple[700]))
+            : DropdownButtonFormField<int>(
+          value: _categoriaIdSelecionada,
+          isExpanded: true,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.grey[50],
+            contentPadding: const EdgeInsets.symmetric(
+                vertical: 14, horizontal: 16),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey[200]!)),
+            enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey[200]!)),
+            focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                    color: Colors.purple[400]!, width: 1.5)),
+          ),
+          items: _categorias
+              .map((c) => DropdownMenuItem<int>(
+              value: c['id'],
+              child: Text(c['nome'],
+                  overflow: TextOverflow.ellipsis)))
+              .toList(),
+          onChanged: (v) => setLocal(
+                  () => _categoriaIdSelecionada = v),
+          validator: (v) =>
+          v == null ? 'Selecione uma categoria' : null,
+        );
+      }),
+      onConfirm: () =>
+          _patch({'categoria_id': _categoriaIdSelecionada}, 'Categoria atualizada!'),
+    );
+  }
+
+  void _editObservacoes() {
+    _obsController.text = gasto['observacoes'] ?? '';
+    _showEditDialog(
+      title: 'Observações',
+      icon: Icons.notes_rounded,
+      formKey: _formObsKey,
+      content: TextFormField(
+        controller: _obsController,
+        autofocus: true,
+        maxLines: 3,
+        style: const TextStyle(fontSize: 15),
+        decoration:
+        _inputDecoration('Escreva uma observação…', Icons.notes_rounded),
+        validator: (v) =>
+        (v == null || v.isEmpty) ? 'Insira uma observação' : null,
+      ),
+      onConfirm: () =>
+          _patch({'observacoes': _obsController.text}, 'Observação salva!'),
+    );
+  }
+
+  // ─── Build ────────────────────────────────────────────────────────────────────
+  @override
+  Widget build(BuildContext context) {
+    final isAtivo = orcamento['data_encerramento'] == null;
+    final descricao = gasto['descricao']?.toString() ?? 'Gasto Variado';
+    final categoriaNome =
+        gasto['categoriaGasto']?['nome']?.toString() ?? 'Sem categoria';
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF4F5F9),
+      body: Column(
+        children: [
+          // ── Header ───────────────────────────────────────────────────────────
+          _GastoHeader(
+            descricao: descricao,
+            isAtivo: isAtivo,
+            isRefreshing: _isRefreshing,
+            refreshCtrl: _refreshCtrl,
+            onRefresh: _handleRefresh,
+            onBack: () => Navigator.of(context).pop(),
+            onDelete: isAtivo
+                ? () => ConfirmationDialog.confirmAction(
+              context: context,
+              title: 'Apagar Gasto',
+              message:
+              'Deseja realmente apagar este gasto variado?',
+              actionText: 'Apagar',
+              action: _delete,
+            )
+                : null,
+          ),
+
+          // ── Conteúdo ──────────────────────────────────────────────────────────
+          Expanded(
+            child: gasto.isEmpty || orcamento.isEmpty
+                ? Center(
+                child: CircularProgressIndicator(
+                    color: Colors.purple[700], strokeWidth: 2.5))
+                : SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Card de valor em destaque ───────────────────────
+                  _ValorDestaque(
+                    valor: gasto['valor'],
+                    dataPgto: gasto['data_pgto'],
+                    categoriaNome: categoriaNome,
+                  ),
+                  const SizedBox(height: 20),
+
+                  // ── Seção de detalhes ───────────────────────────────
+                  _sectionLabel('DETALHES'),
+                  _InfoCard(children: [
+                    _InfoRow(
+                      icon: Icons.label_outline_rounded,
+                      color: const Color(0xFF8E24AA),
+                      label: 'Nome',
+                      value: gasto['descricao']?.toString() ?? 'Sem nome',
+                      isFirst: true,
+                      onTap: isAtivo ? _editNome : null,
+                    ),
+                    _Divider(),
+                    _InfoRow(
+                      icon: Icons.attach_money_rounded,
+                      color: const Color(0xFF7B1FA2),
+                      label: 'Valor',
+                      value: gasto['valor'] != null
+                          ? formatarValorDynamic(gasto['valor'])
+                          : 'Não informado',
+                      onTap: isAtivo ? _editValor : null,
+                    ),
+                    _Divider(),
+                    _InfoRow(
+                      icon: Icons.calendar_today_rounded,
+                      color: const Color(0xFF6A1B9A),
+                      label: 'Data de pagamento',
+                      value: _formatDate(gasto['data_pgto']),
+                      onTap: isAtivo ? _editData : null,
+                    ),
+                    _Divider(),
+                    _InfoRow(
+                      icon: Icons.category_rounded,
+                      color: const Color(0xFF4A148C),
+                      label: 'Categoria',
+                      value: categoriaNome,
+                      onTap: isAtivo ? _editCategoria : null,
+                    ),
+                    _Divider(),
+                    _InfoRow(
+                      icon: Icons.notes_rounded,
+                      color: const Color(0xFF039BE5),
+                      label: 'Observações',
+                      value: gasto['observacoes'] ?? 'Nenhuma observação',
+                      isLast: true,
+                      onTap: isAtivo ? _editObservacoes : null,
+                    ),
+                  ]),
+
+                  // ── Dica de toque ────────────────────────────────────
+                  if (isAtivo) ...[
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.touch_app_rounded,
+                            size: 13, color: Colors.grey[400]),
+                        const SizedBox(width: 4),
+                        Text('Toque em um campo para editar',
+                            style: TextStyle(
+                                fontSize: 11, color: Colors.grey[400])),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sectionLabel(String label) => Padding(
+    padding: const EdgeInsets.only(bottom: 10),
+    child: Text(label,
+        style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[500],
+            letterSpacing: 0.8)),
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Header moderno roxo
+// ═══════════════════════════════════════════════════════════════════════════════
+class _GastoHeader extends StatelessWidget {
+  final String descricao;
+  final bool isAtivo;
+  final bool isRefreshing;
+  final AnimationController refreshCtrl;
+  final VoidCallback onRefresh;
+  final VoidCallback onBack;
+  final VoidCallback? onDelete;
+
+  const _GastoHeader({
+    required this.descricao,
+    required this.isAtivo,
+    required this.isRefreshing,
+    required this.refreshCtrl,
+    required this.onRefresh,
+    required this.onBack,
+    this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final top = MediaQuery.of(context).padding.top;
+    final canPop = Navigator.of(context).canPop();
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF4A148C), Color(0xFF6A1B9A), Color(0xFF7B1FA2)],
+        ),
+        boxShadow: [
+          BoxShadow(
+              color: const Color(0xFF4A148C).withOpacity(0.45),
+              blurRadius: 24,
+              offset: const Offset(0, 8)),
+        ],
+      ),
+      padding: EdgeInsets.fromLTRB(20, top + 16, 20, 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Linha 1: voltar + ícone + título ──────────────────────────────
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (canPop) ...[
+                _HeaderButton(
+                    onTap: onBack,
+                    tooltip: 'Voltar',
+                    isSquare: true,
+                    child: const Icon(Icons.arrow_back_ios_new_rounded,
+                        color: Colors.white, size: 16)),
+                const SizedBox(width: 12),
+              ],
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12)),
+                child: const Icon(Icons.receipt_long_rounded,
+                    color: Colors.white, size: 20),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      title,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      descricao,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.1),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 5),
-                    Text(
-                      value,
-                      style: TextStyle(fontSize: title == 'Pago em' ? 12 : 14, fontWeight: FontWeight.w500, color: color),
-                    ),
+                    Text('Gasto variado',
+                        style: TextStyle(
+                            color: Colors.white.withOpacity(0.6),
+                            fontSize: 12)),
                   ],
                 ),
               ),
             ],
           ),
+
+          const SizedBox(height: 14),
+
+          // ── Linha 2: status + lixo + refresh ─────────────────────────────
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.13),
+                    borderRadius: BorderRadius.circular(20)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: isAtivo
+                          ? const Color(0xFF69F0AE)
+                          : Colors.grey[400],
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    isAtivo ? 'Orçamento ativo' : 'Orçamento encerrado',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600),
+                  ),
+                ]),
+              ),
+
+              const Spacer(),
+
+              if (onDelete != null) ...[
+                _HeaderButton(
+                  onTap: onDelete!,
+                  tooltip: 'Apagar gasto',
+                  isSquare: true,
+                  child: const Icon(Icons.delete_outline_rounded,
+                      color: Colors.white, size: 18),
+                ),
+                const SizedBox(width: 8),
+              ],
+
+              _HeaderButton(
+                onTap: onRefresh,
+                tooltip: 'Recarregar',
+                isSquare: true,
+                child: RotationTransition(
+                  turns: refreshCtrl,
+                  child: Icon(Icons.refresh_rounded,
+                      color:
+                      Colors.white.withOpacity(isRefreshing ? 1.0 : 0.9),
+                      size: 18),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Destaque do valor
+// ═══════════════════════════════════════════════════════════════════════════════
+class _ValorDestaque extends StatelessWidget {
+  final dynamic valor;
+  final String? dataPgto;
+  final String categoriaNome;
+
+  const _ValorDestaque({
+    required this.valor,
+    required this.dataPgto,
+    required this.categoriaNome,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+    final valorDouble = double.tryParse(valor?.toString() ?? '0') ?? 0.0;
+    final dataStr = dataPgto != null
+        ? DateFormat("d 'de' MMMM 'de' yyyy", 'pt_BR')
+        .format(DateTime.parse(dataPgto!))
+        : 'Sem data';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.purple[700]!,
+            Colors.purple[500]!,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.purple[700]!.withOpacity(0.35),
+              blurRadius: 16,
+              offset: const Offset(0, 6)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Valor pago',
+              style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.5)),
+          const SizedBox(height: 6),
+          Text(
+            fmt.format(valorDouble),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 32,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(20)),
+            child: Text(categoriaNome,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600)),
+          ),
+          const SizedBox(width: 12, height: 12,),
+          Text(dataStr,
+              style: TextStyle(
+                  color: Colors.white.withOpacity(0.65),
+                  fontSize: 11)),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Card de info com linhas
+// ═══════════════════════════════════════════════════════════════════════════════
+class _InfoCard extends StatelessWidget {
+  final List<Widget> children;
+  const _InfoCard({required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Column(children: children),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String label;
+  final String value;
+  final VoidCallback? onTap;
+  final bool isFirst;
+  final bool isLast;
+
+  const _InfoRow({
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.value,
+    this.onTap,
+    this.isFirst = false,
+    this.isLast = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.vertical(
+      top: isFirst ? const Radius.circular(18) : Radius.zero,
+      bottom: isLast ? const Radius.circular(18) : Radius.zero,
+    );
+
+    return Material(
+      color: Colors.transparent,
+      borderRadius: radius,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: radius,
+        splashColor: color.withOpacity(0.06),
+        highlightColor: color.withOpacity(0.03),
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+              16, isFirst ? 16 : 12, 16, isLast ? 16 : 12),
+          child: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                    color: color.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(11)),
+                child: Icon(icon, color: color, size: 18),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label,
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[400],
+                            fontWeight: FontWeight.w500,
+                            letterSpacing: 0.3)),
+                    const SizedBox(height: 2),
+                    Text(value,
+                        style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1A1F36))),
+                  ],
+                ),
+              ),
+              if (onTap != null)
+                Icon(Icons.edit_outlined,
+                    size: 15, color: Colors.grey[300]),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Divider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 68),
+      child: Container(height: 1, color: Colors.grey[100]),
+    );
+  }
+}
+
+// ─── Botão glassmorphism ──────────────────────────────────────────────────────
+class _HeaderButton extends StatefulWidget {
+  final Widget child;
+  final VoidCallback onTap;
+  final String tooltip;
+  final bool isSquare;
+
+  const _HeaderButton({
+    required this.child,
+    required this.onTap,
+    required this.tooltip,
+    this.isSquare = false,
+  });
+
+  @override
+  State<_HeaderButton> createState() => _HeaderButtonState();
+}
+
+class _HeaderButtonState extends State<_HeaderButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: widget.tooltip,
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) {
+          setState(() => _pressed = false);
+          widget.onTap();
+        },
+        onTapCancel: () => setState(() => _pressed = false),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 100),
+          padding: EdgeInsets.symmetric(
+              horizontal: widget.isSquare ? 10 : 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: _pressed
+                ? Colors.white.withOpacity(0.28)
+                : Colors.white.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+                color: Colors.white.withOpacity(0.2), width: 1),
+          ),
+          child: widget.child,
         ),
       ),
     );

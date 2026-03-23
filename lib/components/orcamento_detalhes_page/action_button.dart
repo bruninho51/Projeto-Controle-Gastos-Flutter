@@ -6,9 +6,6 @@ class ActionButton extends StatelessWidget {
   final Color color;
   final VoidCallback? onPressed;
   final double verticalPadding;
-  final double iconSpacing;
-  final TextStyle? textStyle;
-  final Color? iconColor;
 
   const ActionButton({
     super.key,
@@ -16,37 +13,24 @@ class ActionButton extends StatelessWidget {
     required this.icon,
     required this.color,
     this.onPressed,
-    this.verticalPadding = 16,
-    this.iconSpacing = 8,
-    this.textStyle,
-    this.iconColor,
+    this.verticalPadding = 14,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        padding: EdgeInsets.symmetric(vertical: verticalPadding),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon, size: 18),
+        label: Text(text, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          padding: EdgeInsets.symmetric(vertical: verticalPadding),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: iconColor ?? Colors.white),
-          SizedBox(width: iconSpacing),
-          Text(
-            text,
-            style: textStyle ?? const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-        ],
       ),
     );
   }

@@ -1,11 +1,10 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:orcamentos_app/components/form_gasto_variado_page/form_gasto_variado_page.dart';
 import 'package:orcamentos_app/components/gasto_variado_detalhes_page/gasto_variado_detalhes_page.dart';
 import 'package:orcamentos_app/components/gastos_variados_page/gastos_page_empty_state.dart';
 import 'package:orcamentos_app/utils/http.dart';
-import 'package:orcamentos_app/components/gastos_variados_page/gasto_variado_item_card.dart';
 import 'package:orcamentos_app/components/gastos_variados_page/filtros_modal.dart';
 import 'package:orcamentos_app/components/common/orcamentos_snackbar.dart';
 
@@ -14,120 +13,112 @@ class GastosVariadosPage extends StatefulWidget {
   final String apiToken;
 
   const GastosVariadosPage({
-    super.key, 
-    required this.orcamentoId, 
-    required this.apiToken
+    super.key,
+    required this.orcamentoId,
+    required this.apiToken,
   });
 
   @override
   _GastosVariadosPageState createState() => _GastosVariadosPageState();
 }
 
-class _GastosVariadosPageState extends State<GastosVariadosPage> {
+class _GastosVariadosPageState extends State<GastosVariadosPage>
+    with SingleTickerProviderStateMixin {
   late Future<List<Map<String, dynamic>>> _gastosVariaveis;
   String _filtroNome = '';
   String? _filtroStatus;
   DateTime? _filtroData;
-  String _ordenacaoCampo = 'descricao';
-  bool _ordenacaoAscendente = true;
+  String _ordenacaoCampo = 'data_pgto';
+  bool _ordenacaoAscendente = false; // mais recente primeiro
+
+  late AnimationController _refreshCtrl;
+  bool _isRefreshing = false;
 
   @override
   void initState() {
     super.initState();
-    _gastosVariaveis = fetchGastosVariaveis(widget.orcamentoId);
+    _refreshCtrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 700));
+    _gastosVariaveis = _fetchGastos();
   }
 
-  Future<List<Map<String, dynamic>>> fetchGastosVariaveis(int orcamentoId) async {
+  @override
+  void dispose() {
+    _refreshCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchGastos() async {
     final client = await MyHttpClient.create();
     final response = await client.get(
-      'orcamentos/$orcamentoId/gastos-variados',
+      'orcamentos/${widget.orcamentoId}/gastos-variados',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ${widget.apiToken}',
       },
     );
-
     if (response.statusCode == 200) {
-      List<dynamic> data = jsonDecode(response.body);
-      List<Map<String, dynamic>> gastos = data.map((item) => item as Map<String, dynamic>).toList();
+      final List<dynamic> data = jsonDecode(response.body);
+      final gastos = data.map((e) => e as Map<String, dynamic>).toList();
       _aplicarOrdenacao(gastos);
       return gastos;
-    } else {
-      throw Exception('Falha ao carregar os gastos variados');
     }
+    throw Exception('Falha ao carregar os gastos variados');
   }
 
   void _aplicarOrdenacao(List<Map<String, dynamic>> gastos) {
     gastos.sort((a, b) {
-      int comparacao;
-      
+      int cmp;
       if (_ordenacaoCampo == 'descricao') {
-        comparacao = a['descricao'].toString().compareTo(b['descricao'].toString());
+        cmp = a['descricao'].toString().compareTo(b['descricao'].toString());
       } else {
-        final dataA = a['data_pgto'] != null ? DateTime.tryParse(a['data_pgto']) : null;
-        final dataB = b['data_pgto'] != null ? DateTime.tryParse(b['data_pgto']) : null;
-        
-        if (dataA == null && dataB == null) {
-          comparacao = 0;
-        } else if (dataA == null) {
-          comparacao = 1;
-        } else if (dataB == null) {
-          comparacao = -1;
-        } else {
-          comparacao = dataA.compareTo(dataB);
-        }
+        final dA = a['data_pgto'] != null ? DateTime.tryParse(a['data_pgto']) : null;
+        final dB = b['data_pgto'] != null ? DateTime.tryParse(b['data_pgto']) : null;
+        if (dA == null && dB == null) cmp = 0;
+        else if (dA == null) cmp = 1;
+        else if (dB == null) cmp = -1;
+        else cmp = dA.compareTo(dB);
       }
-      
-      return _ordenacaoAscendente ? comparacao : -comparacao;
+      return _ordenacaoAscendente ? cmp : -cmp;
     });
   }
 
   List<Map<String, dynamic>> _filtrarGastos(List<Map<String, dynamic>> gastos) {
-    return gastos.where((gasto) {
-      final descricao = gasto['descricao'].toString().toLowerCase();
-      final status = 'Pago';
-      final dataPagamento = gasto['data_pgto'];
-
-      final correspondeNome = descricao.contains(_filtroNome.toLowerCase());
-      final correspondeStatus = _filtroStatus == null || _filtroStatus == status;
+    return gastos.where((g) {
+      final desc = g['descricao'].toString().toLowerCase();
+      final dtPgto = g['data_pgto'];
+      final correspondeName = desc.contains(_filtroNome.toLowerCase());
+      final correspondeStatus = _filtroStatus == null;
       final correspondeData = _filtroData == null ||
-          (dataPagamento != null &&
-              DateTime.tryParse(dataPagamento)?.day == _filtroData!.day &&
-              DateTime.tryParse(dataPagamento)?.month == _filtroData!.month &&
-              DateTime.tryParse(dataPagamento)?.year == _filtroData!.year);
-
-      return correspondeNome && correspondeStatus && correspondeData;
+          (dtPgto != null &&
+              DateTime.tryParse(dtPgto)?.day == _filtroData!.day &&
+              DateTime.tryParse(dtPgto)?.month == _filtroData!.month &&
+              DateTime.tryParse(dtPgto)?.year == _filtroData!.year);
+      return correspondeName && correspondeStatus && correspondeData;
     }).toList();
   }
 
-  Future<Map<String, dynamic>> _getOrcamento(int orcamentoId) async {
+  Future<Map<String, dynamic>> _getOrcamento() async {
     final client = await MyHttpClient.create();
     final response = await client.get(
       'orcamentos/${widget.orcamentoId}',
-      headers: {
-        'Authorization': 'Bearer ${widget.apiToken}',
-      },
+      headers: {'Authorization': 'Bearer ${widget.apiToken}'},
     );
-
     if (response.statusCode >= 200 && response.statusCode <= 299) {
       return jsonDecode(response.body);
-    } else {
-      OrcamentosSnackBar.error(
-        context: context,
-        message: 'Falha ao carregar os dados do orçamento.',
-      );
-      return {};
     }
+    return {};
   }
 
-  void _aplicarFiltros(String nome, String? status, DateTime? data, String ordenacaoCampo, bool ordenacaoAscendente) {
+  void _aplicarFiltros(String nome, String? status, DateTime? data,
+      String campo, bool asc) {
     setState(() {
       _filtroNome = nome;
       _filtroStatus = status;
       _filtroData = data;
-      _ordenacaoCampo = ordenacaoCampo;
-      _ordenacaoAscendente = ordenacaoAscendente;
-      _gastosVariaveis = fetchGastosVariaveis(widget.orcamentoId);
+      _ordenacaoCampo = campo;
+      _ordenacaoAscendente = asc;
+      _gastosVariaveis = _fetchGastos();
     });
   }
 
@@ -136,125 +127,685 @@ class _GastosVariadosPageState extends State<GastosVariadosPage> {
       _filtroNome = '';
       _filtroStatus = null;
       _filtroData = null;
-      _ordenacaoCampo = 'descricao';
-      _ordenacaoAscendente = true;
-      _gastosVariaveis = fetchGastosVariaveis(widget.orcamentoId);
+      _ordenacaoCampo = 'data_pgto';
+      _ordenacaoAscendente = false;
+      _gastosVariaveis = _fetchGastos();
     });
+  }
+
+  void _handleRefresh() async {
+    if (_isRefreshing) return;
+    setState(() {
+      _isRefreshing = true;
+      _gastosVariaveis = _fetchGastos();
+    });
+    _refreshCtrl.repeat();
+    await Future.delayed(const Duration(milliseconds: 900));
+    if (mounted) {
+      _refreshCtrl.stop();
+      _refreshCtrl.reset();
+      setState(() => _isRefreshing = false);
+    }
+  }
+
+  void _showFiltros() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => FiltrosModal(
+        nome: _filtroNome,
+        status: _filtroStatus,
+        data: _filtroData,
+        ordenacaoCampo: _ordenacaoCampo,
+        ordenacaoAscendente: _ordenacaoAscendente,
+        onAplicarFiltros: _aplicarFiltros,
+        onLimparFiltros: _limparFiltros,
+      ),
+    );
+  }
+
+  // ─── Agrupa gastos por dia ────────────────────────────────────────────────
+  Map<String, List<Map<String, dynamic>>> _agruparPorDia(
+      List<Map<String, dynamic>> gastos) {
+    final Map<String, List<Map<String, dynamic>>> grupos = {};
+    for (final g in gastos) {
+      final raw = g['data_pgto'] as String?;
+      final key = raw != null
+          ? DateFormat('yyyy-MM-dd').format(DateTime.parse(raw))
+          : 'sem_data';
+      grupos.putIfAbsent(key, () => []).add(g);
+    }
+    return grupos;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        backgroundColor: Colors.purple[700],
-        title: const Text('Gastos Variados', style: TextStyle(color: Colors.white)),
-        centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: () => showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            builder: (context) => FiltrosModal(
-              nome: _filtroNome,
-              status: _filtroStatus,
-              data: _filtroData,
-              ordenacaoCampo: _ordenacaoCampo,
-              ordenacaoAscendente: _ordenacaoAscendente,
-              onAplicarFiltros: _aplicarFiltros,
-              onLimparFiltros: _limparFiltros,
-            ),
+      backgroundColor: const Color(0xFFF4F5F9),
+      body: Column(
+        children: [
+          // ── Header ─────────────────────────────────────────────────────────
+          _GastosHeader(
+            isRefreshing: _isRefreshing,
+            refreshCtrl: _refreshCtrl,
+            onRefresh: _handleRefresh,
+            onFiltros: _showFiltros,
+            onBack: () => Navigator.of(context).pop(),
+            temFiltroAtivo: _filtroNome.isNotEmpty ||
+                _filtroStatus != null ||
+                _filtroData != null,
           ),
-            color: Colors.white,
+
+          // ── Lista estilo extrato ────────────────────────────────────────────
+          Expanded(
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: _gastosVariaveis,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting &&
+                    snapshot.data == null) {
+                  return Center(
+                      child: CircularProgressIndicator(
+                          color: Colors.purple[700], strokeWidth: 2.5));
+                }
+                if (snapshot.hasError) {
+                  return Center(
+                      child: Text('Erro: ${snapshot.error}',
+                          style: TextStyle(color: Colors.grey[600])));
+                }
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const GastosPageEmptyState();
+                }
+
+                final filtrados = _filtrarGastos(snapshot.data!);
+                if (filtrados.isEmpty) {
+                  return GastosPageEmptyState(
+                      comFiltros: true, onLimparFiltros: _limparFiltros);
+                }
+
+                final grupos = _agruparPorDia(filtrados);
+                final dias = grupos.keys.toList();
+
+                return RefreshIndicator(
+                  color: Colors.purple[700],
+                  onRefresh: () async {
+                    setState(() => _gastosVariaveis = _fetchGastos());
+                    await _gastosVariaveis;
+                  },
+                  child: CustomScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    slivers: [
+                      SliverPadding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                                (context, index) {
+                              final dia = dias[index];
+                              final itens = grupos[dia]!;
+                              final totalDia = itens.fold<double>(
+                                0,
+                                    (sum, g) =>
+                                sum +
+                                    (double.tryParse(
+                                        g['valor']?.toString() ?? '0') ??
+                                        0),
+                              );
+                              return _DiaGroup(
+                                diaKey: dia,
+                                itens: itens,
+                                totalDia: totalDia,
+                                onTapItem: (gasto) async {
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => DetalhesGastoVariadoPage(
+                                        gastoId: gasto['id'],
+                                        orcamentoId: gasto['orcamento_id'],
+                                        apiToken: widget.apiToken,
+                                      ),
+                                    ),
+                                  );
+                                  setState(() =>
+                                  _gastosVariaveis = _fetchGastos());
+                                },
+                              );
+                            },
+                            childCount: dias.length,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: _gastosVariaveis,
+
+      // ── FAB ─────────────────────────────────────────────────────────────────
+      floatingActionButton: FutureBuilder<Map<String, dynamic>>(
+        future: _getOrcamento(),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Erro: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const GastosPageEmptyState();
-          } else {
-            List<Map<String, dynamic>> gastosFiltrados = _filtrarGastos(snapshot.data!);
-
-            if (gastosFiltrados.isEmpty) {
-              return GastosPageEmptyState(
-                comFiltros: true,
-                onLimparFiltros: _limparFiltros,
+          final isAtivo = snapshot.hasData &&
+              snapshot.data!['data_encerramento'] == null;
+          if (!isAtivo) return const SizedBox.shrink();
+          return FloatingActionButton.extended(
+            onPressed: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => CriacaoGastoVariadoPage(
+                    orcamentoId: widget.orcamentoId,
+                    apiToken: widget.apiToken,
+                  ),
+                ),
               );
-            }
-
-            return ListView.builder(
-              itemCount: gastosFiltrados.length,
-              itemBuilder: (context, index) {
-                final gasto = gastosFiltrados[index];
-                return GastoVariadoItemCard(
-                  gasto: gasto,
-                  onTap: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => DetalhesGastoVariadoPage(
-                          gastoId: gasto['id'],
-                          orcamentoId: gasto['orcamento_id'],
-                          apiToken: widget.apiToken,
-                        ),
-                      ),
-                    );
-                    setState(() {
-                      _gastosVariaveis = fetchGastosVariaveis(widget.orcamentoId);
-                    });
-                  },
-                );
-              },
-            );
-          }
+              setState(() => _gastosVariaveis = _fetchGastos());
+            },
+            backgroundColor: Colors.purple[700],
+            foregroundColor: Colors.white,
+            elevation: 4,
+            icon: const Icon(Icons.add, size: 20),
+            label: const Text('Novo Gasto',
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+          );
         },
       ),
-      floatingActionButton: FutureBuilder<Map<String, dynamic>>(
-        future: _getOrcamento(widget.orcamentoId),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const SizedBox.shrink();
-          }
+    );
+  }
+}
 
-          if (snapshot.hasError) {
-            return const SizedBox.shrink();
-          }
+// ═══════════════════════════════════════════════════════════════════════════════
+// Grupo de um dia — cabeçalho + itens + total do dia
+// ═══════════════════════════════════════════════════════════════════════════════
+class _DiaGroup extends StatelessWidget {
+  final String diaKey;
+  final List<Map<String, dynamic>> itens;
+  final double totalDia;
+  final Future<void> Function(Map<String, dynamic>) onTapItem;
 
-          if (snapshot.hasData) {
-            final orcamento = snapshot.data!;
-            return orcamento['data_encerramento'] == null
-                ? FloatingActionButton(
-                    onPressed: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => CriacaoGastoVariadoPage(
-                            orcamentoId: widget.orcamentoId,
-                            apiToken: widget.apiToken,
+  const _DiaGroup({
+    required this.diaKey,
+    required this.itens,
+    required this.totalDia,
+    required this.onTapItem,
+  });
+
+  String get _diaLabel {
+    if (diaKey == 'sem_data') return 'Sem data';
+    try {
+      final dt = DateTime.parse(diaKey);
+      final hoje = DateTime.now();
+      final ontem = hoje.subtract(const Duration(days: 1));
+      if (dt.year == hoje.year && dt.month == hoje.month && dt.day == hoje.day)
+        return 'Hoje';
+      if (dt.year == ontem.year &&
+          dt.month == ontem.month &&
+          dt.day == ontem.day) return 'Ontem';
+      return DateFormat("d 'de' MMMM", 'pt_BR').format(dt);
+    } catch (_) {
+      return diaKey;
+    }
+  }
+
+  String get _diaSemana {
+    if (diaKey == 'sem_data') return '';
+    try {
+      final dt = DateTime.parse(diaKey);
+      return DateFormat('EEEE', 'pt_BR').format(dt);
+    } catch (_) {
+      return '';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Cabeçalho do dia ────────────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 20, 4, 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _diaLabel,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1A1F36),
+                        letterSpacing: 0.1,
+                      ),
+                    ),
+                    if (_diaSemana.isNotEmpty)
+                      Text(
+                        _diaSemana,
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey[400],
+                            fontWeight: FontWeight.w400),
+                      ),
+                  ],
+                ),
+              ),
+              // Total gasto no dia
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '-${fmt.format(totalDia)}',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.purple[700],
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  Text(
+                    '${itens.length} ${itens.length == 1 ? 'lançamento' : 'lançamentos'}',
+                    style: TextStyle(fontSize: 10, color: Colors.grey[400]),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        // ── Card do dia com todos os itens ──────────────────────────────────
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2)),
+            ],
+          ),
+          child: Column(
+            children: itens.asMap().entries.map((e) {
+              final i = e.key;
+              final gasto = e.value;
+              final isLast = i == itens.length - 1;
+              return _ExtratoItem(
+                gasto: gasto,
+                isLast: isLast,
+                onTap: () => onTapItem(gasto),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Item individual do extrato
+// ═══════════════════════════════════════════════════════════════════════════════
+class _ExtratoItem extends StatelessWidget {
+  final Map<String, dynamic> gasto;
+  final bool isLast;
+  final VoidCallback onTap;
+
+  const _ExtratoItem({
+    required this.gasto,
+    required this.isLast,
+    required this.onTap,
+  });
+
+  IconData _iconForCategoria(String? nome) {
+    if (nome == null) return Icons.receipt_long_rounded;
+    final n = nome.toLowerCase();
+    if (_any(n, ['aliment', 'comida', 'restaur', 'mercado'])) return Icons.restaurant_outlined;
+    if (_any(n, ['transport', 'carro', 'gasolina', 'uber', 'ônibus'])) return Icons.directions_car_outlined;
+    if (_any(n, ['saúde', 'saude', 'médico', 'farmácia', 'hospital'])) return Icons.health_and_safety_outlined;
+    if (_any(n, ['educação', 'escola', 'curso', 'livro'])) return Icons.school_outlined;
+    if (_any(n, ['casa', 'aluguel', 'condomínio', 'água', 'luz'])) return Icons.home_outlined;
+    if (_any(n, ['tecnologia', 'celular', 'computador', 'software'])) return Icons.devices_outlined;
+    if (_any(n, ['lazer', 'cinema', 'streaming', 'academia'])) return Icons.sports_esports_outlined;
+    if (_any(n, ['roupa', 'vestuário', 'moda'])) return Icons.shopping_bag_outlined;
+    if (_any(n, ['investimento', 'poupança', 'banco'])) return Icons.savings_outlined;
+    if (_any(n, ['viagem', 'voo', 'hotel'])) return Icons.flight_outlined;
+    if (_any(n, ['pet', 'cachorro', 'gato', 'veterinário'])) return Icons.pets_outlined;
+    return Icons.receipt_long_rounded;
+  }
+
+  bool _any(String text, List<String> keys) => keys.any((k) => text.contains(k));
+
+  Color _colorForCategoria(String? nome) {
+    if (nome == null) return const Color(0xFF8E24AA);
+    final n = nome.toLowerCase();
+    if (_any(n, ['aliment', 'comida', 'restaur'])) return const Color(0xFFF4511E);
+    if (_any(n, ['transport', 'carro', 'gasolina'])) return const Color(0xFF1E88E5);
+    if (_any(n, ['saúde', 'médico', 'farmácia'])) return const Color(0xFF43A047);
+    if (_any(n, ['educação', 'escola', 'curso'])) return const Color(0xFF3949AB);
+    if (_any(n, ['casa', 'aluguel'])) return const Color(0xFF00897B);
+    if (_any(n, ['lazer', 'cinema'])) return const Color(0xFF039BE5);
+    return const Color(0xFF8E24AA);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+    final valor = double.tryParse(gasto['valor']?.toString() ?? '0') ?? 0;
+    final descricao = gasto['descricao']?.toString() ?? 'Sem descrição';
+    final categoriaNome = gasto['categoriaGasto']?['nome']?.toString();
+    final color = _colorForCategoria(categoriaNome);
+
+    final radius = BorderRadius.vertical(
+      top: isLast && gasto == gasto ? Radius.zero : Radius.zero,
+      bottom: isLast ? const Radius.circular(16) : Radius.zero,
+    );
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: isLast
+            ? const BorderRadius.vertical(bottom: Radius.circular(16))
+            : BorderRadius.zero,
+        splashColor: color.withOpacity(0.06),
+        highlightColor: color.withOpacity(0.03),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  // Ícone da categoria
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(_iconForCategoria(categoriaNome),
+                        color: color, size: 20),
+                  ),
+                  const SizedBox(width: 14),
+
+                  // Descrição + categoria
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          descricao,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF1A1F36),
+                            letterSpacing: 0.1,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      );
-                      setState(() {
-                        _gastosVariaveis = fetchGastosVariaveis(widget.orcamentoId);
-                      });
-                    },
-                    backgroundColor: Colors.purple[700],
-                    tooltip: 'Adicionar Gasto Variado',
-                    child: const Icon(Icons.add, color: Colors.white),
-                  )
-                : const SizedBox.shrink();
-          }
+                        if (categoriaNome != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            categoriaNome,
+                            style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey[400],
+                                fontWeight: FontWeight.w400),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
 
-          return const SizedBox.shrink();
+                  // Valor
+                  Text(
+                    '- ${fmt.format(valor)}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.grey[800],
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Divisor (exceto no último)
+            if (!isLast)
+              Padding(
+                padding: const EdgeInsets.only(left: 70),
+                child: Container(height: 1, color: Colors.grey[100]),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Header — navbar indigo com botões de filtro e refresh
+// ═══════════════════════════════════════════════════════════════════════════════
+class _GastosHeader extends StatelessWidget {
+  final bool isRefreshing;
+  final AnimationController refreshCtrl;
+  final VoidCallback onRefresh;
+  final VoidCallback onFiltros;
+  final VoidCallback onBack;
+  final bool temFiltroAtivo;
+
+  const _GastosHeader({
+    required this.isRefreshing,
+    required this.refreshCtrl,
+    required this.onRefresh,
+    required this.onFiltros,
+    required this.onBack,
+    required this.temFiltroAtivo,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final top = MediaQuery.of(context).padding.top;
+    final canPop = Navigator.of(context).canPop();
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF4A148C), Color(0xFF6A1B9A), Color(0xFF7B1FA2)],
+        ),
+        boxShadow: [
+          BoxShadow(
+              color: const Color(0xFF4A148C).withOpacity(0.45),
+              blurRadius: 24,
+              offset: const Offset(0, 8)),
+        ],
+      ),
+      padding: EdgeInsets.fromLTRB(20, top + 16, 20, 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Linha 1: voltar + ícone + título ──────────────────────────────
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (canPop) ...[
+                _HeaderButton(
+                    onTap: onBack,
+                    tooltip: 'Voltar',
+                    isSquare: true,
+                    child: const Icon(Icons.arrow_back_ios_new_rounded,
+                        color: Colors.white, size: 16)),
+                const SizedBox(width: 12),
+              ],
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12)),
+                child: const Icon(Icons.trending_up_rounded,
+                    color: Colors.white, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Gastos Variados',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.2)),
+                    Text('Extrato de lançamentos',
+                        style: TextStyle(
+                            color: Colors.white.withOpacity(0.6),
+                            fontSize: 12)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // ── Linha 2: badge + filtros + refresh ────────────────────────────
+          Row(
+            children: [
+              // Badge "Extrato"
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.13),
+                    borderRadius: BorderRadius.circular(20)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Container(
+                    width: 7,
+                    height: 7,
+                    decoration: const BoxDecoration(
+                        color: Color(0xFF69F0AE), shape: BoxShape.circle),
+                  ),
+                  const SizedBox(width: 7),
+                  const Text('Lançamentos',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600)),
+                ]),
+              ),
+
+              const Spacer(),
+
+              // Botão Filtros (com indicador se ativo)
+              Stack(
+                children: [
+                  _HeaderButton(
+                    onTap: onFiltros,
+                    tooltip: 'Filtros',
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      const Icon(Icons.filter_list_rounded,
+                          color: Colors.white, size: 16),
+                      const SizedBox(width: 6),
+                      Text('Filtros',
+                          style: TextStyle(
+                              color: Colors.white.withOpacity(0.9),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600)),
+                    ]),
+                  ),
+                  if (temFiltroAtivo)
+                    Positioned(
+                      top: 2,
+                      right: 2,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                            color: Color(0xFFFFD740),
+                            shape: BoxShape.circle),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(width: 8),
+
+              // Refresh
+              _HeaderButton(
+                onTap: onRefresh,
+                tooltip: 'Recarregar',
+                isSquare: true,
+                child: RotationTransition(
+                  turns: refreshCtrl,
+                  child: Icon(Icons.refresh_rounded,
+                      color: Colors.white
+                          .withOpacity(isRefreshing ? 1.0 : 0.9),
+                      size: 18),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Botão glassmorphism ──────────────────────────────────────────────────────
+class _HeaderButton extends StatefulWidget {
+  final Widget child;
+  final VoidCallback onTap;
+  final String tooltip;
+  final bool isSquare;
+
+  const _HeaderButton({
+    required this.child,
+    required this.onTap,
+    required this.tooltip,
+    this.isSquare = false,
+  });
+
+  @override
+  State<_HeaderButton> createState() => _HeaderButtonState();
+}
+
+class _HeaderButtonState extends State<_HeaderButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: widget.tooltip,
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) {
+          setState(() => _pressed = false);
+          widget.onTap();
         },
+        onTapCancel: () => setState(() => _pressed = false),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 100),
+          padding: EdgeInsets.symmetric(
+              horizontal: widget.isSquare ? 10 : 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: _pressed
+                ? Colors.white.withOpacity(0.28)
+                : Colors.white.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(12),
+            border:
+            Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+          ),
+          child: widget.child,
+        ),
       ),
     );
   }

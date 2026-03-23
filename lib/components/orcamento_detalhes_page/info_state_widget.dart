@@ -20,51 +20,48 @@ class InfoStateWidget extends StatelessWidget {
     this.iconColor = Colors.red,
     this.buttonForegroundColor = Colors.red,
     this.buttonBackgroundColor,
-    this.iconSize = 50.0,
+    this.iconSize = 48,
     this.padding,
   });
 
   @override
   Widget build(BuildContext context) {
-    final children = <Widget>[
-      Icon(
-        icon,
-        size: iconSize,
-        color: iconColor,
-      ),
-      const SizedBox(height: 16),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0),
-        child: Text(
-          message,
-          style: const TextStyle(fontSize: 16),
-          textAlign: TextAlign.center,
-        ),
-      ),
-    ];
-
-    if (buttonText != null && onPressed != null) {
-      children.addAll([
-        const SizedBox(height: 24),
-        ElevatedButton(
-          onPressed: onPressed,
-          style: ElevatedButton.styleFrom(
-            foregroundColor: buttonForegroundColor,
-            backgroundColor: buttonBackgroundColor ?? 
-                buttonForegroundColor.withAlpha(25),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          ),
-          child: Text(buttonText!),
-        ),
-      ]);
-    }
-
     return Center(
       child: Padding(
-        padding: padding ?? EdgeInsets.zero,
+        padding: padding ?? const EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: children,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.08),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: iconSize, color: iconColor),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              message,
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.grey[700]),
+              textAlign: TextAlign.center,
+            ),
+            if (buttonText != null && onPressed != null) ...[
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: onPressed,
+                icon: const Icon(Icons.refresh_rounded, size: 16),
+                label: Text(buttonText!, style: const TextStyle(fontWeight: FontWeight.w600)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: buttonForegroundColor,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ],
+          ],
         ),
       ),
     );

@@ -22,41 +22,65 @@ class OrcamentosFAB extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.end,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        if (isMenuOpen)
-          AnimatedOpacity(
-            opacity: 1.0,
+        AnimatedSlide(
+          offset: isMenuOpen ? Offset.zero : const Offset(0, 0.4),
+          duration: animationDuration,
+          curve: Curves.easeOutBack,
+          child: AnimatedOpacity(
+            opacity: isMenuOpen ? 1.0 : 0.0,
             duration: animationDuration,
             child: Padding(
-              padding: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.only(bottom: 10),
               child: FloatingActionButton.extended(
                 heroTag: 'btnCategorias',
-                onPressed: onAddCategoria,
-                backgroundColor: Colors.orange[600],
-                icon: const Icon(Icons.category, color: Colors.white),
-                label: const Text('Categorias', style: TextStyle(color: Colors.white)),
+                onPressed: isMenuOpen ? onAddCategoria : null,
+                backgroundColor: const Color(0xFF00897B),
+                foregroundColor: Colors.white,
+                elevation: 3,
+                icon: const Icon(Icons.category_outlined, size: 18),
+                label: const Text(
+                  'Categorias',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                ),
               ),
             ),
           ),
-        if (isMenuOpen)
-          AnimatedOpacity(
-            opacity: 1.0,
+        ),
+        AnimatedSlide(
+          offset: isMenuOpen ? Offset.zero : const Offset(0, 0.4),
+          duration: Duration(milliseconds: animationDuration.inMilliseconds - 40),
+          curve: Curves.easeOutBack,
+          child: AnimatedOpacity(
+            opacity: isMenuOpen ? 1.0 : 0.0,
             duration: animationDuration,
             child: Padding(
-              padding: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.only(bottom: 10),
               child: FloatingActionButton.extended(
                 heroTag: 'btnOrcamento',
-                onPressed: onAddOrcamento,
+                onPressed: isMenuOpen ? onAddOrcamento : null,
                 backgroundColor: Colors.indigo[600],
-                icon: const Icon(Icons.account_balance_wallet, color: Colors.white),
-                label: const Text('Orçamento', style: TextStyle(color: Colors.white)),
+                foregroundColor: Colors.white,
+                elevation: 3,
+                icon: const Icon(Icons.account_balance_wallet_outlined, size: 18),
+                label: const Text(
+                  'Orçamento',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                ),
               ),
             ),
           ),
+        ),
         FloatingActionButton(
           heroTag: 'btnOrcamentosPage',
           onPressed: onToggle,
           backgroundColor: Colors.indigo[700],
-          child: Icon(isMenuOpen ? Icons.close : Icons.add, color: Colors.white),
+          foregroundColor: Colors.white,
+          elevation: 4,
+          child: AnimatedRotation(
+            turns: isMenuOpen ? 0.125 : 0,
+            duration: animationDuration,
+            child: const Icon(Icons.add, size: 26),
+          ),
         ),
       ],
     );

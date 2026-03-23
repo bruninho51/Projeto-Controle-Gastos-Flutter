@@ -2,15 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:orcamentos_app/providers/auth_provider.dart';
+import 'package:orcamentos_app/shared/api_service.dart';
 import 'package:provider/provider.dart';
 
 import 'firebase_options.dart'; // <-- Adiciona este import
 import 'components/common/main_app_scaffold.dart';
 import 'components/login_page/login_page.dart';
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Inicializa o Firebase com as opções corretas
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -24,9 +27,24 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => AuthProvider()..loadCurrentUser(),
+
+    return MultiProvider(
+      providers: [
+        // AuthProvider precisa do ApiService para buscar o token
+        ChangeNotifierProvider<AuthProvider>(
+          create: (_) => AuthProvider(
+            ApiService(tokenProvider: () => ''),
+          )..loadCurrentUser(),
+        ),
+        // ProxyProvider atualiza o ApiService sempre que o token muda
+        ProxyProvider<AuthProvider, ApiService>(
+          update: (_, auth, __) => ApiService(
+            tokenProvider: () => auth.apiToken,
+          ),
+        ),
+      ],
       child: MaterialApp(
+        navigatorKey: navigatorKey,
         locale: const Locale('pt', 'BR'),
         supportedLocales: const [
           Locale('pt', 'BR'),
@@ -52,13 +70,21 @@ class AuthWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final auth = Provider.of<AuthProvider>(context);
+    final user = context.select<AuthProvider, dynamic>((a) => a.user);
+    final token = context.select<AuthProvider, String>((a) => a.apiToken);
+    final isLoading = context.select<AuthProvider, bool>((a) => a.isLoading);
 
-    if (auth.user == null) {
+    if (isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (user == null) {
       return const LoginPage();
     }
 
-    if (auth.apiToken.isEmpty) {
+    if (token.isEmpty) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
