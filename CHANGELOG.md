@@ -1,3 +1,11 @@
+# [1.5.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.4.0...v1.5.0) (2026-03-23)
+
+
+### Features
+
+* implementa nova identidade visual ([8241fbf](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/8241fbf2ae76e17891b21cc82cb9fc6e26bc427c))
+* implementa nova identidade visual ([100c763](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/100c763fbd2e61c459fc467c3aa706343e470ac0))
+
 # [1.4.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.3.0...v1.4.0) (2026-02-19)
 
 
