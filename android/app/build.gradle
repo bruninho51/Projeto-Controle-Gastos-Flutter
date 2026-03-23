@@ -20,7 +20,7 @@ android {
 
     defaultConfig {
         applicationId = "com.bapps.orcamentos"
-        minSdk = 23  // Altere para 23
+        minSdkVersion = flutter.minSdkVersion  // Altere para 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "1004439512234-m1g6cqojfc2b17fc70lln8ofgfn13kf2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bapps.orcamentos",
+            "certificate_hash": "c983ceb204ea79ae85b4288cdf15c94f88455065"
+          }
+        },
+        {
           "client_id": "1004439512234-sv5o9li9vg1ct5aev9vhuts1oh92rp5q.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
