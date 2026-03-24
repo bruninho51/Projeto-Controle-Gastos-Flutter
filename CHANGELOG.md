@@ -1,3 +1,10 @@
+# [1.6.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.5.0...v1.6.0) (2026-03-24)
+
+
+### Features
+
+* agrupa gastos fixos pagos por data ([b2e7885](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/b2e788547a162cd5108c24306145893e6a56cdd0))
+
 # [1.5.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.4.0...v1.5.0) (2026-03-23)
 
 
