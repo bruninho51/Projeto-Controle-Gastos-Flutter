@@ -5,8 +5,9 @@ import 'package:orcamentos_app/components/form_gasto_variado_page/form_gasto_var
 import 'package:orcamentos_app/components/gasto_variado_detalhes_page/gasto_variado_detalhes_page.dart';
 import 'package:orcamentos_app/components/gastos_variados_page/gastos_page_empty_state.dart';
 import 'package:orcamentos_app/utils/http.dart';
-import 'package:orcamentos_app/components/gastos_variados_page/filtros_modal.dart';
 import 'package:orcamentos_app/components/common/orcamentos_snackbar.dart';
+import 'package:provider/provider.dart';
+import 'package:orcamentos_app/providers/auth_provider.dart';
 
 class GastosVariadosPage extends StatefulWidget {
   final int orcamentoId;
@@ -152,14 +153,22 @@ class _GastosVariadosPageState extends State<GastosVariadosPage>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (_) => FiltrosModal(
-        nome: _filtroNome,
-        status: _filtroStatus,
-        data: _filtroData,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _FiltrosSheet(
+        filtroNome: _filtroNome,
+        filtroData: _filtroData,
         ordenacaoCampo: _ordenacaoCampo,
         ordenacaoAscendente: _ordenacaoAscendente,
-        onAplicarFiltros: _aplicarFiltros,
-        onLimparFiltros: _limparFiltros,
+        onAplicar: (nome, data, campo, asc) {
+          setState(() {
+            _filtroNome = nome;
+            _filtroData = data;
+            _ordenacaoCampo = campo;
+            _ordenacaoAscendente = asc;
+            _gastosVariaveis = _fetchGastos();
+          });
+        },
+        onLimpar: _limparFiltros,
       ),
     );
   }
@@ -186,6 +195,7 @@ class _GastosVariadosPageState extends State<GastosVariadosPage>
         children: [
           // ── Header ─────────────────────────────────────────────────────────
           _GastosHeader(
+            auth: Provider.of<AuthProvider>(context),
             isRefreshing: _isRefreshing,
             refreshCtrl: _refreshCtrl,
             onRefresh: _handleRefresh,
@@ -316,6 +326,348 @@ class _GastosVariadosPageState extends State<GastosVariadosPage>
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// Modal de filtros — mesmo tema dos gastos fixos
+// ═══════════════════════════════════════════════════════════════════════════════
+class _FiltrosSheet extends StatefulWidget {
+  final String filtroNome;
+  final DateTime? filtroData;
+  final String ordenacaoCampo;
+  final bool ordenacaoAscendente;
+  final void Function(String nome, DateTime? data, String campo, bool asc) onAplicar;
+  final VoidCallback onLimpar;
+
+  const _FiltrosSheet({
+    required this.filtroNome,
+    required this.filtroData,
+    required this.ordenacaoCampo,
+    required this.ordenacaoAscendente,
+    required this.onAplicar,
+    required this.onLimpar,
+  });
+
+  @override
+  State<_FiltrosSheet> createState() => _FiltrosSheetState();
+}
+
+class _FiltrosSheetState extends State<_FiltrosSheet> {
+  late TextEditingController _nomeCtrl;
+  DateTime? _data;
+  late String _campo;
+  late bool _asc;
+
+  @override
+  void initState() {
+    super.initState();
+    _nomeCtrl = TextEditingController(text: widget.filtroNome);
+    _data = widget.filtroData;
+    _campo = widget.ordenacaoCampo;
+    _asc = widget.ordenacaoAscendente;
+  }
+
+  @override
+  void dispose() {
+    _nomeCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const purple = Color(0xFF6A1B9A);
+    const purpleLight = Color(0xFF7B1FA2);
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.fromLTRB(
+          24, 20, 24, MediaQuery.of(context).viewInsets.bottom + 24),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2)),
+              ),
+            ),
+
+            Row(children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                    color: purple.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(10)),
+                child: const Icon(Icons.filter_list_rounded,
+                    color: purple, size: 18),
+              ),
+              const SizedBox(width: 12),
+              const Text('Filtros',
+                  style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1A1F36))),
+            ]),
+            const SizedBox(height: 20),
+
+            // Campo de nome
+            TextField(
+              controller: _nomeCtrl,
+              style: const TextStyle(fontSize: 15),
+              decoration: InputDecoration(
+                hintText: 'Buscar por descrição…',
+                hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+                prefixIcon: const Icon(Icons.search_rounded,
+                    color: purpleLight, size: 20),
+                filled: true,
+                fillColor: Colors.grey[50],
+                contentPadding:
+                const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey[200]!)),
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey[200]!)),
+                focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide:
+                    const BorderSide(color: purpleLight, width: 1.5)),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Filtro por data
+            Text('Data de pagamento',
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[500],
+                    letterSpacing: 0.5)),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: _data ?? DateTime.now(),
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
+                        builder: (ctx, child) => Theme(
+                          data: Theme.of(ctx).copyWith(
+                              colorScheme:
+                              const ColorScheme.light(primary: purple)),
+                          child: child!,
+                        ),
+                      );
+                      if (picked != null) setState(() => _data = picked);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 13),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                            color: _data != null
+                                ? purple
+                                : Colors.grey[200]!,
+                            width: _data != null ? 1.5 : 1),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.calendar_today_rounded,
+                              size: 16,
+                              color:
+                              _data != null ? purple : Colors.grey[400]),
+                          const SizedBox(width: 10),
+                          Text(
+                            _data != null
+                                ? '${_data!.day.toString().padLeft(2, '0')}/${_data!.month.toString().padLeft(2, '0')}/${_data!.year}'
+                                : 'Selecionar data',
+                            style: TextStyle(
+                                fontSize: 14,
+                                color: _data != null
+                                    ? const Color(0xFF1A1F36)
+                                    : Colors.grey[400]),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                if (_data != null) ...[
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => setState(() => _data = null),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                          color: Colors.grey[100],
+                          borderRadius: BorderRadius.circular(12)),
+                      child: Icon(Icons.close_rounded,
+                          size: 18, color: Colors.grey[500]),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Ordenação
+            Text('Ordenação',
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[500],
+                    letterSpacing: 0.5)),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                _OrdemChip(
+                  label: 'Descrição',
+                  selected: _campo == 'descricao',
+                  asc: _asc,
+                  color: purple,
+                  onTap: () => setState(() {
+                    if (_campo == 'descricao') {
+                      _asc = !_asc;
+                    } else {
+                      _campo = 'descricao';
+                      _asc = true;
+                    }
+                  }),
+                ),
+                const SizedBox(width: 8),
+                _OrdemChip(
+                  label: 'Data',
+                  selected: _campo == 'data_pgto',
+                  asc: _asc,
+                  color: purple,
+                  onTap: () => setState(() {
+                    if (_campo == 'data_pgto') {
+                      _asc = !_asc;
+                    } else {
+                      _campo = 'data_pgto';
+                      _asc = false;
+                    }
+                  }),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+
+            Row(children: [
+              Expanded(
+                child: TextButton(
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: Colors.grey[200]!)),
+                  ),
+                  onPressed: () {
+                    widget.onLimpar();
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('Limpar',
+                      style: TextStyle(
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w600)),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: purple,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () {
+                    widget.onAplicar(
+                        _nomeCtrl.text, _data, _campo, _asc);
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Aplicar',
+                      style: TextStyle(fontWeight: FontWeight.w700)),
+                ),
+              ),
+            ]),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OrdemChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final bool asc;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _OrdemChip({
+    required this.label,
+    required this.selected,
+    required this.asc,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding:
+        const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        decoration: BoxDecoration(
+          color: selected ? color.withOpacity(0.1) : Colors.grey[50],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+              color: selected ? color : Colors.grey[200]!,
+              width: selected ? 1.5 : 1),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(label,
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: selected ? color : Colors.grey[500])),
+            if (selected) ...[
+              const SizedBox(width: 6),
+              Icon(
+                asc ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+                size: 14,
+                color: color,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // Grupo de um dia — cabeçalho + itens + total do dia
 // ═══════════════════════════════════════════════════════════════════════════════
 class _DiaGroup extends StatelessWidget {
@@ -400,7 +752,7 @@ class _DiaGroup extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    '-${fmt.format(totalDia)}',
+                    fmt.format(totalDia),
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
@@ -600,6 +952,7 @@ class _GastosHeader extends StatelessWidget {
   final VoidCallback onFiltros;
   final VoidCallback onBack;
   final bool temFiltroAtivo;
+  final AuthProvider auth;
 
   const _GastosHeader({
     required this.isRefreshing,
@@ -608,7 +961,29 @@ class _GastosHeader extends StatelessWidget {
     required this.onFiltros,
     required this.onBack,
     required this.temFiltroAtivo,
+    required this.auth,
   });
+
+  Widget _buildAvatar() {
+    if (auth.user?.photoURL != null) {
+      return ClipOval(
+        child: Image.network(
+          auth.user!.photoURL!,
+          width: 38, height: 38, fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _fallbackAvatar(),
+        ),
+      );
+    }
+    return _fallbackAvatar();
+  }
+
+  Widget _fallbackAvatar() => Container(
+    width: 36,
+    height: 36,
+    decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
+    child: const Icon(Icons.person_rounded, color: Colors.white, size: 18),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -674,6 +1049,8 @@ class _GastosHeader extends StatelessWidget {
                   ],
                 ),
               ),
+              const SizedBox(width: 10),
+              _buildAvatar(),
             ],
           ),
 
