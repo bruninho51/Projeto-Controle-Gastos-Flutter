@@ -1,3 +1,11 @@
+## [1.6.1](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.6.0...v1.6.1) (2026-03-25)
+
+
+### Bug Fixes
+
+* ajusta pipe do android ([af56afc](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/af56afc77a20a045dd6aa8ddf0a462b5987e7beb))
+* altera os builds ([e46ef04](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/e46ef04fa62e1479313e8ba9f35f5136e40c1138))
+
 # [1.6.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.5.0...v1.6.0) (2026-03-24)
 
 
