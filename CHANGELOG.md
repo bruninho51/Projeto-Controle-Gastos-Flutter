@@ -1,3 +1,10 @@
+## [1.8.1](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.8.0...v1.8.1) (2026-03-25)
+
+
+### Bug Fixes
+
+* corrige a versão no app android ([989a79f](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/989a79fa8bd2cc2a08f1d1f9d038fe9afef20cb5))
+
 # [1.8.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.7.0...v1.8.0) (2026-03-25)
 
 
