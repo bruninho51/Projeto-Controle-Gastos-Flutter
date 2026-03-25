@@ -1,13 +1,13 @@
 #!/bin/sh
 # build_android.sh
-# Lê a versão gerada pelo semantic-release, compila o APK release
+# Lê a versão gerada pelo semantic-release, assina e compila o APK release
 # e faz upload para o GitLab Generic Package Registry + Release Asset.
 
 set -e
 
-# ─────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
 # Versão
-# ─────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
 version_file="version.txt"
 if [ ! -f "$version_file" ]; then
     echo "❌ Erro: $version_file não encontrado. O stage 'release' rodou antes?"
@@ -24,10 +24,45 @@ echo "📱 Iniciando build Android para versão: $new_version"
 
 # ─────────────────────────────────────────────────────────────
 # Java home — fixo para ghcr.io/cirruslabs/flutter (Ubuntu + JDK 21)
-# /usr/bin/java → /usr/lib/jvm/java-21-openjdk-amd64
 # ─────────────────────────────────────────────────────────────
 export JAVA_HOME=$(readlink -f /usr/bin/java | sed 's|/bin/java||')
 echo "☕ JAVA_HOME: $JAVA_HOME"
+
+# ─────────────────────────────────────────────────────────────
+# Keystore — decodifica o base64 e gera o key.properties
+# ─────────────────────────────────────────────────────────────
+echo "🔑 Configurando keystore para assinatura..."
+
+if [ -z "$KEYSTORE_BASE64" ]; then
+    echo "❌ Erro: variável KEYSTORE_BASE64 não definida"
+    exit 1
+fi
+if [ -z "$KEYSTORE_PASSWORD" ]; then
+    echo "❌ Erro: variável KEYSTORE_PASSWORD não definida"
+    exit 1
+fi
+if [ -z "$KEYSTORE_ALIAS" ]; then
+    echo "❌ Erro: variável KEYSTORE_ALIAS não definida"
+    exit 1
+fi
+if [ -z "$KEYSTORE_ALIAS_PASSWORD" ]; then
+    echo "❌ Erro: variável KEYSTORE_ALIAS_PASSWORD não definida"
+    exit 1
+fi
+
+keystore_path="$(pwd)/android/release.keystore"
+
+echo "$KEYSTORE_BASE64" | base64 -d > "$keystore_path"
+echo "✅ Keystore decodificada em: $keystore_path"
+
+cat > android/key.properties << PROPS
+storeFile=$keystore_path
+storePassword=$KEYSTORE_PASSWORD
+keyAlias=$KEYSTORE_ALIAS
+keyPassword=$KEYSTORE_ALIAS_PASSWORD
+PROPS
+
+echo "✅ key.properties gerado"
 
 # ─────────────────────────────────────────────────────────────
 # Flutter build
@@ -40,7 +75,7 @@ fi
 echo "📦 Instalando dependências..."
 flutter pub get
 
-echo "🔨 Compilando APK release..."
+echo "🔨 Compilando APK release (assinado)..."
 flutter build apk --release
 
 apk_source="build/app/outputs/flutter-apk/app-release.apk"
@@ -105,6 +140,12 @@ else
     echo "⚠️  Não foi possível adicionar asset link (HTTP $http_status)."
     echo "   O APK ainda está disponível no Package Registry."
 fi
+
+# ─────────────────────────────────────────────────────────────
+# Limpeza — remove arquivos sensíveis do workspace
+# ─────────────────────────────────────────────────────────────
+rm -f "$keystore_path" android/key.properties
+echo "🧹 Arquivos sensíveis removidos do workspace"
 
 echo ""
 echo "✅ Android concluído!"

@@ -10,45 +10,52 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17  // Usando Java 17
+        sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_17  // Usando Java 17
+        jvmTarget = JavaVersion.VERSION_17
     }
 
     defaultConfig {
         applicationId = "com.bapps.orcamentos"
-        minSdkVersion = flutter.minSdkVersion  // Altere para 23
+        minSdkVersion = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        release {
+            def keystorePropertiesFile = rootProject.file("key.properties")
+            if (keystorePropertiesFile.exists()) {
+                def keystoreProperties = new Properties()
+                keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+                storeFile     file(keystoreProperties["storeFile"])
+                storePassword keystoreProperties["storePassword"]
+                keyAlias      keystoreProperties["keyAlias"]
+                keyPassword   keystoreProperties["keyPassword"]
+            }
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig = signingConfigs.debug
+            signingConfig = signingConfigs.release
         }
     }
 }
 
 dependencies {
-    // Firebase BOM para gerenciar versões do Firebase
-    implementation platform('com.google.firebase:firebase-bom:32.0.0')  // Firebase BOM (Bill of Materials)
-
-    // Dependências específicas do Firebase
-    implementation 'com.google.firebase:firebase-auth'  // Firebase Authentication
-    implementation 'com.google.firebase:firebase-firestore'  // Firestore
-    implementation 'com.google.firebase:firebase-messaging'  // Firebase Cloud Messaging
-
-    // Outras dependências do Firebase podem ser adicionadas, como:
-    // implementation 'com.google.firebase:firebase-analytics'  // Firebase Analytics, por exemplo
+    implementation platform('com.google.firebase:firebase-bom:32.0.0')
+    implementation 'com.google.firebase:firebase-auth'
+    implementation 'com.google.firebase:firebase-firestore'
+    implementation 'com.google.firebase:firebase-messaging'
 }
 
 flutter {
     source = "../.."
 }
 
-// Necessário para a configuração do Firebase no Android
 apply plugin: 'com.google.gms.google-services'
