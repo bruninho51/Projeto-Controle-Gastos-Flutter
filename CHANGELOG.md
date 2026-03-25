@@ -1,3 +1,10 @@
+## [1.6.1](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.6.0...v1.6.1) (2026-03-25)
+
+
+### Bug Fixes
+
+* altera os builds ([d08414b](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/d08414b3cf77fd21731dadeb54a2b689ae230db8))
+
 # [1.6.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.5.0...v1.6.0) (2026-03-24)
 
 
