@@ -1,3 +1,10 @@
+# [1.8.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.7.0...v1.8.0) (2026-03-25)
+
+
+### Features
+
+* assina apk ([ce0aeee](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/ce0aeeed93c77d8ed718f3901a3d39fb38ab16b0))
+
 # [1.7.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.6.0...v1.7.0) (2026-03-25)
 
 
