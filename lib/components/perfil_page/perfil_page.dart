@@ -2,9 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:package_info_plus/package_info_plus.dart';
 
-class PerfilPage extends StatelessWidget {
+class PerfilPage extends StatefulWidget {
   const PerfilPage({super.key});
+
+  @override
+  State<PerfilPage> createState() => _PerfilPageState();
+}
+
+class _PerfilPageState extends State<PerfilPage> {
+  String _version = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    if (mounted) {
+      setState(() => _version = info.version);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,15 +54,14 @@ class PerfilPage extends StatelessWidget {
                     ),
                     child: Column(
                       children: [
-                        // Card de informações do usuário
                         _InfoCard(auth: auth),
                         const SizedBox(height: 16),
-                        // Card de ações
                         _ActionsCard(auth: auth),
                         const SizedBox(height: 32),
-                        // Versão
                         Text(
-                          'Orçamentos App • v1.0.0',
+                          _version.isEmpty
+                              ? 'Orçamentos App'
+                              : 'Orçamentos App • v$_version',
                           style: TextStyle(fontSize: 12, color: Colors.grey[400]),
                         ),
                       ],
@@ -83,7 +103,6 @@ class _PerfilHeader extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(24, top + 20, 24, 32),
       child: Column(
         children: [
-          // Avatar
           Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
@@ -99,8 +118,6 @@ class _PerfilHeader extends StatelessWidget {
             child: _buildAvatar(),
           ),
           const SizedBox(height: 16),
-
-          // Nome
           Text(
             auth.user?.displayName ?? 'Usuário',
             style: const TextStyle(
@@ -112,8 +129,6 @@ class _PerfilHeader extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 6),
-
-          // Email
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             decoration: BoxDecoration(

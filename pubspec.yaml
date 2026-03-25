@@ -44,6 +44,7 @@ dependencies:
   line_icons: ^2.0.0
   graphql_flutter: ^5.1.2
   json_annotation: ^4.8.0
+  package_info_plus: ^8.0.0
 
 flutter_icons:
   android: true
