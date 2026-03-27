@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:orcamentos_app/components/form_gasto_fixo_page/form_gasto_fixo_page.dart';
 import 'package:orcamentos_app/components/gasto_fixo_detalhes_page/gasto_fixo_detalhes_page.dart';
+import 'package:orcamentos_app/components/gastos_fixos_page/copiar_gastos_fixos_page.dart';
 import 'package:orcamentos_app/utils/formatters.dart';
 import 'dart:convert';
 import 'package:orcamentos_app/utils/http.dart';
@@ -98,7 +99,20 @@ class _GastosFixosPageState extends State<GastosFixosPage>
         ),
       ),
     );
-    setState(() => _gastosFixos = _fetchGastos());
+    setState(() => _handleRefresh());
+  }
+
+  void _abrirCopiarGastos() async {
+    final copiou = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CopiarGastosFixosPage(
+          orcamentoDestinoId: widget.orcamentoId,
+          apiToken: widget.apiToken,
+        ),
+      ),
+    );
+    if (copiou == true) _handleRefresh();
   }
 
   String _statusOf(Map<String, dynamic> g) {
@@ -216,6 +230,7 @@ class _GastosFixosPageState extends State<GastosFixosPage>
             onRefresh: _handleRefresh,
             onFiltros: _showFiltros,
             onBack: () => Navigator.of(context).pop(),
+            onCopiar: _abrirCopiarGastos,
             temFiltroAtivo: _filtroNome.isNotEmpty ||
                 _filtroStatus != null ||
                 _filtroData != null,
@@ -267,8 +282,7 @@ class _GastosFixosPageState extends State<GastosFixosPage>
                     final totalPagos = itens.fold<double>(
                         0,
                             (s, g) => s +
-                            (double.tryParse(g['valor']?.toString() ?? '0') ??
-                                0));
+                            (double.tryParse(g['valor']?.toString() ?? '0') ?? 0));
                     widgets.add(_PagosHeader(
                         totalItens: itens.length, totalValor: totalPagos));
 
@@ -277,10 +291,8 @@ class _GastosFixosPageState extends State<GastosFixosPage>
                       final diaItens = porDia[diaKey]!;
                       final totalDia = diaItens.fold<double>(
                           0,
-                              (s, g) => s +
-                              (double.tryParse(
-                                  g['valor']?.toString() ?? '0') ??
-                                  0));
+                              (s, g) =>
+                          s + (double.tryParse(g['valor']?.toString() ?? '0') ?? 0));
                       widgets.add(_PagosDiaGroup(
                         diaKey: diaKey,
                         itens: diaItens,
@@ -294,8 +306,7 @@ class _GastosFixosPageState extends State<GastosFixosPage>
                 return RefreshIndicator(
                   color: const Color(0xFF1A237E),
                   onRefresh: () async {
-                    setState(() => _gastosFixos = _fetchGastos());
-                    await _gastosFixos;
+                    _handleRefresh();
                   },
                   child: CustomScrollView(
                     physics: const BouncingScrollPhysics(),
@@ -361,11 +372,9 @@ class _StatusGroup extends StatelessWidget {
       {required this.status, required this.itens, required this.onTapItem});
 
   Color get _color => status == 'VENCIDO'
-      ? const Color(0xFFE53935)
-      : const Color(0xFFF4511E);
+      ? const Color(0xFFE53935) : const Color(0xFFF4511E);
   IconData get _icon => status == 'VENCIDO'
-      ? Icons.warning_amber_rounded
-      : Icons.schedule_rounded;
+      ? Icons.warning_amber_rounded : Icons.schedule_rounded;
   String get _label => status == 'VENCIDO' ? 'Vencidos' : 'Pendentes';
   double get _totalPrevisto => itens.fold(
       0, (s, g) => s + (double.tryParse(g['previsto']?.toString() ?? '0') ?? 0));
@@ -378,43 +387,29 @@ class _StatusGroup extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(4, 20, 4, 10),
-          child: Row(
-            children: [
-              Container(
-                width: 28, height: 28,
-                decoration: BoxDecoration(
-                    color: _color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8)),
-                child: Icon(_icon, color: _color, size: 15),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(_label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: _color)),
-                  Text('${itens.length} ${itens.length == 1 ? 'item' : 'itens'}',
-                      style: TextStyle(fontSize: 11, color: Colors.grey[400])),
-                ]),
-              ),
-              Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                Text(fmt.format(_totalPrevisto),
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: _color, letterSpacing: -0.2)),
-                Text('previsto', style: TextStyle(fontSize: 10, color: Colors.grey[400])),
-              ]),
-            ],
-          ),
+          child: Row(children: [
+            Container(width: 28, height: 28,
+                decoration: BoxDecoration(color: _color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                child: Icon(_icon, color: _color, size: 15)),
+            const SizedBox(width: 10),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(_label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: _color)),
+              Text('${itens.length} ${itens.length == 1 ? 'item' : 'itens'}',
+                  style: TextStyle(fontSize: 11, color: Colors.grey[400])),
+            ])),
+            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+              Text(fmt.format(_totalPrevisto),
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: _color, letterSpacing: -0.2)),
+              Text('previsto', style: TextStyle(fontSize: 10, color: Colors.grey[400])),
+            ]),
+          ]),
         ),
         Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
-          ),
-          child: Column(
-            children: itens.asMap().entries.map((e) => _GastoFixoItem(
-                gasto: e.value,
-                isLast: e.key == itens.length - 1,
-                onTap: () => onTapItem(e.value))).toList(),
-          ),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))]),
+          child: Column(children: itens.asMap().entries.map((e) => _GastoFixoItem(
+              gasto: e.value, isLast: e.key == itens.length - 1,
+              onTap: () => onTapItem(e.value))).toList()),
         ),
       ],
     );
@@ -435,28 +430,22 @@ class _PagosHeader extends StatelessWidget {
     const color = Color(0xFF43A047);
     return Padding(
       padding: const EdgeInsets.fromLTRB(4, 24, 4, 4),
-      child: Row(
-        children: [
-          Container(
-            width: 28, height: 28,
+      child: Row(children: [
+        Container(width: 28, height: 28,
             decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-            child: const Icon(Icons.check_circle_rounded, color: color, size: 15),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('Pagos', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: color)),
-              Text('$totalItens ${totalItens == 1 ? 'item' : 'itens'}',
-                  style: TextStyle(fontSize: 11, color: Colors.grey[400])),
-            ]),
-          ),
-          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text(fmt.format(totalValor),
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: color, letterSpacing: -0.2)),
-            Text('total pago', style: TextStyle(fontSize: 10, color: Colors.grey[400])),
-          ]),
-        ],
-      ),
+            child: const Icon(Icons.check_circle_rounded, color: color, size: 15)),
+        const SizedBox(width: 10),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('Pagos', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: color)),
+          Text('$totalItens ${totalItens == 1 ? 'item' : 'itens'}',
+              style: TextStyle(fontSize: 11, color: Colors.grey[400])),
+        ])),
+        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          Text(fmt.format(totalValor),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: color, letterSpacing: -0.2)),
+          Text('total pago', style: TextStyle(fontSize: 10, color: Colors.grey[400])),
+        ]),
+      ]),
     );
   }
 }
@@ -470,10 +459,7 @@ class _PagosDiaGroup extends StatelessWidget {
   final double totalDia;
   final Future<void> Function(Map<String, dynamic>) onTapItem;
 
-  const _PagosDiaGroup({
-    required this.diaKey, required this.itens,
-    required this.totalDia, required this.onTapItem,
-  });
+  const _PagosDiaGroup({required this.diaKey, required this.itens, required this.totalDia, required this.onTapItem});
 
   String get _diaLabel {
     if (diaKey == 'sem_data') return 'Sem data';
@@ -489,52 +475,37 @@ class _PagosDiaGroup extends StatelessWidget {
 
   String get _diaSemana {
     if (diaKey == 'sem_data') return '';
-    try { return DateFormat('EEEE', 'pt_BR').format(DateTime.parse(diaKey)); }
-    catch (_) { return ''; }
+    try { return DateFormat('EEEE', 'pt_BR').format(DateTime.parse(diaKey)); } catch (_) { return ''; }
   }
 
   @override
   Widget build(BuildContext context) {
     final fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 14, 4, 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(_diaLabel, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1A1F36))),
-                  if (_diaSemana.isNotEmpty)
-                    Text(_diaSemana, style: TextStyle(fontSize: 11, color: Colors.grey[400])),
-                ]),
-              ),
-              Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                Text(fmt.format(totalDia),
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF43A047), letterSpacing: -0.2)),
-                Text('${itens.length} ${itens.length == 1 ? 'lançamento' : 'lançamentos'}',
-                    style: TextStyle(fontSize: 10, color: Colors.grey[400])),
-              ]),
-            ],
-          ),
-        ),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
-          ),
-          child: Column(
-            children: itens.asMap().entries.map((e) => _GastoFixoItem(
-                gasto: e.value,
-                isLast: e.key == itens.length - 1,
-                onTap: () => onTapItem(e.value))).toList(),
-          ),
-        ),
-      ],
-    );
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(4, 14, 4, 8),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(_diaLabel, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1A1F36))),
+            if (_diaSemana.isNotEmpty)
+              Text(_diaSemana, style: TextStyle(fontSize: 11, color: Colors.grey[400])),
+          ])),
+          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+            Text(fmt.format(totalDia),
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF43A047), letterSpacing: -0.2)),
+            Text('${itens.length} ${itens.length == 1 ? 'lançamento' : 'lançamentos'}',
+                style: TextStyle(fontSize: 10, color: Colors.grey[400])),
+          ]),
+        ]),
+      ),
+      Container(
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))]),
+        child: Column(children: itens.asMap().entries.map((e) => _GastoFixoItem(
+            gasto: e.value, isLast: e.key == itens.length - 1,
+            onTap: () => onTapItem(e.value))).toList()),
+      ),
+    ]);
   }
 }
 
@@ -582,100 +553,76 @@ class _GastoFixoItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
     final previsto = double.tryParse(gasto['previsto']?.toString() ?? '0') ?? 0.0;
-    final valorPago = gasto['valor'] != null
-        ? double.tryParse(gasto['valor'].toString()) ?? 0.0
-        : null;
+    final valorPago = gasto['valor'] != null ? double.tryParse(gasto['valor'].toString()) ?? 0.0 : null;
     final descricao = gasto['descricao']?.toString() ?? 'Sem descrição';
     final categoriaNome = gasto['categoriaGasto']?['nome']?.toString();
     final status = _statusOf();
 
     String subtitulo = '';
-    if (status == 'PAGO') {
-      subtitulo = 'Pago em ${_fmtDate(gasto['data_pgto'])}';
-    } else if (gasto['data_venc'] != null) {
+    if (status == 'PAGO') subtitulo = 'Pago em ${_fmtDate(gasto['data_pgto'])}';
+    else if (gasto['data_venc'] != null) {
       subtitulo = status == 'VENCIDO'
           ? 'Venceu em ${_fmtDate(gasto['data_venc'])}'
           : 'Vence em ${_fmtDate(gasto['data_venc'])}';
     }
-    if (categoriaNome != null && subtitulo.isNotEmpty) {
-      subtitulo = '$categoriaNome · $subtitulo';
-    } else if (categoriaNome != null) {
-      subtitulo = categoriaNome;
-    }
+    if (categoriaNome != null && subtitulo.isNotEmpty) subtitulo = '$categoriaNome · $subtitulo';
+    else if (categoriaNome != null) subtitulo = categoriaNome;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: isLast ? const BorderRadius.vertical(bottom: Radius.circular(16)) : BorderRadius.zero,
-        splashColor: _color.withOpacity(0.06),
-        highlightColor: _color.withOpacity(0.03),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              child: Row(
-                children: [
-                  Container(
-                    width: 40, height: 40,
-                    decoration: BoxDecoration(color: _color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                    child: Icon(_icon, color: _color, size: 20),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(descricao,
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1A1F36)),
-                          maxLines: 1, overflow: TextOverflow.ellipsis),
-                      if (subtitulo.isNotEmpty) ...[
-                        const SizedBox(height: 2),
-                        Text(subtitulo,
-                            style: TextStyle(fontSize: 11, color: Colors.grey[400]),
-                            maxLines: 1, overflow: TextOverflow.ellipsis),
-                      ],
-                    ]),
-                  ),
-                  Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                    Text(
-                      status == 'PAGO' && valorPago != null
-                          ? fmt.format(valorPago)
-                          : fmt.format(previsto),
-                      style: TextStyle(
-                          fontSize: 14, fontWeight: FontWeight.w700,
-                          color: status == 'PAGO' ? const Color(0xFF43A047) : const Color(0xFF1A1F36),
-                          letterSpacing: -0.2),
-                    ),
-                    if (status == 'PAGO' && valorPago != null && valorPago != previsto) ...[
-                      const SizedBox(height: 2),
-                      Text('prev. ${fmt.format(previsto)}',
-                          style: TextStyle(fontSize: 10, color: Colors.grey[400], decoration: TextDecoration.lineThrough)),
-                    ],
-                    if (status != 'PAGO') ...[
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                        decoration: BoxDecoration(color: _color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
-                        child: Text(status, style: TextStyle(fontSize: 9, color: _color, fontWeight: FontWeight.w700, letterSpacing: 0.3)),
-                      ),
-                    ],
-                  ]),
+        splashColor: _color.withOpacity(0.06), highlightColor: _color.withOpacity(0.03),
+        child: Column(children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(children: [
+              Container(width: 40, height: 40,
+                  decoration: BoxDecoration(color: _color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                  child: Icon(_icon, color: _color, size: 20)),
+              const SizedBox(width: 14),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(descricao, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1A1F36)),
+                    maxLines: 1, overflow: TextOverflow.ellipsis),
+                if (subtitulo.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(subtitulo, style: TextStyle(fontSize: 11, color: Colors.grey[400]),
+                      maxLines: 1, overflow: TextOverflow.ellipsis),
                 ],
-              ),
-            ),
-            if (!isLast)
-              Padding(
-                padding: const EdgeInsets.only(left: 70),
-                child: Container(height: 1, color: Colors.grey[100]),
-              ),
-          ],
-        ),
+              ])),
+              Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                Text(
+                  status == 'PAGO' && valorPago != null ? fmt.format(valorPago) : fmt.format(previsto),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700,
+                      color: status == 'PAGO' ? const Color(0xFF43A047) : const Color(0xFF1A1F36),
+                      letterSpacing: -0.2),
+                ),
+                if (status == 'PAGO' && valorPago != null && valorPago != previsto) ...[
+                  const SizedBox(height: 2),
+                  Text('prev. ${fmt.format(previsto)}',
+                      style: TextStyle(fontSize: 10, color: Colors.grey[400], decoration: TextDecoration.lineThrough)),
+                ],
+                if (status != 'PAGO') ...[
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(color: _color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+                    child: Text(status, style: TextStyle(fontSize: 9, color: _color, fontWeight: FontWeight.w700, letterSpacing: 0.3)),
+                  ),
+                ],
+              ]),
+            ]),
+          ),
+          if (!isLast) Padding(padding: const EdgeInsets.only(left: 70), child: Container(height: 1, color: Colors.grey[100])),
+        ]),
       ),
     );
   }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Header navbar
+// Header navbar com botão ⋮
 // ═══════════════════════════════════════════════════════════════════════════════
 class _FixosHeader extends StatelessWidget {
   final bool isRefreshing;
@@ -683,24 +630,23 @@ class _FixosHeader extends StatelessWidget {
   final VoidCallback onRefresh;
   final VoidCallback onFiltros;
   final VoidCallback onBack;
+  final VoidCallback onCopiar;
   final bool temFiltroAtivo;
   final AuthProvider auth;
 
   const _FixosHeader({
     required this.isRefreshing, required this.refreshCtrl,
     required this.onRefresh, required this.onFiltros,
-    required this.onBack, required this.temFiltroAtivo,
-    required this.auth,
+    required this.onBack, required this.onCopiar,
+    required this.temFiltroAtivo, required this.auth,
   });
 
   Widget _buildAvatar() {
     if (auth.user?.photoURL != null) {
       return ClipOval(
-        child: Image.network(
-          auth.user!.photoURL!,
-          width: 38, height: 38, fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => _fallbackAvatar(),
-        ),
+        child: Image.network(auth.user!.photoURL!,
+            width: 38, height: 38, fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _fallbackAvatar()),
       );
     }
     return _fallbackAvatar();
@@ -712,10 +658,51 @@ class _FixosHeader extends StatelessWidget {
     child: const Icon(Icons.person_rounded, color: Colors.white, size: 18),
   );
 
+  void _showMenu(BuildContext context, GlobalKey key) {
+    final box = key.currentContext!.findRenderObject() as RenderBox;
+    final offset = box.localToGlobal(Offset.zero);
+    final size = box.size;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    showMenu<String>(
+      context: context,
+      color: Colors.white,
+      elevation: 16,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      position: RelativeRect.fromLTRB(
+        offset.dx,                           // alinhado à esquerda do botão
+        offset.dy + size.height + 4,         // logo abaixo do botão
+        screenWidth - (offset.dx + size.width), // distância da borda direita
+        screenHeight - (offset.dy + size.height + 4), // distância da borda inferior
+      ),
+      items: [
+        PopupMenuItem<String>(
+          value: 'copiar',
+          padding: EdgeInsets.zero,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(children: [
+              Container(width: 32, height: 32,
+                  decoration: BoxDecoration(color: const Color(0xFF1A237E).withOpacity(0.1), borderRadius: BorderRadius.circular(9)),
+                  child: const Icon(Icons.copy_all_rounded, color: Color(0xFF1A237E), size: 16)),
+              const SizedBox(width: 12),
+              const Text('Copiar do Orçamento',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF1A1F36))),
+            ]),
+          ),
+        ),
+      ],
+    ).then((value) {
+      if (value == 'copiar') onCopiar();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final top = MediaQuery.of(context).padding.top;
     final canPop = Navigator.of(context).canPop();
+    final menuKey = GlobalKey();
 
     return Container(
       width: double.infinity,
@@ -727,77 +714,73 @@ class _FixosHeader extends StatelessWidget {
         boxShadow: [BoxShadow(color: Color(0x551A237E), blurRadius: 24, offset: Offset(0, 8))],
       ),
       padding: EdgeInsets.fromLTRB(20, top + 16, 20, 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              if (canPop) ...[
-                _HeaderButton(onTap: onBack, tooltip: 'Voltar', isSquare: true,
-                    child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 16)),
-                const SizedBox(width: 12),
-              ],
-              Container(
-                width: 40, height: 40,
-                decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
-                child: const Icon(Icons.receipt_long_rounded, color: Colors.white, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  const Text('Gastos Fixos',
-                      style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: 0.2)),
-                  Text('Planejamento de despesas',
-                      style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
-                ]),
-              ),
-              const SizedBox(width: 10),
-              _buildAvatar(),
-            ],
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        // ── Linha 1 ────────────────────────────────────────────────────────────
+        Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+          if (canPop) ...[
+            _HeaderButton(onTap: onBack, tooltip: 'Voltar', isSquare: true,
+                child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 16)),
+            const SizedBox(width: 12),
+          ],
+          Container(width: 40, height: 40,
+              decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
+              child: const Icon(Icons.receipt_long_rounded, color: Colors.white, size: 20)),
+          const SizedBox(width: 12),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('Gastos Fixos', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: 0.2)),
+            Text('Planejamento de despesas', style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
+          ])),
+          const SizedBox(width: 10),
+          _buildAvatar(),
+        ]),
+
+        const SizedBox(height: 16),
+
+        // ── Linha 2 ────────────────────────────────────────────────────────────
+        Row(children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(color: Colors.white.withOpacity(0.13), borderRadius: BorderRadius.circular(20)),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Container(width: 7, height: 7, decoration: const BoxDecoration(color: Color(0xFF69F0AE), shape: BoxShape.circle)),
+              const SizedBox(width: 7),
+              const Text('Planejamentos', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+            ]),
           ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(color: Colors.white.withOpacity(0.13), borderRadius: BorderRadius.circular(20)),
+          const Spacer(),
+
+          // Filtros
+          Stack(children: [
+            _HeaderButton(onTap: onFiltros, tooltip: 'Filtros',
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Container(width: 7, height: 7, decoration: const BoxDecoration(color: Color(0xFF69F0AE), shape: BoxShape.circle)),
-                  const SizedBox(width: 7),
-                  const Text('Planejamentos', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
-                ]),
-              ),
-              const Spacer(),
-              Stack(
-                children: [
-                  _HeaderButton(
-                    onTap: onFiltros, tooltip: 'Filtros',
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      const Icon(Icons.filter_list_rounded, color: Colors.white, size: 16),
-                      const SizedBox(width: 6),
-                      Text('Filtros', style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12, fontWeight: FontWeight.w600)),
-                    ]),
-                  ),
-                  if (temFiltroAtivo)
-                    Positioned(
-                      top: 2, right: 2,
-                      child: Container(width: 8, height: 8, decoration: const BoxDecoration(color: Color(0xFFFFD740), shape: BoxShape.circle)),
-                    ),
-                ],
-              ),
-              const SizedBox(width: 8),
-              _HeaderButton(
-                onTap: onRefresh, tooltip: 'Recarregar', isSquare: true,
-                child: RotationTransition(
-                  turns: refreshCtrl,
-                  child: Icon(Icons.refresh_rounded, color: Colors.white.withOpacity(isRefreshing ? 1.0 : 0.9), size: 18),
-                ),
-              ),
-            ],
+                  const Icon(Icons.filter_list_rounded, color: Colors.white, size: 16),
+                  const SizedBox(width: 6),
+                  Text('Filtros', style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12, fontWeight: FontWeight.w600)),
+                ])),
+            if (temFiltroAtivo)
+              Positioned(top: 2, right: 2,
+                  child: Container(width: 8, height: 8, decoration: const BoxDecoration(color: Color(0xFFFFD740), shape: BoxShape.circle))),
+          ]),
+          const SizedBox(width: 8),
+
+          // Refresh
+          _HeaderButton(onTap: onRefresh, tooltip: 'Recarregar', isSquare: true,
+              child: RotationTransition(
+                turns: refreshCtrl,
+                child: Icon(Icons.refresh_rounded, color: Colors.white.withOpacity(isRefreshing ? 1.0 : 0.9), size: 18),
+              )),
+          const SizedBox(width: 8),
+
+          // 3 pontinhos
+          _HeaderButton(
+            key: menuKey,
+            onTap: () => _showMenu(context, menuKey),
+            tooltip: 'Mais opções',
+            isSquare: true,
+            child: const Icon(Icons.more_vert_rounded, color: Colors.white, size: 18),
           ),
-        ],
-      ),
+        ]),
+      ]),
     );
   }
 }
@@ -813,11 +796,8 @@ class _FiltrosSheet extends StatefulWidget {
   final VoidCallback onLimpar;
 
   const _FiltrosSheet({
-    required this.filtroNome,
-    required this.filtroStatus,
-    required this.filtroData,
-    required this.onAplicar,
-    required this.onLimpar,
+    required this.filtroNome, required this.filtroStatus,
+    required this.filtroData, required this.onAplicar, required this.onLimpar,
   });
 
   @override
@@ -838,176 +818,106 @@ class _FiltrosSheetState extends State<_FiltrosSheet> {
   }
 
   @override
-  void dispose() {
-    _nomeCtrl.dispose();
-    super.dispose();
-  }
+  void dispose() { _nomeCtrl.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+      decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(context).viewInsets.bottom + 24),
       child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Handle
-            Center(
-              child: Container(
-                width: 36, height: 4,
-                margin: const EdgeInsets.only(bottom: 20),
-                decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
-              ),
-            ),
-
-            // Título
-            Row(children: [
-              Container(
-                padding: const EdgeInsets.all(8),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Center(child: Container(width: 36, height: 4, margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)))),
+          Row(children: [
+            Container(padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(color: const Color(0xFF1A237E).withOpacity(0.08), borderRadius: BorderRadius.circular(10)),
-                child: const Icon(Icons.filter_list_rounded, color: Color(0xFF1A237E), size: 18),
-              ),
-              const SizedBox(width: 12),
-              const Text('Filtros', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Color(0xFF1A1F36))),
-            ]),
-            const SizedBox(height: 20),
-
-            // Campo nome
-            TextField(
-              controller: _nomeCtrl,
-              style: const TextStyle(fontSize: 15),
+                child: const Icon(Icons.filter_list_rounded, color: Color(0xFF1A237E), size: 18)),
+            const SizedBox(width: 12),
+            const Text('Filtros', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Color(0xFF1A1F36))),
+          ]),
+          const SizedBox(height: 20),
+          TextField(controller: _nomeCtrl, style: const TextStyle(fontSize: 15),
               decoration: InputDecoration(
-                hintText: 'Buscar por nome…',
-                hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+                hintText: 'Buscar por nome…', hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
                 prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF3949AB), size: 20),
                 filled: true, fillColor: Colors.grey[50],
                 contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[200]!)),
                 enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[200]!)),
                 focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF3949AB), width: 1.5)),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Status chips
-            Text('Status', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey[500], letterSpacing: 0.5)),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 8,
-              children: ['PAGO', 'PENDENTE', 'VENCIDO'].map((s) {
-                final selected = _status == s;
-                final color = s == 'PAGO'
-                    ? const Color(0xFF43A047)
-                    : s == 'VENCIDO'
-                    ? const Color(0xFFE53935)
-                    : const Color(0xFFF4511E);
-                return FilterChip(
-                  label: Text(s, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: selected ? Colors.white : color)),
-                  selected: selected,
-                  onSelected: (v) => setState(() => _status = v ? s : null),
-                  backgroundColor: color.withOpacity(0.08),
-                  selectedColor: color,
-                  checkmarkColor: Colors.white,
-                  side: BorderSide(color: color.withOpacity(0.3)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              )),
+          const SizedBox(height: 16),
+          Text('Status', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey[500], letterSpacing: 0.5)),
+          const SizedBox(height: 10),
+          Wrap(spacing: 8, children: ['PAGO', 'PENDENTE', 'VENCIDO'].map((s) {
+            final selected = _status == s;
+            final color = s == 'PAGO' ? const Color(0xFF43A047) : s == 'VENCIDO' ? const Color(0xFFE53935) : const Color(0xFFF4511E);
+            return FilterChip(
+              label: Text(s, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: selected ? Colors.white : color)),
+              selected: selected, onSelected: (v) => setState(() => _status = v ? s : null),
+              backgroundColor: color.withOpacity(0.08), selectedColor: color, checkmarkColor: Colors.white,
+              side: BorderSide(color: color.withOpacity(0.3)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            );
+          }).toList()),
+          const SizedBox(height: 16),
+          Text('Data', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey[500], letterSpacing: 0.5)),
+          const SizedBox(height: 10),
+          Row(children: [
+            Expanded(child: GestureDetector(
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: context, initialDate: _data ?? DateTime.now(),
+                  firstDate: DateTime(2000), lastDate: DateTime(2100),
+                  builder: (ctx, child) => Theme(
+                    data: Theme.of(ctx).copyWith(colorScheme: const ColorScheme.light(primary: Color(0xFF1A237E))),
+                    child: child!,
+                  ),
                 );
-              }).toList(),
-            ),
-            const SizedBox(height: 16),
-
-            // Filtro de data
-            Text('Data', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey[500], letterSpacing: 0.5)),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () async {
-                      final picked = await showDatePicker(
-                        context: context,
-                        initialDate: _data ?? DateTime.now(),
-                        firstDate: DateTime(2000),
-                        lastDate: DateTime(2100),
-                        builder: (ctx, child) => Theme(
-                          data: Theme.of(ctx).copyWith(
-                              colorScheme: const ColorScheme.light(primary: Color(0xFF1A237E))),
-                          child: child!,
-                        ),
-                      );
-                      if (picked != null) setState(() => _data = picked);
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                            color: _data != null ? const Color(0xFF3949AB) : Colors.grey[200]!,
-                            width: _data != null ? 1.5 : 1),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.calendar_today_rounded, size: 16,
-                              color: _data != null ? const Color(0xFF3949AB) : Colors.grey[400]),
-                          const SizedBox(width: 10),
-                          Text(
-                            _data != null
-                                ? '${_data!.day.toString().padLeft(2, '0')}/${_data!.month.toString().padLeft(2, '0')}/${_data!.year}'
-                                : 'Selecionar data',
-                            style: TextStyle(fontSize: 14, color: _data != null ? const Color(0xFF1A1F36) : Colors.grey[400]),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                if (picked != null) setState(() => _data = picked);
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50], borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: _data != null ? const Color(0xFF3949AB) : Colors.grey[200]!, width: _data != null ? 1.5 : 1),
                 ),
-                if (_data != null) ...[
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: () => setState(() => _data = null),
-                    child: Container(
-                      width: 40, height: 40,
+                child: Row(children: [
+                  Icon(Icons.calendar_today_rounded, size: 16, color: _data != null ? const Color(0xFF3949AB) : Colors.grey[400]),
+                  const SizedBox(width: 10),
+                  Text(
+                    _data != null ? '${_data!.day.toString().padLeft(2, '0')}/${_data!.month.toString().padLeft(2, '0')}/${_data!.year}' : 'Selecionar data',
+                    style: TextStyle(fontSize: 14, color: _data != null ? const Color(0xFF1A1F36) : Colors.grey[400]),
+                  ),
+                ]),
+              ),
+            )),
+            if (_data != null) ...[
+              const SizedBox(width: 8),
+              GestureDetector(onTap: () => setState(() => _data = null),
+                  child: Container(width: 40, height: 40,
                       decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(12)),
-                      child: Icon(Icons.close_rounded, size: 18, color: Colors.grey[500]),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // Botões
-            Row(children: [
-              Expanded(
-                child: TextButton(
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 13),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey[200]!)),
-                  ),
-                  onPressed: () { widget.onLimpar(); Navigator.of(context).pop(); },
-                  child: Text('Limpar', style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.w600)),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1A237E), foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 13), elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onPressed: () { widget.onAplicar(_nomeCtrl.text, _status, _data); Navigator.of(context).pop(); },
-                  child: const Text('Aplicar', style: TextStyle(fontWeight: FontWeight.w700)),
-                ),
-              ),
-            ]),
-          ],
-        ),
+                      child: Icon(Icons.close_rounded, size: 18, color: Colors.grey[500]))),
+            ],
+          ]),
+          const SizedBox(height: 24),
+          Row(children: [
+            Expanded(child: TextButton(
+              style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 13),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey[200]!))),
+              onPressed: () { widget.onLimpar(); Navigator.of(context).pop(); },
+              child: Text('Limpar', style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.w600)),
+            )),
+            const SizedBox(width: 12),
+            Expanded(child: ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1A237E), foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 13), elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+              onPressed: () { widget.onAplicar(_nomeCtrl.text, _status, _data); Navigator.of(context).pop(); },
+              child: const Text('Aplicar', style: TextStyle(fontWeight: FontWeight.w700)),
+            )),
+          ]),
+        ]),
       ),
     );
   }
@@ -1026,35 +936,23 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(28),
-            decoration: BoxDecoration(color: const Color(0xFF1A237E).withOpacity(0.06), shape: BoxShape.circle),
-            child: Icon(
-              showClearButton ? Icons.filter_alt_off_rounded : Icons.receipt_long_rounded,
-              size: 48, color: const Color(0xFF3949AB).withOpacity(0.5),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Text(message, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey[700])),
-          const SizedBox(height: 6),
-          Text(subtitle, style: TextStyle(fontSize: 13, color: Colors.grey[450])),
-          if (showClearButton && onClear != null) ...[
-            const SizedBox(height: 20),
-            TextButton.icon(
-              onPressed: onClear,
-              icon: const Icon(Icons.clear_all_rounded, size: 16),
-              label: const Text('Limpar filtros'),
-              style: TextButton.styleFrom(foregroundColor: const Color(0xFF3949AB)),
-            ),
-          ],
-          const SizedBox(height: 100),
-        ],
-      ),
-    );
+    return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      Container(padding: const EdgeInsets.all(28),
+          decoration: BoxDecoration(color: const Color(0xFF1A237E).withOpacity(0.06), shape: BoxShape.circle),
+          child: Icon(showClearButton ? Icons.filter_alt_off_rounded : Icons.receipt_long_rounded,
+              size: 48, color: const Color(0xFF3949AB).withOpacity(0.5))),
+      const SizedBox(height: 20),
+      Text(message, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey[700])),
+      const SizedBox(height: 6),
+      Text(subtitle, style: TextStyle(fontSize: 13, color: Colors.grey[450])),
+      if (showClearButton && onClear != null) ...[
+        const SizedBox(height: 20),
+        TextButton.icon(onPressed: onClear, icon: const Icon(Icons.clear_all_rounded, size: 16),
+            label: const Text('Limpar filtros'),
+            style: TextButton.styleFrom(foregroundColor: const Color(0xFF3949AB))),
+      ],
+      const SizedBox(height: 100),
+    ]));
   }
 }
 
@@ -1065,7 +963,7 @@ class _HeaderButton extends StatefulWidget {
   final String tooltip;
   final bool isSquare;
 
-  const _HeaderButton({required this.child, required this.onTap, required this.tooltip, this.isSquare = false});
+  const _HeaderButton({super.key, required this.child, required this.onTap, required this.tooltip, this.isSquare = false});
 
   @override
   State<_HeaderButton> createState() => _HeaderButtonState();
