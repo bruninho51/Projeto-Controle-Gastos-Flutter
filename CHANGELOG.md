@@ -1,3 +1,10 @@
+# [1.9.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.8.1...v1.9.0) (2026-03-27)
+
+
+### Features
+
+* adiciona funcionalidade de cópia de gastos fixos de um orçamento para o outro ([c99f7c6](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/c99f7c6ce8d509c0536d1d7862d05c7b38fc2e90))
+
 ## [1.8.1](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.8.0...v1.8.1) (2026-03-25)
 
 
