@@ -1,3 +1,10 @@
+# [1.10.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.9.0...v1.10.0) (2026-04-16)
+
+
+### Features
+
+* adiciona suporte para notificações push via firebase messaging ([39da53e](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/39da53eea13cd778d01ac6c2e2c59f0867200381))
+
 # [1.9.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.8.1...v1.9.0) (2026-03-27)
 
 
