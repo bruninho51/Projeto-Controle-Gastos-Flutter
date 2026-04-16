@@ -6,7 +6,7 @@ class AuthManager {
 
   AuthManager._internal();
 
-  final ValueNotifier<bool> _isAuthenticated = ValueNotifier<bool>(true);
+  final ValueNotifier<bool> _isAuthenticated = ValueNotifier<bool>(false);
   bool _logoutInProgress = false;
 
   ValueListenable<bool> get isAuthenticatedListenable => _isAuthenticated;

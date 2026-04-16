@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
+import 'dart:io' show Platform;
 
+import 'package:orcamentos_app/shared/api_models.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
 import 'package:orcamentos_app/shared/auth_manager.dart';
 
@@ -108,12 +111,40 @@ class AuthProvider with ChangeNotifier {
       _apiToken = response.accessToken;
 
       AuthManager().setAuthenticated();
-
     } catch (e) {
       _apiToken = '';
       rethrow;
     } finally {
       notifyListeners();
+    }
+    await _registerDeviceToken();
+  }
+
+  Future<void> _registerDeviceToken() async {
+    try {
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+      if (fcmToken == null) return;
+
+      final platform = kIsWeb
+          ? 'web'
+          : Platform.isAndroid
+          ? 'android'
+          : 'ios';
+
+      final api = ApiService(tokenProvider: () => _apiToken);
+
+      await api.upsertTokenDispositivo(
+        TokenDispositivoUpsertDto(token: fcmToken, plataforma: platform),
+      );
+
+      FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+        await api.upsertTokenDispositivo(
+          TokenDispositivoUpsertDto(token: newToken, plataforma: platform),
+        );
+      });
+    } catch (e) {
+      // Falha silenciosa — não bloqueia o fluxo do usuário
+      debugPrint('Erro ao registrar token do dispositivo: $e');
     }
   }
 
@@ -127,7 +158,6 @@ class AuthProvider with ChangeNotifier {
 
       _user = null;
       _apiToken = '';
-
     } finally {
       _logoutInProgress = false;
       notifyListeners();

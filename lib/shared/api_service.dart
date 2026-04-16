@@ -41,7 +41,6 @@ class ApiService {
     dynamic body,
     required T Function(dynamic) fromJson,
   }) async {
-    // Garante que a baseUrl não termine com barra e o path comece com barra
     final cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
     final cleanPath = path.startsWith('/') ? path : '/$path';
     final uri = Uri.parse('$cleanBaseUrl$cleanPath')
@@ -61,6 +60,8 @@ class ApiService {
         response = await client.get(uri, headers: headers);
       } else if (method == 'POST') {
         response = await client.post(uri, headers: headers, body: jsonEncode(body));
+      } else if (method == 'PUT') {
+        response = await client.put(uri, headers: headers, body: jsonEncode(body));
       } else if (method == 'PATCH') {
         response = await client.patch(uri, headers: headers, body: jsonEncode(body));
       } else if (method == 'DELETE') {
@@ -74,7 +75,6 @@ class ApiService {
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       if (response.body.isEmpty) {
-        // Para alguns endpoints, pode não haver conteúdo. Retorna null.
         return null as T;
       }
       try {
@@ -86,7 +86,7 @@ class ApiService {
     } else if (response.statusCode == 401) {
       await AuthManager().logout();
       throw ApiException('Token expirado', statusCode: 401);
-    }else {
+    } else {
       String errorMessage = 'Erro na requisição';
       try {
         final errorJson = jsonDecode(utf8.decode(response.bodyBytes));
@@ -312,6 +312,40 @@ class ApiService {
       method: 'DELETE',
       path: '/orcamentos/$orcamentoId/gastos-variados/$id',
       fromJson: (json) => GastoVariadoResponseDto.fromJson(json),
+    );
+  }
+
+  // -------------------- Tokens de Dispositivos --------------------
+  Future<TokenDispositivoResponseDto> upsertTokenDispositivo(TokenDispositivoUpsertDto dto) async {
+    return await _request(
+      method: 'PUT',
+      path: '/tokens-dispositivos',
+      body: dto.toJson(),
+      fromJson: (json) => TokenDispositivoResponseDto.fromJson(json),
+    );
+  }
+
+  Future<List<TokenDispositivoResponseDto>> getTokensDispositivos() async {
+    return await _request(
+      method: 'GET',
+      path: '/tokens-dispositivos',
+      fromJson: (json) => (json as List).map((e) => TokenDispositivoResponseDto.fromJson(e)).toList(),
+    );
+  }
+
+  Future<TokenDispositivoResponseDto> getTokenDispositivoById(int id) async {
+    return await _request(
+      method: 'GET',
+      path: '/tokens-dispositivos/$id',
+      fromJson: (json) => TokenDispositivoResponseDto.fromJson(json),
+    );
+  }
+
+  Future<TokenDispositivoResponseDto> deleteTokenDispositivo(int id) async {
+    return await _request(
+      method: 'DELETE',
+      path: '/tokens-dispositivos/$id',
+      fromJson: (json) => TokenDispositivoResponseDto.fromJson(json),
     );
   }
 }

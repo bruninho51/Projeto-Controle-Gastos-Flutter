@@ -6,6 +6,46 @@ part of 'api_models.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
+TokenDispositivoUpsertDto _$TokenDispositivoUpsertDtoFromJson(
+        Map<String, dynamic> json) =>
+    TokenDispositivoUpsertDto(
+      token: json['token'] as String,
+      plataforma: json['plataforma'] as String,
+    );
+
+Map<String, dynamic> _$TokenDispositivoUpsertDtoToJson(
+        TokenDispositivoUpsertDto instance) =>
+    <String, dynamic>{
+      'token': instance.token,
+      'plataforma': instance.plataforma,
+    };
+
+TokenDispositivoResponseDto _$TokenDispositivoResponseDtoFromJson(
+        Map<String, dynamic> json) =>
+    TokenDispositivoResponseDto(
+      id: (json['id'] as num).toInt(),
+      token: json['token'] as String,
+      usuarioId: (json['usuario_id'] as num).toInt(),
+      plataforma: json['plataforma'] as String,
+      dataCriacao: json['data_criacao'] == null
+          ? null
+          : DateTime.parse(json['data_criacao'] as String),
+      dataAtualizacao: json['data_atualizacao'] == null
+          ? null
+          : DateTime.parse(json['data_atualizacao'] as String),
+    );
+
+Map<String, dynamic> _$TokenDispositivoResponseDtoToJson(
+        TokenDispositivoResponseDto instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'token': instance.token,
+      'usuario_id': instance.usuarioId,
+      'plataforma': instance.plataforma,
+      'data_criacao': instance.dataCriacao?.toIso8601String(),
+      'data_atualizacao': instance.dataAtualizacao?.toIso8601String(),
+    };
+
 CategoriaGastoResponseDto _$CategoriaGastoResponseDtoFromJson(
         Map<String, dynamic> json) =>
     CategoriaGastoResponseDto(

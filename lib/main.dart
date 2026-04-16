@@ -1,3 +1,4 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -5,7 +6,7 @@ import 'package:orcamentos_app/providers/auth_provider.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
 import 'package:provider/provider.dart';
 
-import 'firebase_options.dart'; // <-- Adiciona este import
+import 'firebase_options.dart';
 import 'components/common/main_app_scaffold.dart';
 import 'components/login_page/login_page.dart';
 
@@ -18,6 +19,7 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  await FirebaseMessaging.instance.requestPermission();
 
   runApp(const MyApp());
 }

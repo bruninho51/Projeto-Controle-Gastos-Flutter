@@ -4,6 +4,55 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'api_models.g.dart';
 
+/// DTO de upsert de token de dispositivo
+@JsonSerializable()
+class TokenDispositivoUpsertDto {
+  final String token;
+  final String plataforma;
+
+  TokenDispositivoUpsertDto({
+    required this.token,
+    required this.plataforma,
+  });
+
+  factory TokenDispositivoUpsertDto.fromJson(Map<String, dynamic> json) =>
+      _$TokenDispositivoUpsertDtoFromJson(json);
+
+  Map<String, dynamic> toJson() => _$TokenDispositivoUpsertDtoToJson(this);
+}
+
+/// Resposta de token de dispositivo
+@JsonSerializable()
+class TokenDispositivoResponseDto {
+  final int id;
+  final String token;
+
+  @JsonKey(name: 'usuario_id')
+  final int usuarioId;
+
+  final String plataforma;
+
+  @JsonKey(name: 'data_criacao')
+  final DateTime? dataCriacao;
+
+  @JsonKey(name: 'data_atualizacao')
+  final DateTime? dataAtualizacao;
+
+  TokenDispositivoResponseDto({
+    required this.id,
+    required this.token,
+    required this.usuarioId,
+    required this.plataforma,
+    this.dataCriacao,
+    this.dataAtualizacao,
+  });
+
+  factory TokenDispositivoResponseDto.fromJson(Map<String, dynamic> json) =>
+      _$TokenDispositivoResponseDtoFromJson(json);
+
+  Map<String, dynamic> toJson() => _$TokenDispositivoResponseDtoToJson(this);
+}
+
 /// Categoria de gasto (resposta)
 @JsonSerializable()
 class CategoriaGastoResponseDto {
