@@ -1,3 +1,11 @@
+# [1.11.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.10.0...v1.11.0) (2026-04-23)
+
+
+### Features
+
+* melhora a configuração do registro de dispositivo ([d686555](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/d686555132a2a5b2897c33429ebf07fdb20cbec6))
+* refatora estados ([f1dd90f](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/f1dd90fd60993968ac49c026b439efb1c118e7c8))
+
 # [1.10.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.9.0...v1.10.0) (2026-04-16)
 
 
