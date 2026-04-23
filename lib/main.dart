@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:orcamentos_app/shared/auth_service.dart';
-import 'package:orcamentos_app/shared/push_service.dart';
+import 'package:orcamentos_app/shared/device_registration_service.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
@@ -54,6 +54,12 @@ class MyApp extends StatelessWidget {
 
 List<SingleChildWidget> _buildProviders() {
   return [
+    // ================= API =================
+
+    Provider<ApiService>(
+      create: (context) => ApiService(),
+    ),
+
     // ================= INFRA =================
 
     Provider(
@@ -65,12 +71,10 @@ List<SingleChildWidget> _buildProviders() {
       ),
     ),
 
-    Provider(create: (_) => PushService()),
-
-    // ================= API =================
-
-    Provider<ApiService>(
-      create: (context) => ApiService(),
+    Provider<DeviceRegistrationService>(
+      create: (context) => DeviceRegistrationService(
+        context.read<ApiService>(),
+      ),
     ),
 
     // ================= AUTH =================
@@ -79,7 +83,8 @@ List<SingleChildWidget> _buildProviders() {
       create: (context) => AuthState(
         context.read<AuthService>(),
         context.read<ApiService>(),
-        context.read<PushService>(),
+      )..onAfterAuth(
+        context.read<DeviceRegistrationService>().registerDevice,
       ),
     ),
   ];

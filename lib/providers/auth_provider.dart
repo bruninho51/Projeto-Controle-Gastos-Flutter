@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
 import 'package:orcamentos_app/shared/auth_service.dart';
-import 'package:orcamentos_app/shared/push_service.dart';
 
 class AuthState with ChangeNotifier {
   final AuthService authService;
   final ApiService api;
-  final PushService pushService;
 
   String? _apiToken;
   User? _user;
   bool _isLoading = false;
+
+  final List<Future<void> Function()> _afterAuthHooks = [];
 
   // ================= GETTERS =================
 
@@ -22,7 +22,7 @@ class AuthState with ChangeNotifier {
 
   // ================= CONSTRUCTOR =================
 
-  AuthState(this.authService, this.api, this.pushService) {
+  AuthState(this.authService, this.api) {
     _wireApiService();
   }
 
@@ -34,6 +34,18 @@ class AuthState with ChangeNotifier {
     });
   }
 
+  // ================= HOOK API =================
+
+  void onAfterAuth(Future<void> Function() callback) {
+    _afterAuthHooks.add(callback);
+  }
+
+  Future<void> _runAfterAuthHooks() async {
+    for (final hook in _afterAuthHooks) {
+      await hook();
+    }
+  }
+
   // ================= LOGIN =================
 
   Future<void> login() async {
@@ -42,22 +54,20 @@ class AuthState with ChangeNotifier {
 
     try {
       final user = await authService.signInWithGoogle();
-
       if (user == null) return;
 
       _user = user;
 
       final idToken = await authService.getIdToken();
-
       if (idToken == null) return;
 
       final response = await api.verifyGoogle(idToken);
 
       _apiToken = response.accessToken;
 
-      notifyListeners(); // <- importante: atualiza token antes de requests futuros
+      notifyListeners();
 
-      await pushService.registerDevice(api);
+      await _runAfterAuthHooks();
     } finally {
       _isLoading = false;
       notifyListeners();
