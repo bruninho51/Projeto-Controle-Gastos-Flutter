@@ -29,7 +29,7 @@ class _PerfilPageState extends State<PerfilPage> {
 
   @override
   Widget build(BuildContext context) {
-    final auth = Provider.of<AuthProvider>(context);
+    final auth = Provider.of<AuthState>(context);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F5F9),
@@ -81,7 +81,7 @@ class _PerfilPageState extends State<PerfilPage> {
 // Header com avatar grande e nome do usuário
 // ═══════════════════════════════════════════════════════════════════════════════
 class _PerfilHeader extends StatelessWidget {
-  final AuthProvider auth;
+  final AuthState auth;
   const _PerfilHeader({required this.auth});
 
   @override
@@ -169,7 +169,7 @@ class _PerfilHeader extends StatelessWidget {
 // Card de informações
 // ═══════════════════════════════════════════════════════════════════════════════
 class _InfoCard extends StatelessWidget {
-  final AuthProvider auth;
+  final AuthState auth;
   const _InfoCard({required this.auth});
 
   @override
@@ -209,7 +209,7 @@ class _InfoCard extends StatelessWidget {
 // Card de ações
 // ═══════════════════════════════════════════════════════════════════════════════
 class _ActionsCard extends StatelessWidget {
-  final AuthProvider auth;
+  final AuthState auth;
   const _ActionsCard({required this.auth});
 
   @override

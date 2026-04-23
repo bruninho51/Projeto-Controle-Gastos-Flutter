@@ -195,7 +195,7 @@ class _GastosVariadosPageState extends State<GastosVariadosPage>
         children: [
           // ── Header ─────────────────────────────────────────────────────────
           _GastosHeader(
-            auth: Provider.of<AuthProvider>(context),
+            auth: Provider.of<AuthState>(context),
             isRefreshing: _isRefreshing,
             refreshCtrl: _refreshCtrl,
             onRefresh: _handleRefresh,
@@ -952,7 +952,7 @@ class _GastosHeader extends StatelessWidget {
   final VoidCallback onFiltros;
   final VoidCallback onBack;
   final bool temFiltroAtivo;
-  final AuthProvider auth;
+  final AuthState auth;
 
   const _GastosHeader({
     required this.isRefreshing,

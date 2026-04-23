@@ -224,7 +224,7 @@ class _GastosFixosPageState extends State<GastosFixosPage>
       body: Column(
         children: [
           _FixosHeader(
-            auth: Provider.of<AuthProvider>(context),
+            auth: Provider.of<AuthState>(context),
             isRefreshing: _isRefreshing,
             refreshCtrl: _refreshCtrl,
             onRefresh: _handleRefresh,
@@ -632,7 +632,7 @@ class _FixosHeader extends StatelessWidget {
   final VoidCallback onBack;
   final VoidCallback onCopiar;
   final bool temFiltroAtivo;
-  final AuthProvider auth;
+  final AuthState auth;
 
   const _FixosHeader({
     required this.isRefreshing, required this.refreshCtrl,

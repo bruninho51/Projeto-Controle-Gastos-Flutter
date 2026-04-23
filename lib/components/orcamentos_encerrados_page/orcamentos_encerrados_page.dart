@@ -18,7 +18,7 @@ class OrcamentosEncerradosPage extends StatefulWidget {
 }
 
 class _OrcamentosEncerradosPageState extends State<OrcamentosEncerradosPage> {
-  AuthProvider get _auth => Provider.of<AuthProvider>(context, listen: false);
+  AuthState get _auth => Provider.of<AuthState>(context, listen: false);
   
   List<dynamic> _orcamentos = [];
   bool _isLoading = false;

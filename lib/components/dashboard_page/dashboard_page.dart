@@ -79,7 +79,7 @@ class _DashboardPageState extends State<DashboardPage>
 
   @override
   Widget build(BuildContext context) {
-    final auth = Provider.of<AuthProvider>(context);
+    final auth = Provider.of<AuthState>(context);
     return Scaffold(
       backgroundColor: const Color(0xFFF4F5F9),
       body: Column(
@@ -161,8 +161,8 @@ class _DashboardPageState extends State<DashboardPage>
   Future<int> _fetchOrcamentosEncerrados(String t) async =>
       (await _fetchOrcamentos(t)).where((o) => o['data_encerramento'] != null).length;
 
-  Future<Map<String, dynamic>> _fetchDashboardData(AuthProvider auth) async {
-    final graphql = await MyGraphQLClient.create(token: auth.apiToken);
+  Future<Map<String, dynamic>> _fetchDashboardData(AuthState auth) async {
+    final graphql = await MyGraphQLClient.create(token: auth.apiToken!);
     final result = await graphql.query("""
       query {
         consolidadoOrcamentos(filter: { encerrado: false }) {
@@ -173,8 +173,8 @@ class _DashboardPageState extends State<DashboardPage>
     """);
     final c = result['consolidadoOrcamentos'] as Map<String, dynamic>;
     return {
-      'qtdOrcamentosAtivos': await _fetchOrcamentosAtivos(auth.apiToken),
-      'qtdOrcamentosEncerrados': await _fetchOrcamentosEncerrados(auth.apiToken),
+      'qtdOrcamentosAtivos': await _fetchOrcamentosAtivos(auth.apiToken!),
+      'qtdOrcamentosEncerrados': await _fetchOrcamentosEncerrados(auth.apiToken!),
       'valorInicialAtivos': c['valorTotal'],
       'valorLivreAtivos': c['valorLivre'],
       'valorAtualAtivos': c['valorAtual'],
@@ -189,7 +189,7 @@ class _DashboardPageState extends State<DashboardPage>
 // Header — recebe tabController diretamente
 // ═══════════════════════════════════════════════════════════════════════════════
 class _DashboardHeader extends StatelessWidget {
-  final AuthProvider auth;
+  final AuthState auth;
   final TabController tabController;
 
   const _DashboardHeader({required this.auth, required this.tabController});

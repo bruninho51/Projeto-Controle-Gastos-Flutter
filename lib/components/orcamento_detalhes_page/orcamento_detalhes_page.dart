@@ -35,7 +35,7 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
   String? _dataCriacao;
   String? _dataEncerramento;
 
-  AuthProvider get _auth => Provider.of<AuthProvider>(context, listen: false);
+  AuthState get _auth => Provider.of<AuthState>(context, listen: false);
 
   @override
   void initState() {
@@ -53,7 +53,7 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
   void _loadOrcamentoData() {
     setState(() {
       _orcamentoDetalhes = _fetchOrcamentoDetalhes(widget.orcamentoId);
-      _spendingData = _consolidarTotaisPorCategoria(_auth.apiToken, widget.orcamentoId);
+      _spendingData = _consolidarTotaisPorCategoria(_auth.apiToken!, widget.orcamentoId);
     });
   }
 
@@ -71,7 +71,7 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
   }
 
   Future<Map<String, dynamic>> _fetchOrcamentoDetalhes(int orcamentoId) async {
-    final graphql = await MyGraphQLClient.create(token: _auth.apiToken);
+    final graphql = await MyGraphQLClient.create(token: _auth.apiToken!);
     final consolidadoResult = await graphql.query(
       """
       query ConsolidadoOrcamento(\$ids: [Int!]!) {
@@ -496,12 +496,12 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
   }
 
   Future<void> _navigateToGastosFixos() async {
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => GastosFixosPage(apiToken: _auth.apiToken, orcamentoId: widget.orcamentoId)));
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => GastosFixosPage(apiToken: _auth.apiToken!, orcamentoId: widget.orcamentoId)));
     _loadOrcamentoData();
   }
 
   Future<void> _navigateToGastosVariados() async {
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => GastosVariadosPage(apiToken: _auth.apiToken, orcamentoId: widget.orcamentoId)));
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => GastosVariadosPage(apiToken: _auth.apiToken!, orcamentoId: widget.orcamentoId)));
     _loadOrcamentoData();
   }
 
@@ -886,7 +886,7 @@ class _DetalhesHeader extends StatelessWidget {
   final VoidCallback? onEncerrar;
   final VoidCallback? onApagar;
   final VoidCallback? onReativar;
-  final AuthProvider auth;
+  final AuthState auth;
 
   const _DetalhesHeader({
     required this.nome,

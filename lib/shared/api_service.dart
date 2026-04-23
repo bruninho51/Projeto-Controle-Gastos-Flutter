@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:ui';
 
 import 'package:http/http.dart' as http;
-import 'package:orcamentos_app/shared/auth_manager.dart';
 
 import 'api_models.dart';
 
@@ -17,23 +16,33 @@ class ApiException implements Exception {
 }
 
 class ApiService {
-  static const String _defaultBaseUrl = 'https://api.orcamentos.app/api/v1';
-
-  static VoidCallback? onUnauthorized;
+  static const String _defaultBaseUrl =
+      'https://api.orcamentos.app/api/v1';
 
   final String baseUrl;
   final http.Client client;
 
-  final String? Function() tokenProvider;
+  String? Function()? _onTokenRequested;
+  VoidCallback? _onUnauthorized;
 
   ApiService({
-    required this.tokenProvider,
     String? baseUrl,
     http.Client? client,
   })  : baseUrl = baseUrl ?? _defaultBaseUrl,
         client = client ?? http.Client();
 
-  /// Método genérico para requisições HTTP com autenticação
+  // ===================== SETTERS DINÂMICOS =====================
+
+  void onTokenRequested(String? Function() provider) {
+    _onTokenRequested = provider;
+  }
+
+  void onUnauthorized(VoidCallback callback) {
+    _onUnauthorized = callback;
+  }
+
+  // ================= CORE =================
+
   Future<T> _request<T>({
     required String method,
     required String path,
@@ -41,12 +50,15 @@ class ApiService {
     dynamic body,
     required T Function(dynamic) fromJson,
   }) async {
-    final cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
-    final cleanPath = path.startsWith('/') ? path : '/$path';
-    final uri = Uri.parse('$cleanBaseUrl$cleanPath')
-        .replace(queryParameters: queryParams?.map((k, v) => MapEntry(k, v.toString())));
+    final uri = Uri.parse(
+      '${baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl}'
+          '${path.startsWith('/') ? path : '/$path'}',
+    ).replace(
+      queryParameters:
+      queryParams?.map((k, v) => MapEntry(k, v.toString())),
+    );
 
-    final token = tokenProvider.call();
+    final token = _onTokenRequested?.call();
 
     final headers = {
       'Content-Type': 'application/json',
@@ -54,46 +66,52 @@ class ApiService {
         'Authorization': 'Bearer $token',
     };
 
-    http.Response response;
+    late http.Response response;
+
     try {
-      if (method == 'GET') {
-        response = await client.get(uri, headers: headers);
-      } else if (method == 'POST') {
-        response = await client.post(uri, headers: headers, body: jsonEncode(body));
-      } else if (method == 'PUT') {
-        response = await client.put(uri, headers: headers, body: jsonEncode(body));
-      } else if (method == 'PATCH') {
-        response = await client.patch(uri, headers: headers, body: jsonEncode(body));
-      } else if (method == 'DELETE') {
-        response = await client.delete(uri, headers: headers);
-      } else {
-        throw ApiException('Método HTTP não suportado: $method');
+      switch (method) {
+        case 'GET':
+          response = await client.get(uri, headers: headers);
+          break;
+        case 'POST':
+          response = await client.post(uri, headers: headers, body: jsonEncode(body));
+          break;
+        case 'PUT':
+          response = await client.put(uri, headers: headers, body: jsonEncode(body));
+          break;
+        case 'PATCH':
+          response = await client.patch(uri, headers: headers, body: jsonEncode(body));
+          break;
+        case 'DELETE':
+          response = await client.delete(uri, headers: headers);
+          break;
+        default:
+          throw ApiException('Método não suportado: $method');
       }
     } catch (e) {
       throw ApiException('Erro de rede: $e');
     }
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
-      if (response.body.isEmpty) {
-        return null as T;
-      }
-      try {
-        final json = jsonDecode(utf8.decode(response.bodyBytes));
-        return fromJson(json);
-      } catch (e) {
-        throw ApiException('Erro ao decodificar resposta JSON: $e', statusCode: response.statusCode);
-      }
-    } else if (response.statusCode == 401) {
-      await AuthManager().logout();
-      throw ApiException('Token expirado', statusCode: 401);
-    } else {
-      String errorMessage = 'Erro na requisição';
-      try {
-        final errorJson = jsonDecode(utf8.decode(response.bodyBytes));
-        errorMessage = errorJson['message'] ?? errorJson['error'] ?? 'Erro desconhecido';
-      } catch (_) {}
-      throw ApiException(errorMessage, statusCode: response.statusCode);
+      if (response.body.isEmpty) return null as T;
+
+      final json = jsonDecode(utf8.decode(response.bodyBytes));
+      return fromJson(json);
     }
+
+    if (response.statusCode == 401) {
+      _onUnauthorized?.call();
+      throw ApiException('Não autorizado', statusCode: 401);
+    }
+
+    String message = 'Erro na requisição';
+
+    try {
+      final json = jsonDecode(utf8.decode(response.bodyBytes));
+      message = json['message'] ?? json['error'] ?? message;
+    } catch (_) {}
+
+    throw ApiException(message, statusCode: response.statusCode);
   }
 
   // -------------------- Autenticação --------------------
@@ -347,5 +365,9 @@ class ApiService {
       path: '/tokens-dispositivos/$id',
       fromJson: (json) => TokenDispositivoResponseDto.fromJson(json),
     );
+  }
+
+  Future<List<dynamic>> getInvestimentos() async {
+    return [];
   }
 }

@@ -33,7 +33,7 @@ class _InvestimentoDetalhesPageState extends State<InvestimentoDetalhesPage> {
   List<Map<String, dynamic>> _groupedData = [];
   bool _isLoading = false;
 
-  AuthProvider get _auth => Provider.of<AuthProvider>(context, listen: false);
+  AuthState get _auth => Provider.of<AuthState>(context, listen: false);
 
   @override
   void initState() {
@@ -319,8 +319,8 @@ void _showCreateItemLinhaDoTempoDialog() {
     setState(() => _isLoading = true);
     
     try {
-      final investimento = await _buscarInvestimento(_auth.apiToken);
-      final timeline = await _buscarTimeline(_auth.apiToken, investimento);
+      final investimento = await _buscarInvestimento(_auth.apiToken!);
+      final timeline = await _buscarTimeline(_auth.apiToken!, investimento);
       final groupedData = _agruparPorMes(timeline);
       
       setState(() {

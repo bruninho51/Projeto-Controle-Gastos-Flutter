@@ -50,7 +50,7 @@ class _MainAppScaffoldState extends State<MainAppScaffold> {
 
   // ─── Navigation Rail (web) ───────────────────────────────────────────────
   Widget _buildNavigationRail(BuildContext context) {
-    final auth = Provider.of<AuthProvider>(context);
+    final auth = Provider.of<AuthState>(context);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 280),

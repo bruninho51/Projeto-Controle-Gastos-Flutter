@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb; // Adicionado
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:orcamentos_app/components/categorias_investimentos_page/categorias_investimentos_page.dart';
 import 'package:orcamentos_app/components/common/orcamentos_snackbar.dart';
 import 'package:orcamentos_app/components/form_investimento_page/form_investimento_page.dart';
@@ -26,21 +26,22 @@ class InvestimentosPageState extends State<InvestimentosPage> {
   bool _isMenuOpen = false;
   final _animationDuration = const Duration(milliseconds: 300);
 
-  AuthProvider get _auth => Provider.of<AuthProvider>(context, listen: false);
+  AuthState get _auth => Provider.of<AuthState>(context, listen: false);
+  String get _token => _auth.apiToken!;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        _fetchApiData(_auth.apiToken);
+        _fetchApiData(_token);
       }
     });
   }
 
   Future<void> _fetchApiData(String apiToken) async {
     setState(() => _isLoading = true);
-    
+
     try {
       final client = await MyHttpClient.create();
       final response = await client.get(
@@ -77,6 +78,7 @@ class InvestimentosPageState extends State<InvestimentosPage> {
         builder: (context) => FormularioInvestimentoPage(apiToken: apiToken),
       ),
     );
+
     if (result == true) _fetchApiData(apiToken);
   }
 
@@ -96,57 +98,57 @@ class InvestimentosPageState extends State<InvestimentosPage> {
         builder: (context) => OrcamentosEncerradosPage(),
       ),
     );
+
     _fetchApiData(apiToken);
   }
 
   PreferredSizeWidget _buildAppBar() {
-    final auth = Provider.of<AuthProvider>(context);
+    final auth = Provider.of<AuthState>(context);
 
     return OrcamentosAppBar(
-        appTitle: "Investimentos Ativos",
-        isWeb: kIsWeb,
-        userAvatar: kIsWeb
-            ? CircleAvatar(
-                backgroundColor: Colors.indigo[100],
-                radius: 20,
-                child: auth.user?.photoURL != null
-                    ? ClipOval(
-                        child: Image.network(
-                          auth.user!.photoURL!,
-                          width: 40,
-                          height: 40,
-                          fit: BoxFit.cover,
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                      loadingProgress.expectedTotalBytes!
-                                  : null,
-                            );
-                          },
-                          errorBuilder: (context, error, stackTrace) {
-                            return Icon(Icons.person, color: Colors.indigo[700]);
-                          },
-                        ),
-                      )
-                    : Icon(Icons.person, color: Colors.indigo[700]),
-              )
-            : null,
-        actions: [
-          /*IconButton(
-            icon: Icon(Icons.archive, color: kIsWeb ? Colors.indigo[700] : Colors.white),
-            tooltip: 'Investimentos encerrados',
-            onPressed: () => _navigateToArquivados(_auth.apiToken),
-          ),*/
-          IconButton(
-            icon: Icon(Icons.refresh, color: kIsWeb ? Colors.indigo[700] : Colors.white),
-            tooltip: 'Recarregar',
-            onPressed: () => _fetchApiData(_auth.apiToken),
+      appTitle: "Investimentos Ativos",
+      isWeb: kIsWeb,
+      userAvatar: kIsWeb
+          ? CircleAvatar(
+        backgroundColor: Colors.indigo[100],
+        radius: 20,
+        child: auth.user?.photoURL != null
+            ? ClipOval(
+          child: Image.network(
+            auth.user!.photoURL!,
+            width: 40,
+            height: 40,
+            fit: BoxFit.cover,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                    loadingProgress.expectedTotalBytes!
+                    : null,
+              );
+            },
+            errorBuilder: (context, error, stackTrace) {
+              return Icon(Icons.person,
+                  color: Colors.indigo[700]);
+            },
           ),
-        ],
-        webNavItems: []
-      );
+        )
+            : Icon(Icons.person, color: Colors.indigo[700]),
+      )
+          : null,
+      actions: [
+        IconButton(
+          icon: Icon(
+            Icons.refresh,
+            color: kIsWeb ? Colors.indigo[700] : Colors.white,
+          ),
+          tooltip: 'Recarregar',
+          onPressed: () => _fetchApiData(_token),
+        ),
+      ],
+      webNavItems: [],
+    );
   }
 
   @override
@@ -157,39 +159,39 @@ class InvestimentosPageState extends State<InvestimentosPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _investimentos.isEmpty
-              ? InvestimentosPageEmptyState(
-                  onAddInvestimento: () => _addNewInvestimento(_auth.apiToken),
-                )
-              : RefreshIndicator(
-                  onRefresh: () => _fetchApiData(_auth.apiToken),
-                  child: ListView.builder(
-                    padding: EdgeInsets.all(kIsWeb ? 24.0 : 16.0), // Ajuste para web
-                    itemCount: _investimentos.length,
-                    itemBuilder: (context, index) => Padding(
-                      padding: EdgeInsets.only(
-                        bottom: kIsWeb ? 16.0 : 12.0, // Espaçamento maior na web
-                        left: kIsWeb ? 24.0 : 0,    // Padding lateral na web
-                        right: kIsWeb ? 24.0 : 0,
-                      ),
-                      child: InvestimentoCard(
-                        investimento: _investimentos[index],
-                        apiToken: _auth.apiToken,
-                        onRefresh: () => _fetchApiData(_auth.apiToken),
-                      ),
-                    ),
-                  ),
-                ),
+          ? InvestimentosPageEmptyState(
+        onAddInvestimento: () => _addNewInvestimento(_token),
+      )
+          : RefreshIndicator(
+        onRefresh: () => _fetchApiData(_token),
+        child: ListView.builder(
+          padding: EdgeInsets.all(kIsWeb ? 24.0 : 16.0),
+          itemCount: _investimentos.length,
+          itemBuilder: (context, index) => Padding(
+            padding: EdgeInsets.only(
+              bottom: kIsWeb ? 16.0 : 12.0,
+              left: kIsWeb ? 24.0 : 0,
+              right: kIsWeb ? 24.0 : 0,
+            ),
+            child: InvestimentoCard(
+              investimento: _investimentos[index],
+              apiToken: _token,
+              onRefresh: () => _fetchApiData(_token),
+            ),
+          ),
+        ),
+      ),
       floatingActionButton: InvestimentosFAB(
         isMenuOpen: _isMenuOpen,
         animationDuration: _animationDuration,
         onToggle: () => setState(() => _isMenuOpen = !_isMenuOpen),
         onAddCategoria: () {
           setState(() => _isMenuOpen = false);
-          _addNewCategoria(_auth.apiToken);
+          _addNewCategoria(_token);
         },
         onAddInvestimento: () {
           setState(() => _isMenuOpen = false);
-          _addNewInvestimento(_auth.apiToken);
+          _addNewInvestimento(_token);
         },
       ),
     );

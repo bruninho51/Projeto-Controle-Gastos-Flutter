@@ -7,8 +7,6 @@ class LoginPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
     return Scaffold(
       body: Container(
         decoration: _buildBackgroundDecoration(),
@@ -25,7 +23,7 @@ class LoginPage extends StatelessWidget {
                   const SizedBox(height: 24),
                   _buildDescriptionText(),
                   const SizedBox(height: 40),
-                  _buildGoogleSignInButton(authProvider),
+                  _buildGoogleSignInButton(context),
                   const SizedBox(height: 30),
                   _buildTermsText(),
                 ],
@@ -36,6 +34,48 @@ class LoginPage extends StatelessWidget {
       ),
     );
   }
+
+  // ================= LOGIN =================
+
+  Widget _buildGoogleSignInButton(BuildContext context) {
+    return Consumer<AuthState>(
+      builder: (context, auth, _) {
+        return Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(50),
+                blurRadius: 10,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: ElevatedButton(
+            onPressed: auth.isLoading
+                ? null
+                : () => _handleLogin(context),
+            style: _googleButtonStyle(),
+            child: auth.isLoading
+                ? const SizedBox(
+              height: 22,
+              width: 22,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+                : _buildGoogleButtonContent(),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _handleLogin(BuildContext context) async {
+    final auth = context.read<AuthState>();
+
+    await auth.login();
+  }
+
+  // ================= UI =================
 
   BoxDecoration _buildBackgroundDecoration() {
     return BoxDecoration(
@@ -108,45 +148,6 @@ class LoginPage extends StatelessWidget {
     );
   }
 
-  Widget _buildGoogleSignInButton(AuthProvider authProvider) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(50),
-            blurRadius: 10,
-            spreadRadius: 2,
-          ),
-        ],
-      ),
-      child: ElevatedButton(
-        onPressed: () => _handleGoogleSignIn(authProvider),
-        style: _googleButtonStyle(),
-        child: _buildGoogleButtonContent(),
-      ),
-    );
-  }
-
-  Future<void> _handleGoogleSignIn(AuthProvider authProvider) async {
-    await authProvider.signInWithGoogle();
-  }
-
-  ButtonStyle _googleButtonStyle() {
-    return ElevatedButton.styleFrom(
-      backgroundColor: Colors.white,
-      foregroundColor: Colors.grey[800],
-      padding: const EdgeInsets.symmetric(
-        horizontal: 24,
-        vertical: 16,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(30),
-      ),
-      elevation: 0,
-    );
-  }
-
   Widget _buildGoogleButtonContent() {
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -175,6 +176,21 @@ class LoginPage extends StatelessWidget {
         fontSize: 12,
         color: Colors.white54,
       ),
+    );
+  }
+
+  ButtonStyle _googleButtonStyle() {
+    return ElevatedButton.styleFrom(
+      backgroundColor: Colors.white,
+      foregroundColor: Colors.grey[800],
+      padding: const EdgeInsets.symmetric(
+        horizontal: 24,
+        vertical: 16,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(30),
+      ),
+      elevation: 0,
     );
   }
 }

@@ -1,166 +1,77 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
-import 'dart:io' show Platform;
-
-import 'package:orcamentos_app/shared/api_models.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
-import 'package:orcamentos_app/shared/auth_manager.dart';
+import 'package:orcamentos_app/shared/auth_service.dart';
+import 'package:orcamentos_app/shared/push_service.dart';
 
-const _webClientId = '1004439512234-mqqb1622hk1f9tlomi5r83gmh14b9bno.apps.googleusercontent.com';
+class AuthState with ChangeNotifier {
+  final AuthService authService;
+  final ApiService api;
+  final PushService pushService;
 
-class AuthProvider with ChangeNotifier {
-  // ================= DEPENDÊNCIAS =================
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  ApiService _api;
-
-  late final GoogleSignIn _googleSignIn = GoogleSignIn(
-    clientId: kIsWeb ? _webClientId : null,
-  );
-
-  // ================= ESTADO =================
+  String? _apiToken;
   User? _user;
-  String _apiToken = '';
-  bool _logoutInProgress = false;
-  bool _isLoading = true;
+  bool _isLoading = false;
 
   // ================= GETTERS =================
+
+  bool get isLoggedIn => _apiToken != null;
+  String? get apiToken => _apiToken;
   User? get user => _user;
-  String get apiToken => _apiToken;
-  bool get isLoggedIn => _user != null && _apiToken.isNotEmpty;
   bool get isLoading => _isLoading;
 
-  // ================= CONSTRUTOR =================
-  AuthProvider(this._api) {
-    AuthManager().isAuthenticatedListenable.addListener(_onAuthChanged);
+  // ================= CONSTRUCTOR =================
+
+  AuthState(this.authService, this.api, this.pushService) {
+    _wireApiService();
   }
 
-  void updateApiService(ApiService api) {
-    _api = api;
+  void _wireApiService() {
+    api.onTokenRequested(() => _apiToken);
+
+    api.onUnauthorized(() async {
+      await logout();
+    });
   }
 
-  ApiService get api => _api;
+  // ================= LOGIN =================
 
-  // ================= LIFECYCLE =================
-  @override
-  void dispose() {
-    AuthManager().isAuthenticatedListenable.removeListener(_onAuthChanged);
-    super.dispose();
-  }
-
-  void _onAuthChanged() {
-    if (!AuthManager().isAuthenticated) {
-      logout();
-    }
-  }
-
-  // ================= AÇÕES =================
-
-  Future<void> loadCurrentUser() async {
+  Future<void> login() async {
     _isLoading = true;
     notifyListeners();
 
-    _user = _auth.currentUser;
-
-    if (_user != null) {
-      await _fetchApiToken();
-    }
-
-    _isLoading = false;
-    notifyListeners();
-  }
-
-  Future<void> signInWithGoogle() async {
     try {
-      final googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) return;
+      final user = await authService.signInWithGoogle();
 
-      final googleAuth = await googleUser.authentication;
+      if (user == null) return;
 
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
+      _user = user;
 
-      await _auth.signInWithCredential(credential);
+      final idToken = await authService.getIdToken();
 
-      _user = _auth.currentUser;
+      if (idToken == null) return;
 
-      await _fetchApiToken();
+      final response = await api.verifyGoogle(idToken);
 
-      notifyListeners();
-    } catch (e) {
-      _apiToken = '';
-      notifyListeners();
-      rethrow;
-    }
-  }
-
-  Future<void> _fetchApiToken() async {
-    try {
-      final idToken = await _user?.getIdToken();
-
-      if (idToken == null) {
-        _apiToken = '';
-        return;
-      }
-
-      final response = await _api.verifyGoogle(idToken);
       _apiToken = response.accessToken;
 
-      AuthManager().setAuthenticated();
-    } catch (e) {
-      _apiToken = '';
-      rethrow;
+      notifyListeners(); // <- importante: atualiza token antes de requests futuros
+
+      await pushService.registerDevice(api);
     } finally {
+      _isLoading = false;
       notifyListeners();
     }
-    await _registerDeviceToken();
   }
 
-  Future<void> _registerDeviceToken() async {
-    try {
-      final fcmToken = await FirebaseMessaging.instance.getToken();
-      if (fcmToken == null) return;
-
-      final platform = kIsWeb
-          ? 'web'
-          : Platform.isAndroid
-          ? 'android'
-          : 'ios';
-
-      final api = ApiService(tokenProvider: () => _apiToken);
-
-      await api.upsertTokenDispositivo(
-        TokenDispositivoUpsertDto(token: fcmToken, plataforma: platform),
-      );
-
-      FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
-        await api.upsertTokenDispositivo(
-          TokenDispositivoUpsertDto(token: newToken, plataforma: platform),
-        );
-      });
-    } catch (e) {
-      // Falha silenciosa — não bloqueia o fluxo do usuário
-      debugPrint('Erro ao registrar token do dispositivo: $e');
-    }
-  }
+  // ================= LOGOUT =================
 
   Future<void> logout() async {
-    if (_logoutInProgress) return;
-    _logoutInProgress = true;
+    await authService.logout();
 
-    try {
-      await _googleSignIn.signOut();
-      await _auth.signOut();
+    _apiToken = null;
+    _user = null;
 
-      _user = null;
-      _apiToken = '';
-    } finally {
-      _logoutInProgress = false;
-      notifyListeners();
-    }
+    notifyListeners();
   }
 }
