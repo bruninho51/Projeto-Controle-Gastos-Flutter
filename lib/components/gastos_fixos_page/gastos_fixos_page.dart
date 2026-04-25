@@ -9,6 +9,8 @@ import 'package:orcamentos_app/utils/http.dart';
 import 'package:provider/provider.dart';
 import 'package:orcamentos_app/providers/auth_provider.dart';
 
+import '../common/orcamentos_loading.dart';
+
 class GastosFixosPage extends StatefulWidget {
   final int orcamentoId;
   final String apiToken;
@@ -242,8 +244,7 @@ class _GastosFixosPageState extends State<GastosFixosPage>
                 if (snapshot.connectionState == ConnectionState.waiting &&
                     snapshot.data == null) {
                   return Center(
-                      child: CircularProgressIndicator(
-                          color: const Color(0xFF1A237E), strokeWidth: 2.5));
+                      child: OrcamentosLoading(message: 'Carregando gastos fixos...'));
                 }
                 if (snapshot.hasError) {
                   return Center(

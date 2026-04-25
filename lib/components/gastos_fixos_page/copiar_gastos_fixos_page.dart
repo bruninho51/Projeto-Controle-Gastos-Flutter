@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:orcamentos_app/components/common/orcamentos_loading.dart';
 import 'package:orcamentos_app/shared/api_models.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
 import 'package:orcamentos_app/components/common/orcamentos_snackbar.dart';
@@ -63,8 +64,7 @@ class _CopiarGastosFixosPageState extends State<CopiarGastosFixosPage> {
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(
-                      child: CircularProgressIndicator(
-                          color: const Color(0xFF1A237E), strokeWidth: 2.5));
+                      child: OrcamentosLoading(message: 'Carregando...'));
                 }
                 if (snapshot.hasError) {
                   return Center(
@@ -259,8 +259,7 @@ class _SelecionarGastosPageState extends State<_SelecionarGastosPage> {
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(
-                      child: CircularProgressIndicator(
-                          color: const Color(0xFF1A237E), strokeWidth: 2.5));
+                      child: OrcamentosLoading(message: 'Carregando...'));
                 }
                 if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
                   return Center(

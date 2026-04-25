@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:orcamentos_app/components/common/orcamentos_loading.dart';
 import 'package:provider/provider.dart';
 
 import 'package:orcamentos_app/components/categorias_gastos_page/categorias_gastos_page.dart';
@@ -187,10 +188,7 @@ class OrcamentosPageState extends State<OrcamentosPage> {
   Widget _buildBody() {
     if (_isLoading) {
       return Center(
-        child: CircularProgressIndicator(
-          color: Colors.indigo[700],
-          strokeWidth: 2.5,
-        ),
+        child: OrcamentosLoading(message: 'Carregando orçamentos...'),
       );
     }
 

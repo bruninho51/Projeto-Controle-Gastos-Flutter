@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:orcamentos_app/components/common/orcamentos_loading.dart';
 import 'dart:convert';
 import 'package:orcamentos_app/utils/http.dart';
 import 'package:orcamentos_app/components/common/orcamentos_snackbar.dart';
@@ -186,7 +187,7 @@ class _CategoriasDeInvestimentoPageState extends State<CategoriasDeInvestimentoP
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: OrcamentosLoading(message: 'Carregando categorias...'))
           : _categorias.isEmpty
               ? Center(
                   child: Column(

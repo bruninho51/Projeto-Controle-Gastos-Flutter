@@ -9,6 +9,8 @@ import 'package:orcamentos_app/components/common/orcamentos_snackbar.dart';
 import 'package:provider/provider.dart';
 import 'package:orcamentos_app/providers/auth_provider.dart';
 
+import '../common/orcamentos_loading.dart';
+
 class GastosVariadosPage extends StatefulWidget {
   final int orcamentoId;
   final String apiToken;
@@ -214,8 +216,7 @@ class _GastosVariadosPageState extends State<GastosVariadosPage>
                 if (snapshot.connectionState == ConnectionState.waiting &&
                     snapshot.data == null) {
                   return Center(
-                      child: CircularProgressIndicator(
-                          color: Colors.purple[700], strokeWidth: 2.5));
+                      child: OrcamentosLoading(message: 'Carregando gastos variados...'));
                 }
                 if (snapshot.hasError) {
                   return Center(

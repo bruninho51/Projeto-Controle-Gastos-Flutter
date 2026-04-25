@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:orcamentos_app/components/common/orcamentos_loading.dart';
 import 'package:orcamentos_app/shared/api_models.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
 import 'package:orcamentos_app/components/common/orcamentos_snackbar.dart';
@@ -219,7 +220,7 @@ class _CategoriasDeGastoPageState extends State<CategoriasDeGastoPage>
           // ── Corpo ───────────────────────────────────────────────────────
           Expanded(
             child: _isLoading
-                ? Center(child: CircularProgressIndicator(color: Colors.indigo[700], strokeWidth: 2.5))
+                ? Center(child: OrcamentosLoading(message: 'Carregando categorias...'))
                 : _categorias.isEmpty
                 ? _buildEmptyState()
                 : _buildList(),

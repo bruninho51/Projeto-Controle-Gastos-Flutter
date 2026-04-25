@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:orcamentos_app/components/common/orcamentos_loading.dart';
 import 'package:orcamentos_app/providers/auth_provider.dart';
 import 'package:orcamentos_app/utils/http.dart';
 import 'package:orcamentos_app/components/orcamento_detalhes_page/info_state_widget.dart';
@@ -108,7 +109,7 @@ class _OrcamentosEncerradosPageState extends State<OrcamentosEncerradosPage> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: OrcamentosLoading(message: 'Carregando orçamentos...'));
     } else if (_orcamentos.isEmpty) {
       return InfoStateWidget(
         icon: Icons.archive,

@@ -55,7 +55,11 @@ class SharedAppBar extends StatefulWidget implements PreferredSizeWidget {
   State<SharedAppBar> createState() => _SharedAppBarState();
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight + 110.0);
+  Size get preferredSize {
+    final hasBottom = bottomContent != null || actionButtons.isNotEmpty;
+    final bottomHeight = hasBottom ? 44.0 : 0.0;
+    return Size.fromHeight(kToolbarHeight + 35.0 + bottomHeight);
+  }
 }
 
 class _SharedAppBarState extends State<SharedAppBar> {
@@ -127,11 +131,12 @@ class _SharedAppBarState extends State<SharedAppBar> {
             ),
           ),
         const Spacer(),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          spacing: 8,
-          children: widget.actionButtons,
-        ),
+        if (widget.actionButtons.isNotEmpty)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            spacing: 8,
+            children: widget.actionButtons,
+          ),
       ],
     );
   }
@@ -150,8 +155,10 @@ class _SharedAppBarState extends State<SharedAppBar> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildTopRow(),
-          const SizedBox(height: 16),
-          _buildBottomRow(),
+          if (widget.bottomContent != null || widget.actionButtons.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _buildBottomRow(),
+          ],
         ],
       ),
     );

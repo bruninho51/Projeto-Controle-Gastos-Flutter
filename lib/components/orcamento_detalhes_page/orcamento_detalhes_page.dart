@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:convert';
 import 'package:intl/intl.dart';
+import 'package:orcamentos_app/components/common/orcamentos_loading.dart';
 import 'package:orcamentos_app/providers/auth_provider.dart';
 import 'package:orcamentos_app/utils/formatters.dart';
 import 'package:orcamentos_app/components/gastos_fixos_page/gastos_fixos_page.dart';
@@ -568,7 +569,7 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
     return FutureBuilder<Map<String, double>>(
       future: _spendingData,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) return Center(child: CircularProgressIndicator(color: Colors.indigo[700], strokeWidth: 2.5));
+        if (snapshot.connectionState == ConnectionState.waiting) return Center(child: OrcamentosLoading(message: 'Carregando o Gŕafico...'));
         if (snapshot.hasError) return InfoStateWidget(buttonForegroundColor: Colors.red, buttonBackgroundColor: Colors.white, icon: Icons.error, iconColor: Colors.red, message: snapshot.error is String ? snapshot.error as String : 'Erro desconhecido');
         if (!snapshot.hasData || snapshot.data!.isEmpty) return _buildEmptyGrafico();
         return _GraficoContainer(child: GraficoGastoCategorias(categoryData: snapshot.data!, height: kIsWeb ? 420 : 380, barWidth: kIsWeb ? 28 : 20, title: 'Gastos por Categoria'));
@@ -636,7 +637,7 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
               future: _orcamentoDetalhes,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting && snapshot.data == null) {
-                  return Center(child: CircularProgressIndicator(color: Colors.indigo[700], strokeWidth: 2.5));
+                  return Center(child: OrcamentosLoading(message: 'Carregando o Orçamento...'));
                 }
                 if (snapshot.hasError) {
                   return InfoStateWidget(buttonForegroundColor: Colors.red, buttonBackgroundColor: Colors.white, icon: Icons.error, iconColor: Colors.red, message: snapshot.error is String ? snapshot.error as String : 'Erro desconhecido', buttonText: 'Tentar novamente', onPressed: _loadOrcamentoData);
