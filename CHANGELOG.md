@@ -1,3 +1,10 @@
+# [1.12.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.11.0...v1.12.0) (2026-04-25)
+
+
+### Features
+
+* melhorias visuais e limpeza de código ([53730c4](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/53730c46635e55ec6b4a27f158f244c44661ace3))
+
 # [1.11.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.10.0...v1.11.0) (2026-04-23)
 
 
