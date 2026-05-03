@@ -5,6 +5,7 @@ import 'package:orcamentos_app/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import '../dashboard_page/dashboard_page.dart';
 import '../perfil_page/perfil_page.dart';
+import 'package:orcamentos_app/features/config/pages/configuracoes_page.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 class MainAppScaffold extends StatefulWidget {
@@ -23,6 +24,7 @@ class _MainAppScaffoldState extends State<MainAppScaffold> {
     NavigationItem(icon: Icons.account_balance_wallet_outlined, activeIcon: Icons.account_balance_wallet_rounded, label: 'Orçamentos', page: OrcamentosPage()),
     NavigationItem(icon: Icons.savings_outlined, activeIcon: Icons.savings_rounded, label: 'Investimentos', page: InvestimentosPage()),
     NavigationItem(icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, label: 'Perfil', page: PerfilPage()),
+    NavigationItem(icon: Icons.settings_outlined, activeIcon: Icons.settings, label: 'Configurações', page: ConfiguracoesPage()),
   ];
 
   @override

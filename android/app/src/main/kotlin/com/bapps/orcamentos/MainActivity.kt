@@ -5,21 +5,55 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.PowerManager
 import android.provider.Settings
-import androidx.core.app.ActivityCompat
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
 
+    private val CHANNEL = "com.bapps.orcamentos/permissions"
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        NotificationBridge.initialize(flutterEngine)
-        startMonitorService()
-    }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        requestSetupPermissions()
+        //NotificationBridge.initialize(flutterEngine)
+
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
+            .setMethodCallHandler { call, result ->
+
+                when (call.method) {
+
+                    // ─────────────────────
+                    // START SERVICE (SAFE)
+                    // ─────────────────────
+                    "startMonitorService" -> {
+                        startMonitorServiceSafe()
+                        result.success(true)
+                    }
+
+                    "batteryOptimization" -> {
+                        requestBatteryOptimizationExemption()
+                        result.success(true)
+                    }
+
+                    "notificationListener" -> {
+                        requestNotificationListenerAccess()
+                        result.success(true)
+                    }
+
+                    "postNotifications" -> {
+                        requestPostNotificationsPermission()
+                        result.success(true)
+                    }
+
+                    "openAppSettings" -> {
+                        openAppSettings()
+                        result.success(true)
+                    }
+
+                    else -> result.notImplemented()
+                }
+            }
     }
 
     override fun onDestroy() {
@@ -27,47 +61,61 @@ class MainActivity : FlutterActivity() {
         super.onDestroy()
     }
 
-    private fun startMonitorService() {
-        if (MonitorForegroundService.isRunning) return
-        val intent = Intent(this, MonitorForegroundService::class.java)
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            startForegroundService(intent)
-        } else {
-            startService(intent)
+    // ─────────────────────────────
+    // SAFE SERVICE START
+    // ─────────────────────────────
+
+    private fun startMonitorServiceSafe() {
+        try {
+            val intent = Intent(this, MonitorForegroundService::class.java)
+
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                startForegroundService(intent)
+            } else {
+                startService(intent)
+            }
+
+        } catch (e: Exception) {
+            // não crasha app
         }
     }
 
-    private fun requestSetupPermissions() {
-        requestPostNotificationsPermission()
-        requestBatteryOptimizationExemption()
-        requestNotificationListenerAccess()
-    }
+    // ─────────────────────────────
+    // PERMISSIONS
+    // ─────────────────────────────
 
     private fun requestNotificationListenerAccess() {
-        val flat = Settings.Secure.getString(contentResolver, "enabled_notification_listeners")
-        if (flat == null || !flat.contains(packageName)) {
-            startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-        }
+        val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        startActivity(intent)
     }
 
     private fun requestBatteryOptimizationExemption() {
         val pm = getSystemService(POWER_SERVICE) as PowerManager
+
         if (!pm.isIgnoringBatteryOptimizations(packageName)) {
-            startActivity(
-                Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                    data = Uri.parse("package:$packageName")
-                }
-            )
+            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                data = Uri.parse("package:$packageName")
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            startActivity(intent)
         }
     }
 
     private fun requestPostNotificationsPermission() {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            ActivityCompat.requestPermissions(
-                this,
+            requestPermissions(
                 arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
                 1001
             )
         }
+    }
+
+    private fun openAppSettings() {
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            data = Uri.parse("package:$packageName")
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        startActivity(intent)
     }
 }

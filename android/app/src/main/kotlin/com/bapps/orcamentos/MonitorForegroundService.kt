@@ -3,6 +3,7 @@ package com.bapps.orcamentos
 import android.app.*
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.os.*
 import androidx.core.app.NotificationCompat
@@ -20,28 +21,60 @@ class MonitorForegroundService : Service() {
 
     private val handler = Handler(Looper.getMainLooper())
 
+    private var startedForeground = false
+
     private val watchdogRunnable = object : Runnable {
         override fun run() {
+
+            if (!isServiceAllowed()) {
+                stopSelf()
+                return
+            }
+
             if (isRunning) {
                 ensureNotificationVisible()
-                handler.postDelayed(this, 5000) // 🔁 verifica a cada 5s
+                handler.postDelayed(this, 5000)
             }
         }
     }
 
+    // ─────────────────────────────
+    // ENTRY POINT SAFETY
+    // ─────────────────────────────
+
     override fun onCreate() {
         super.onCreate()
-        isRunning = true
+
+        if (!isServiceAllowed()) {
+            stopSelf()
+            return
+        }
 
         createNotificationChannel()
-        startAsForeground()
 
-        // 🔥 inicia watchdog
+        if (!startAsForegroundSafe()) {
+            stopSelf()
+            return
+        }
+
+        isRunning = true
         handler.post(watchdogRunnable)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        startAsForeground()
+
+        if (!isServiceAllowed()) {
+            stopSelf()
+            return START_NOT_STICKY
+        }
+
+        if (!startedForeground) {
+            if (!startAsForegroundSafe()) {
+                stopSelf()
+                return START_NOT_STICKY
+            }
+        }
+
         return START_STICKY
     }
 
@@ -50,44 +83,65 @@ class MonitorForegroundService : Service() {
     override fun onDestroy() {
         isRunning = false
         handler.removeCallbacks(watchdogRunnable)
-
-        // 🔥 tenta reviver
-        val restartIntent = Intent(applicationContext, MonitorForegroundService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            applicationContext.startForegroundService(restartIntent)
-        } else {
-            applicationContext.startService(restartIntent)
-        }
-
+        startedForeground = false
         super.onDestroy()
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
-        val restartIntent = Intent(applicationContext, MonitorForegroundService::class.java)
-        restartIntent.setPackage(packageName)
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            applicationContext.startForegroundService(restartIntent)
-        } else {
-            applicationContext.startService(restartIntent)
-        }
-
+        isRunning = false
+        handler.removeCallbacks(watchdogRunnable)
+        stopSelf()
         super.onTaskRemoved(rootIntent)
     }
 
-    private fun startAsForeground() {
-        val notification = buildNotification()
+    // ─────────────────────────────
+    // RULE ENGINE (IMPORTANTE)
+    // ─────────────────────────────
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(
-                NOTIFICATION_ID,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
-            )
-        } else {
-            startForeground(NOTIFICATION_ID, notification)
+    private fun isServiceAllowed(): Boolean {
+
+        // Android 13+ notification permission
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val granted = checkSelfPermission(
+                android.Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+
+            if (!granted) return false
+        }
+
+        return true
+    }
+
+    // ─────────────────────────────
+    // FOREGROUND START (SAFE)
+    // ─────────────────────────────
+
+    private fun startAsForegroundSafe(): Boolean {
+        return try {
+
+            val notification = buildNotification()
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(
+                    NOTIFICATION_ID,
+                    notification,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+                )
+            } else {
+                startForeground(NOTIFICATION_ID, notification)
+            }
+
+            startedForeground = true
+            true
+
+        } catch (e: Exception) {
+            false
         }
     }
+
+    // ─────────────────────────────
+    // WATCHDOG
+    // ─────────────────────────────
 
     private fun ensureNotificationVisible() {
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -100,14 +154,18 @@ class MonitorForegroundService : Service() {
 
         val exists = activeNotifications.any { it.id == NOTIFICATION_ID }
 
-        if (!exists) {
-            // 🔥 recria a notificação se o usuário deu swipe
-            startAsForeground()
+        if (!exists && startedForeground) {
+            startAsForegroundSafe()
         }
     }
 
+    // ─────────────────────────────
+    // CHANNEL
+    // ─────────────────────────────
+
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 "Notification Monitor",
@@ -122,10 +180,14 @@ class MonitorForegroundService : Service() {
         }
     }
 
+    // ─────────────────────────────
+    // NOTIFICATION
+    // ─────────────────────────────
+
     private fun buildNotification(): Notification {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Orçamentos App")
-            .setContentText("Monitorando notificações para registrar gastos")
+            .setContentText("Monitor ativo (quando permitido)")
             .setSmallIcon(R.mipmap.ic_launcher)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)

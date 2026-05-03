@@ -14,7 +14,7 @@ class BootReceiver : BroadcastReceiver() {
             Log.d(TAG, "Boot completed, starting foreground service")
             val serviceIntent = Intent(context, MonitorForegroundService::class.java)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(serviceIntent)
+                //context.startForegroundService(serviceIntent)
             } else {
                 context.startService(serviceIntent)
             }
