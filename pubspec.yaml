@@ -53,6 +53,11 @@ flutter_icons:
   android: true
   ios: true
   image_path: "assets/icon.png"  # Caminho do ícone
+  web:
+    generate: true
+    image_path: "assets/icon.png"
+    background_color: "#1A237E"
+    theme_color: "#1A237E"
   #adaptive_icon_background: "#ffffff"  # Para Android (opcional)
   #adaptive_icon_foreground: "assets/icon_foreground.png"  # Para Android (opcional)
 
