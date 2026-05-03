@@ -21,6 +21,26 @@ fi
 
 echo "🐳 Iniciando build Docker para versão: $new_version"
 
+# ─────────────────────────────────────────────────────────────
+# pubspec.yaml
+# ─────────────────────────────────────────────────────────────
+pubspec_file="pubspec.yaml"
+echo "📝 Atualizando $pubspec_file..."
+
+if [ ! -f "$pubspec_file" ]; then
+    echo "❌ Erro: $pubspec_file não encontrado"
+    exit 1
+fi
+
+sed -i "s/^version: [0-9]\+\.[0-9]\+\.[0-9]\+\(.*\)$/version: $new_version\1/" "$pubspec_file"
+
+if grep -q "version: $new_version" "$pubspec_file"; then
+    echo "✅ $pubspec_file atualizado!"
+else
+    echo "❌ Erro: Falha ao atualizar $pubspec_file"
+    exit 1
+fi
+
 image_name="registry.gitlab.com/bruninho51/projeto-controle-gastos-flutter"
 full_image="$image_name:v$new_version"
 
