@@ -11,7 +11,7 @@ import androidx.core.app.NotificationCompat
 class MonitorForegroundService : Service() {
 
     companion object {
-        private const val CHANNEL_ID = "notification_monitor_channel"
+        private const val CHANNEL_ID   = "notification_monitor_channel"
         private const val NOTIFICATION_ID = 1001
 
         @Volatile
@@ -21,25 +21,8 @@ class MonitorForegroundService : Service() {
 
     private val handler = Handler(Looper.getMainLooper())
 
-    private var startedForeground = false
-
-    private val watchdogRunnable = object : Runnable {
-        override fun run() {
-
-            if (!isServiceAllowed()) {
-                stopSelf()
-                return
-            }
-
-            if (isRunning) {
-                ensureNotificationVisible()
-                handler.postDelayed(this, 5000)
-            }
-        }
-    }
-
     // ─────────────────────────────
-    // ENTRY POINT SAFETY
+    // LIFECYCLE
     // ─────────────────────────────
 
     override fun onCreate() {
@@ -57,50 +40,71 @@ class MonitorForegroundService : Service() {
             return
         }
 
+        // só marca running depois que o foreground subiu com sucesso
         isRunning = true
-        handler.post(watchdogRunnable)
+        handler.postDelayed(watchdogRunnable, 5_000)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-
-        if (!isServiceAllowed()) {
+        // onCreate já fez tudo; onStartCommand só precisa garantir
+        // que o serviço continue vivo se o sistema o reiniciar
+        if (!isRunning) {
             stopSelf()
             return START_NOT_STICKY
         }
-
-        if (!startedForeground) {
-            if (!startAsForegroundSafe()) {
-                stopSelf()
-                return START_NOT_STICKY
-            }
-        }
-
         return START_STICKY
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
-        isRunning = false
-        handler.removeCallbacks(watchdogRunnable)
-        startedForeground = false
+        teardown()
         super.onDestroy()
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
-        isRunning = false
-        handler.removeCallbacks(watchdogRunnable)
+        // usuário fechou o app pelo recentes — para limpo
+        teardown()
         stopSelf()
         super.onTaskRemoved(rootIntent)
     }
 
     // ─────────────────────────────
-    // RULE ENGINE (IMPORTANTE)
+    // TEARDOWN CENTRALIZADO
+    // ─────────────────────────────
+
+    private fun teardown() {
+        isRunning = false
+        handler.removeCallbacks(watchdogRunnable)
+    }
+
+    // ─────────────────────────────
+    // WATCHDOG
+    // ─────────────────────────────
+
+    private val watchdogRunnable = object : Runnable {
+        override fun run() {
+            // checa isRunning antes de qualquer coisa —
+            // evita repostar depois de teardown()
+            if (!isRunning) return
+
+            if (!isServiceAllowed()) {
+                stopSelf()
+                return
+            }
+
+            ensureNotificationVisible()
+
+            // reagenda somente se ainda estiver rodando
+            handler.postDelayed(this, 5_000)
+        }
+    }
+
+    // ─────────────────────────────
+    // PERMISSÃO MÍNIMA
     // ─────────────────────────────
 
     private fun isServiceAllowed(): Boolean {
-
-        // Android 13+ notification permission
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val granted = checkSelfPermission(
                 android.Manifest.permission.POST_NOTIFICATIONS
@@ -108,7 +112,6 @@ class MonitorForegroundService : Service() {
 
             if (!granted) return false
         }
-
         return true
     }
 
@@ -118,7 +121,6 @@ class MonitorForegroundService : Service() {
 
     private fun startAsForegroundSafe(): Boolean {
         return try {
-
             val notification = buildNotification()
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -131,46 +133,40 @@ class MonitorForegroundService : Service() {
                 startForeground(NOTIFICATION_ID, notification)
             }
 
-            startedForeground = true
             true
-
         } catch (e: Exception) {
             false
         }
     }
 
     // ─────────────────────────────
-    // WATCHDOG
+    // WATCHDOG — checar notificação
     // ─────────────────────────────
 
     private fun ensureNotificationVisible() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return
+
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val exists  = manager.activeNotifications.any { it.id == NOTIFICATION_ID }
 
-        val activeNotifications = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            manager.activeNotifications
-        } else {
-            emptyArray()
-        }
-
-        val exists = activeNotifications.any { it.id == NOTIFICATION_ID }
-
-        if (!exists && startedForeground) {
+        if (!exists) {
+            // notificação sumiu (ex: usuário deslizou) — recria
             startAsForegroundSafe()
         }
     }
 
     // ─────────────────────────────
-    // CHANNEL
+    // CANAL DE NOTIFICAÇÃO
     // ─────────────────────────────
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Notification Monitor",
+                "Monitor de notificações",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
+                description      = "Serviço de captura de gastos automáticos"
                 setShowBadge(false)
                 lockscreenVisibility = Notification.VISIBILITY_SECRET
             }
@@ -181,17 +177,30 @@ class MonitorForegroundService : Service() {
     }
 
     // ─────────────────────────────
-    // NOTIFICATION
+    // NOTIFICAÇÃO
     // ─────────────────────────────
 
     private fun buildNotification(): Notification {
+        // toca na tela principal ao clicar na notificação
+        val pendingIntent = packageManager
+            .getLaunchIntentForPackage(packageName)
+            ?.let { launchIntent ->
+                launchIntent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                PendingIntent.getActivity(
+                    this, 0, launchIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+            }
+
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Orçamentos App")
-            .setContentText("Monitor ativo (quando permitido)")
+            .setContentTitle("Orçamentos")
+            .setContentText("Capturando notificações bancárias em segundo plano")
             .setSmallIcon(R.mipmap.ic_launcher)
             .setOngoing(true)
+            .setSilent(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .setContentIntent(pendingIntent)
             .build()
     }
 }

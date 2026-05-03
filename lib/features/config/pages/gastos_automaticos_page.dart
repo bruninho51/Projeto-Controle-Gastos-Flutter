@@ -1,8 +1,8 @@
 // lib/features/configuracoes/gastos_automaticos_page.dart
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:app_settings/app_settings.dart';
 import 'package:orcamentos_app/components/common/shared_appbar.dart';
 
 class GastosAutomaticosPage extends StatefulWidget {
@@ -14,10 +14,9 @@ class GastosAutomaticosPage extends StatefulWidget {
 
 class _GastosAutomaticosPageState extends State<GastosAutomaticosPage>
     with WidgetsBindingObserver {
-  static const _dark   = Color(0xFF1A237E);
-  static const _mid    = Color(0xFF283593);
-  static const _light  = Color(0xFF3949AB);
-  static const _accent = Color(0xFF7986CB);
+  static const _dark  = Color(0xFF1A237E);
+  static const _mid   = Color(0xFF283593);
+  static const _light = Color(0xFF3949AB);
 
   static const _gradientColors = [
     Color(0xFF1A237E),
@@ -25,75 +24,107 @@ class _GastosAutomaticosPageState extends State<GastosAutomaticosPage>
     Color(0xFF3949AB),
   ];
 
-  // Canal nativo para verificar permissão de notificação listener
-  static const _channel = MethodChannel('orcamentos_app/notification_listener');
+  static const _channel = MethodChannel('com.bapps.orcamentos/permissions');
 
-  bool _listenerEnabled = false;
-  bool _serviceRunning  = false;
-  bool _loading         = true;
-  bool _waitingForSettings = false;
+  bool _notificationListenerEnabled = false;
+  bool _batteryOptimizationExempt   = false;
+  bool _postNotificationsGranted    = false;
+  bool _serviceRunning              = false;
+  bool _loading                     = true;
+
+  Timer? _pollingTimer;
+
+  bool get _allPermissionsGranted =>
+      _notificationListenerEnabled &&
+          _batteryOptimizationExempt &&
+          _postNotificationsGranted;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _loadStatus();
+    _startPolling();
   }
 
   @override
   void dispose() {
+    _pollingTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && _waitingForSettings) {
-      _waitingForSettings = false;
+    if (state == AppLifecycleState.resumed) {
       _loadStatus();
+      _startPolling();
+    } else if (state == AppLifecycleState.paused) {
+      _pollingTimer?.cancel();
     }
   }
 
+  void _startPolling() {
+    _pollingTimer?.cancel();
+    _pollingTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+      _loadStatus();
+    });
+  }
+
   Future<void> _loadStatus() async {
-    setState(() => _loading = true);
+    // não mostra loading no polling — só na primeira carga
+    final isFirstLoad = _loading;
+    if (!isFirstLoad) {
+      // atualiza silenciosamente
+    } else {
+      setState(() => _loading = true);
+    }
+
     try {
-      final enabled = await _channel.invokeMethod<bool>('isNotificationListenerEnabled') ?? false;
-      final running = await _channel.invokeMethod<bool>('isServiceRunning') ?? false;
+      final listener = await _channel.invokeMethod<bool>('isNotificationListenerEnabled') ?? false;
+      final battery  = await _channel.invokeMethod<bool>('isBatteryOptimizationExempt') ?? false;
+      final post     = await _channel.invokeMethod<bool>('isPostNotificationsGranted') ?? false;
+      final running  = await _channel.invokeMethod<bool>('isServiceRunning') ?? false;
+
+      if (!mounted) return;
       setState(() {
-        _listenerEnabled = enabled;
-        _serviceRunning  = running;
+        _notificationListenerEnabled = listener;
+        _batteryOptimizationExempt   = battery;
+        _postNotificationsGranted    = post;
+        _serviceRunning              = running;
+        _loading                     = false;
       });
     } on PlatformException {
-      // Canal não implementado ainda — trata graciosamente
+      if (!mounted) return;
       setState(() {
-        _listenerEnabled = false;
-        _serviceRunning  = false;
+        _notificationListenerEnabled = false;
+        _batteryOptimizationExempt   = false;
+        _postNotificationsGranted    = false;
+        _serviceRunning              = false;
+        _loading                     = false;
       });
-    } finally {
-      setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _requestPermission(String type) async {
+    try {
+      await _channel.invokeMethod(type);
+    } on PlatformException catch (e) {
+      _showErrorSnack(e.message ?? 'Erro ao solicitar permissão.');
     }
   }
 
   Future<void> _toggleService(bool value) async {
-    if (!_listenerEnabled) {
-      _showPermissionRequiredDialog();
+    if (!_allPermissionsGranted) {
+      _showPermissionsRequiredDialog();
       return;
     }
     try {
-      if (value) {
-        await _channel.invokeMethod('startService');
-      } else {
-        await _channel.invokeMethod('stopService');
-      }
+      await _channel.invokeMethod(value ? 'startService' : 'stopService');
       setState(() => _serviceRunning = value);
     } on PlatformException catch (e) {
       _showErrorSnack(e.message ?? 'Erro ao alterar o serviço.');
     }
-  }
-
-  void _openNotificationListenerSettings() {
-    _waitingForSettings = true;
-    AppSettings.openAppSettings(type: AppSettingsType.notification);
   }
 
   // ── Build ─────────────────────────────────────────────
@@ -121,15 +152,15 @@ class _GastosAutomaticosPageState extends State<GastosAutomaticosPage>
           children: [
             _buildInfoBanner(),
             const SizedBox(height: 20),
-            _buildSectionLabel('Permissão do sistema'),
-            _buildListenerCard(),
-            const SizedBox(height: 20),
-            _buildSectionLabel('Serviço em foreground'),
-            _buildServiceCard(),
-            if (!_listenerEnabled) ...[
+            _buildSectionLabel('Permissões do sistema'),
+            _buildPermissionsCard(),
+            if (!_allPermissionsGranted) ...[
               const SizedBox(height: 12),
               _buildBlockedBanner(),
             ],
+            const SizedBox(height: 20),
+            _buildSectionLabel('Serviço de captura'),
+            _buildServiceCard(),
             const SizedBox(height: 20),
             _buildSectionLabel('Como funciona'),
             _buildHowItWorksCard(),
@@ -187,34 +218,88 @@ class _GastosAutomaticosPageState extends State<GastosAutomaticosPage>
     );
   }
 
-  // ── Card de permissão listener ────────────────────────
+  // ── Card de permissões (3 em 1) ───────────────────────
 
-  Widget _buildListenerCard() {
+  Widget _buildPermissionsCard() {
     return _Card(children: [
       _PermissionTile(
-        icon: _listenerEnabled
+        icon: _notificationListenerEnabled
             ? Icons.notifications_active_outlined
             : Icons.notifications_off_outlined,
-        iconColor: _listenerEnabled
+        iconColor: _notificationListenerEnabled
             ? const Color(0xFF43A047)
             : const Color(0xFFE53935),
         title: 'Acesso a notificações',
-        subtitle: _listenerEnabled
+        subtitle: _notificationListenerEnabled
             ? 'O app pode ler notificações de outros aplicativos'
             : 'Necessário para capturar notificações dos bancos',
         statusWidget: _StatusBadge(
-          label: _listenerEnabled ? 'Permitido' : 'Bloqueado',
-          color: _listenerEnabled
+          label: _notificationListenerEnabled ? 'Permitido' : 'Bloqueado',
+          color: _notificationListenerEnabled
               ? const Color(0xFF43A047)
               : const Color(0xFFE53935),
         ),
-        action: _listenerEnabled
+        action: _notificationListenerEnabled
             ? null
             : _ActionButton(
           label: 'Conceder acesso',
           icon: Icons.open_in_new_rounded,
           color: _mid,
-          onTap: _openNotificationListenerSettings,
+          onTap: () => _requestPermission('notificationListener'),
+        ),
+      ),
+
+      _PermissionTile(
+        icon: _batteryOptimizationExempt
+            ? Icons.battery_charging_full_outlined
+            : Icons.battery_alert_outlined,
+        iconColor: _batteryOptimizationExempt
+            ? const Color(0xFF43A047)
+            : const Color(0xFFE53935),
+        title: 'Execução sem restrições',
+        subtitle: _batteryOptimizationExempt
+            ? 'O app não será interrompido pela otimização de bateria'
+            : 'Sem essa permissão o serviço pode ser encerrado pelo sistema',
+        statusWidget: _StatusBadge(
+          label: _batteryOptimizationExempt ? 'Permitido' : 'Bloqueado',
+          color: _batteryOptimizationExempt
+              ? const Color(0xFF43A047)
+              : const Color(0xFFE53935),
+        ),
+        action: _batteryOptimizationExempt
+            ? null
+            : _ActionButton(
+          label: 'Conceder acesso',
+          icon: Icons.open_in_new_rounded,
+          color: _mid,
+          onTap: () => _requestPermission('batteryOptimization'),
+        ),
+      ),
+
+      _PermissionTile(
+        icon: _postNotificationsGranted
+            ? Icons.add_alert_outlined
+            : Icons.notifications_paused_outlined,
+        iconColor: _postNotificationsGranted
+            ? const Color(0xFF43A047)
+            : const Color(0xFFE53935),
+        title: 'Exibir notificações',
+        subtitle: _postNotificationsGranted
+            ? 'O app pode exibir notificações de status do serviço'
+            : 'Necessário para manter o serviço visível em segundo plano',
+        statusWidget: _StatusBadge(
+          label: _postNotificationsGranted ? 'Permitido' : 'Bloqueado',
+          color: _postNotificationsGranted
+              ? const Color(0xFF43A047)
+              : const Color(0xFFE53935),
+        ),
+        action: _postNotificationsGranted
+            ? null
+            : _ActionButton(
+          label: 'Conceder acesso',
+          icon: Icons.open_in_new_rounded,
+          color: _mid,
+          onTap: () => _requestPermission('postNotifications'),
         ),
       ),
     ]);
@@ -224,24 +309,24 @@ class _GastosAutomaticosPageState extends State<GastosAutomaticosPage>
 
   Widget _buildServiceCard() {
     return Opacity(
-      opacity: _listenerEnabled ? 1.0 : 0.5,
+      opacity: _allPermissionsGranted ? 1.0 : 0.5,
       child: _Card(children: [
         _PermissionTile(
           icon: _serviceRunning
-              ? Icons.play_circle_outline_rounded
-              : Icons.pause_circle_outline_rounded,
+              ? Icons.sync_rounded
+              : Icons.sync_disabled_rounded,
           iconColor: _serviceRunning ? _light : Colors.grey,
-          title: 'Serviço em foreground',
+          title: 'Captura automática de gastos',
           subtitle: _serviceRunning
-              ? 'Rodando em segundo plano — capturando notificações'
-              : 'Serviço parado — nenhuma notificação será capturada',
+              ? 'Monitorando notificações bancárias em segundo plano'
+              : 'Ative para registrar gastos automaticamente ao receber notificações do banco',
           statusWidget: _StatusBadge(
             label: _serviceRunning ? 'Ativo' : 'Inativo',
             color: _serviceRunning ? _light : Colors.grey,
           ),
           action: Switch(
             value: _serviceRunning,
-            onChanged: _listenerEnabled ? _toggleService : null,
+            onChanged: _allPermissionsGranted ? _toggleService : null,
             activeColor: Colors.white,
             activeTrackColor: _mid,
             inactiveThumbColor: Colors.white,
@@ -255,6 +340,15 @@ class _GastosAutomaticosPageState extends State<GastosAutomaticosPage>
   // ── Banner de bloqueio ────────────────────────────────
 
   Widget _buildBlockedBanner() {
+    final missing = <String>[];
+    if (!_notificationListenerEnabled) missing.add('acesso a notificações');
+    if (!_batteryOptimizationExempt)   missing.add('execução sem restrições');
+    if (!_postNotificationsGranted)    missing.add('exibição de notificações');
+
+    final text = missing.length == 1
+        ? 'Conceda a permissão de ${missing[0]} para ativar o serviço.'
+        : 'Conceda as permissões pendentes para ativar o serviço de captura automática.';
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
@@ -264,16 +358,12 @@ class _GastosAutomaticosPageState extends State<GastosAutomaticosPage>
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline_rounded,
-              color: Color(0xFFE53935), size: 20),
+          const Icon(Icons.error_outline_rounded, color: Color(0xFFE53935), size: 20),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Conceda o acesso a notificações para ativar o serviço de captura automática.',
-              style: TextStyle(
-                  fontSize: 12,
-                  color: const Color(0xFFE53935),
-                  height: 1.5),
+              text,
+              style: const TextStyle(fontSize: 12, color: Color(0xFFE53935), height: 1.5),
             ),
           ),
         ],
@@ -285,10 +375,10 @@ class _GastosAutomaticosPageState extends State<GastosAutomaticosPage>
 
   Widget _buildHowItWorksCard() {
     const steps = [
-      (Icons.notifications_outlined,   'Notificação recebida',   'Seu banco envia uma notificação de débito ou compra'),
-      (Icons.search_outlined,          'Leitura automática',     'O serviço em foreground lê e interpreta o valor e descrição'),
-      (Icons.add_circle_outline,       'Cadastro no orçamento',  'O gasto é cadastrado automaticamente no orçamento ativo'),
-      (Icons.check_circle_outline,     'Revisão disponível',     'Você pode revisar ou excluir qualquer gasto capturado'),
+      (Icons.notifications_outlined, 'Notificação recebida',  'Seu banco envia uma notificação de débito ou compra'),
+      (Icons.search_outlined,        'Leitura automática',    'O aplicativo lê e interpreta o valor e a descrição'),
+      (Icons.add_circle_outline,     'Cadastro no orçamento', 'O gasto é cadastrado automaticamente no orçamento ativo'),
+      (Icons.check_circle_outline,   'Revisão disponível',    'Você pode revisar ou excluir qualquer gasto capturado'),
     ];
 
     return _Card(
@@ -296,7 +386,6 @@ class _GastosAutomaticosPageState extends State<GastosAutomaticosPage>
         final i = e.key;
         final (icon, title, desc) = e.value;
         final isLast = i == steps.length - 1;
-
         return Column(
           children: [
             Padding(
@@ -316,10 +405,7 @@ class _GastosAutomaticosPageState extends State<GastosAutomaticosPage>
                       ),
                       if (!isLast) ...[
                         const SizedBox(height: 4),
-                        Container(
-                          width: 1.5, height: 16,
-                          color: _light.withOpacity(0.2),
-                        ),
+                        Container(width: 1.5, height: 16, color: _light.withOpacity(0.2)),
                       ],
                     ],
                   ),
@@ -330,22 +416,12 @@ class _GastosAutomaticosPageState extends State<GastosAutomaticosPage>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            title,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: _dark,
-                            ),
-                          ),
+                          Text(title,
+                              style: const TextStyle(
+                                  fontSize: 13, fontWeight: FontWeight.w600, color: _dark)),
                           const SizedBox(height: 2),
-                          Text(
-                            desc,
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[500],
-                                height: 1.4),
-                          ),
+                          Text(desc,
+                              style: TextStyle(fontSize: 12, color: Colors.grey[500], height: 1.4)),
                         ],
                       ),
                     ),
@@ -390,7 +466,7 @@ class _GastosAutomaticosPageState extends State<GastosAutomaticosPage>
     );
   }
 
-  void _showPermissionRequiredDialog() {
+  void _showPermissionsRequiredDialog() {
     showDialog(
       context: context,
       builder: (_) => Dialog(
@@ -407,59 +483,33 @@ class _GastosAutomaticosPageState extends State<GastosAutomaticosPage>
                   color: const Color(0xFFE53935).withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.block_rounded,
-                    color: Color(0xFFE53935), size: 26),
+                child: const Icon(Icons.block_rounded, color: Color(0xFFE53935), size: 26),
               ),
               const SizedBox(height: 16),
               const Text(
-                'Acesso necessário',
-                style: TextStyle(
-                    fontSize: 17, fontWeight: FontWeight.w700, color: _dark),
+                'Permissões necessárias',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: _dark),
               ),
               const SizedBox(height: 8),
               Text(
-                'Conceda o acesso a notificações antes de ativar o serviço.',
+                'Conceda todas as permissões pendentes antes de ativar o serviço.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                    fontSize: 13, color: Colors.grey[500], height: 1.5),
+                style: TextStyle(fontSize: 13, color: Colors.grey[500], height: 1.5),
               ),
               const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 13),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: BorderSide(color: Colors.grey.shade200),
-                        ),
-                      ),
-                      child: Text('Cancelar',
-                          style: TextStyle(color: Colors.grey[600])),
-                    ),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _mid,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _openNotificationListenerSettings();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _mid,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 13),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: const Text('Conceder',
-                          style: TextStyle(fontWeight: FontWeight.w600)),
-                    ),
-                  ),
-                ],
+                  child: const Text('Entendi', style: TextStyle(fontWeight: FontWeight.w600)),
+                ),
               ),
             ],
           ),
@@ -498,11 +548,7 @@ class _Card extends StatelessWidget {
             children: [
               e.value,
               if (!isLast)
-                Divider(
-                    height: 1,
-                    indent: 60,
-                    endIndent: 20,
-                    color: Colors.grey.shade100),
+                Divider(height: 1, indent: 60, endIndent: 20, color: Colors.grey.shade100),
             ],
           );
         }).toList(),
@@ -564,11 +610,8 @@ class _PermissionTile extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                      fontSize: 12, color: Colors.grey[500], height: 1.4),
-                ),
+                Text(subtitle,
+                    style: TextStyle(fontSize: 12, color: Colors.grey[500], height: 1.4)),
                 if (action != null) ...[
                   const SizedBox(height: 12),
                   action!,
@@ -598,10 +641,7 @@ class _StatusBadge extends StatelessWidget {
       child: Text(
         label,
         style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            color: color,
-            letterSpacing: 0.3),
+            fontSize: 11, fontWeight: FontWeight.w700, color: color, letterSpacing: 0.3),
       ),
     );
   }
@@ -635,10 +675,8 @@ class _ActionButton extends StatelessWidget {
           foregroundColor: color,
           side: BorderSide(color: color.withOpacity(0.4)),
           padding: const EdgeInsets.symmetric(horizontal: 14),
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10)),
-          textStyle: const TextStyle(
-              fontSize: 13, fontWeight: FontWeight.w600),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
         ),
       )
           : ElevatedButton.icon(
@@ -650,10 +688,8 @@ class _ActionButton extends StatelessWidget {
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 14),
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10)),
-          textStyle: const TextStyle(
-              fontSize: 13, fontWeight: FontWeight.w600),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
         ),
       ),
     );

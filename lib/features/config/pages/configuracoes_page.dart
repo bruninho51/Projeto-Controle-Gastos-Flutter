@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:orcamentos_app/features/config/pages/gastos_automaticos_page.dart';
+import 'package:orcamentos_app/features/config/pages/permissoes_notificacoes_page.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:orcamentos_app/components/common/shared_appbar.dart';
-import 'package:orcamentos_app/features/config/pages/permissoes_page.dart';
 
 class ConfiguracoesPage extends StatefulWidget {
   const ConfiguracoesPage({super.key});
@@ -54,17 +54,17 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
         children: [
-          _buildSectionLabel('Acesso'),
+          _buildSectionLabel('Notificações'),
           _buildCard([
             _buildTile(
               context,
-              icon: Icons.lock_outline_rounded,
+              icon: Icons.notifications_outlined,
               color: _light,
-              title: 'Permissões',
-              subtitle: 'Gerencie o acesso de usuários',
+              title: 'Notificações',
+              subtitle: 'Permissões de notificação do sistema e do app',
               onTap: () => Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const PermissoesPage()),
+                MaterialPageRoute(builder: (_) => const PermissoesNotificacoesPage()),
               ),
             ),
           ]),
@@ -99,8 +99,7 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
                   : Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: _light.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -122,8 +121,6 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
     );
   }
 
-  // ── Label de seção ────────────────────────────────────
-
   Widget _buildSectionLabel(String label) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10, left: 4),
@@ -138,8 +135,6 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
       ),
     );
   }
-
-  // ── Card agrupador ────────────────────────────────────
 
   Widget _buildCard(List<Widget> children) {
     return Container(
@@ -173,8 +168,6 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
       ),
     );
   }
-
-  // ── Tile ──────────────────────────────────────────────
 
   Widget _buildTile(
       BuildContext context, {
@@ -227,13 +220,10 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                   ],
                 ),
               ),
-              if (trailing != null) trailing
+              if (trailing != null)
+                trailing
               else if (showArrow)
-                Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 14,
-                  color: Colors.grey[400],
-                ),
+                Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey[400]),
             ],
           ),
         ),
