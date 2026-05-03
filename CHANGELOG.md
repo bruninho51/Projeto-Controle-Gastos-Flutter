@@ -1,3 +1,10 @@
+## [1.14.1](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.14.0...v1.14.1) (2026-05-03)
+
+
+### Bug Fixes
+
+* corrige bug nas configurações na web ([051da1d](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/051da1dd590b93f4b15f9fe3b4789dc02e98ff19))
+
 # [1.14.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.13.0...v1.14.0) (2026-05-03)
 
 
