@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:app_settings/app_settings.dart';
 import 'package:orcamentos_app/components/common/shared_appbar.dart';
+import 'package:orcamentos_app/shared/device_registration_service.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PermissoesNotificacoesPage extends StatefulWidget {
   const PermissoesNotificacoesPage({super.key});
@@ -12,10 +15,9 @@ class PermissoesNotificacoesPage extends StatefulWidget {
 
 class _PermissoesNotificacoesPageState extends State<PermissoesNotificacoesPage>
     with WidgetsBindingObserver {
-  static const _dark   = Color(0xFF1A237E);
-  static const _mid    = Color(0xFF283593);
-  static const _light  = Color(0xFF3949AB);
-  static const _accent = Color(0xFF7986CB);
+  static const _dark  = Color(0xFF1A237E);
+  static const _mid   = Color(0xFF283593);
+  static const _light = Color(0xFF3949AB);
 
   static const _gradientColors = [
     Color(0xFF1A237E),
@@ -23,10 +25,10 @@ class _PermissoesNotificacoesPageState extends State<PermissoesNotificacoesPage>
     Color(0xFF3949AB),
   ];
 
-  AuthorizationStatus _androidStatus = AuthorizationStatus.notDetermined;
+  AuthorizationStatus _status = AuthorizationStatus.notDetermined;
   bool _appNotificationsEnabled = false;
-  bool _loading = true;
-  bool _waitingForSettings = false;
+  bool _loading                 = true;
+  bool _waitingForSettings      = false;
 
   @override
   void initState() {
@@ -51,33 +53,38 @@ class _PermissoesNotificacoesPageState extends State<PermissoesNotificacoesPage>
 
   Future<void> _loadStatus() async {
     setState(() => _loading = true);
+
+    final prefs    = await SharedPreferences.getInstance();
     final settings = await FirebaseMessaging.instance.getNotificationSettings();
+
     setState(() {
-      _androidStatus = settings.authorizationStatus;
-      _appNotificationsEnabled =
-          settings.authorizationStatus == AuthorizationStatus.authorized ||
-              settings.authorizationStatus == AuthorizationStatus.provisional;
+      _status                  = settings.authorizationStatus;
+      _appNotificationsEnabled = _systemGranted &&
+          (prefs.getBool('notificacoes_ativas') ?? false);
       _loading = false;
     });
   }
 
-  bool get _androidGranted =>
-      _androidStatus == AuthorizationStatus.authorized ||
-          _androidStatus == AuthorizationStatus.provisional;
+  bool get _systemGranted =>
+      _status == AuthorizationStatus.authorized ||
+          _status == AuthorizationStatus.provisional;
 
-  bool get _androidPermanentlyDenied =>
-      _androidStatus == AuthorizationStatus.denied;
+  bool get _systemPermanentlyDenied =>
+      _status == AuthorizationStatus.denied;
+
+  DeviceRegistrationService get _deviceService =>
+      Provider.of<DeviceRegistrationService>(context, listen: false);
 
   // ── Ações ─────────────────────────────────────────────
 
-  Future<void> _requestAndroidPermission() async {
+  Future<void> _requestPermission() async {
     final settings = await FirebaseMessaging.instance.requestPermission(
       alert: true,
       badge: true,
       sound: true,
     );
     setState(() {
-      _androidStatus = settings.authorizationStatus;
+      _status = settings.authorizationStatus;
       _appNotificationsEnabled =
           settings.authorizationStatus == AuthorizationStatus.authorized ||
               settings.authorizationStatus == AuthorizationStatus.provisional;
@@ -93,12 +100,21 @@ class _PermissoesNotificacoesPageState extends State<PermissoesNotificacoesPage>
   }
 
   Future<void> _toggleAppNotifications(bool value) async {
-    if (!_androidGranted) {
-      _showAndroidBlockedDialog();
+    if (!_systemGranted) {
+      _showBlockedDialog();
       return;
     }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('notificacoes_ativas', value);
+
+    if (value) {
+      await _deviceService.registerDevice();
+    } else {
+      await _deviceService.unregisterDevice();
+    }
+
     setState(() => _appNotificationsEnabled = value);
-    // TODO: propagar para backend / unsubscribe topic
   }
 
   // ── Build ─────────────────────────────────────────────
@@ -125,11 +141,11 @@ class _PermissoesNotificacoesPageState extends State<PermissoesNotificacoesPage>
           padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
           children: [
             _buildSectionLabel('Permissão do sistema'),
-            _buildAndroidCard(),
+            _buildSystemCard(),
             const SizedBox(height: 20),
             _buildSectionLabel('Preferências do app'),
             _buildAppCard(),
-            if (!_androidGranted) ...[
+            if (!_systemGranted) ...[
               const SizedBox(height: 12),
               _buildBlockedBanner(),
             ],
@@ -139,39 +155,37 @@ class _PermissoesNotificacoesPageState extends State<PermissoesNotificacoesPage>
     );
   }
 
-  // ── Seção Android ─────────────────────────────────────
+  // ── Seção sistema ─────────────────────────────────────
 
-  Widget _buildAndroidCard() {
+  Widget _buildSystemCard() {
     return _PermissionCard(
       children: [
         _PermissionTile(
-          icon: _androidGranted
+          icon: _systemGranted
               ? Icons.verified_rounded
               : Icons.block_rounded,
-          iconColor: _androidGranted
+          iconColor: _systemGranted
               ? const Color(0xFF43A047)
-              : _androidPermanentlyDenied
+              : _systemPermanentlyDenied
               ? const Color(0xFFE53935)
               : Colors.orange,
-          title: 'Notificações do Android',
-          subtitle: _androidSubtitle,
-          statusWidget: _AndroidStatusBadge(status: _androidStatus),
-          action: _buildAndroidAction(),
+          title: 'Notificações do sistema',
+          subtitle: _systemSubtitle,
+          statusWidget: _StatusBadge(status: _status),
+          action: _buildSystemAction(),
         ),
       ],
     );
   }
 
-  String get _androidSubtitle {
-    if (_androidGranted) return 'O sistema permite receber notificações';
-    if (_androidPermanentlyDenied) {
-      return 'Permissão bloqueada nas configurações do sistema';
-    }
+  String get _systemSubtitle {
+    if (_systemGranted) return 'O sistema permite receber notificações';
+    if (_systemPermanentlyDenied) return 'Permissão bloqueada nas configurações do sistema';
     return 'Permissão não solicitada ainda';
   }
 
-  Widget? _buildAndroidAction() {
-    if (_androidPermanentlyDenied) {
+  Widget? _buildSystemAction() {
+    if (_systemPermanentlyDenied) {
       return _ActionButton(
         label: 'Abrir configurações',
         icon: Icons.open_in_new_rounded,
@@ -179,22 +193,22 @@ class _PermissoesNotificacoesPageState extends State<PermissoesNotificacoesPage>
         onTap: _openSystemSettings,
       );
     }
-    if (!_androidGranted) {
+    if (!_systemGranted) {
       return _ActionButton(
         label: 'Solicitar permissão',
         icon: Icons.notifications_outlined,
         color: _mid,
-        onTap: _requestAndroidPermission,
+        onTap: _requestPermission,
       );
     }
     return null;
   }
 
-  // ── Seção App ─────────────────────────────────────────
+  // ── Seção app ─────────────────────────────────────────
 
   Widget _buildAppCard() {
     return Opacity(
-      opacity: _androidGranted ? 1.0 : 0.5,
+      opacity: _systemGranted ? 1.0 : 0.5,
       child: _PermissionCard(
         children: [
           _PermissionTile(
@@ -208,7 +222,7 @@ class _PermissoesNotificacoesPageState extends State<PermissoesNotificacoesPage>
                 : 'As notificações estão desativadas no app',
             action: Switch(
               value: _appNotificationsEnabled,
-              onChanged: _androidGranted ? _toggleAppNotifications : null,
+              onChanged: _systemGranted ? _toggleAppNotifications : null,
               activeColor: Colors.white,
               activeTrackColor: _mid,
               inactiveThumbColor: Colors.white,
@@ -223,8 +237,8 @@ class _PermissoesNotificacoesPageState extends State<PermissoesNotificacoesPage>
   // ── Banner de bloqueio ────────────────────────────────
 
   Widget _buildBlockedBanner() {
-    final isPermanent = _androidPermanentlyDenied;
-    final color = isPermanent ? const Color(0xFFE53935) : Colors.orange;
+    final isPermanent = _systemPermanentlyDenied;
+    final color       = isPermanent ? const Color(0xFFE53935) : Colors.orange;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -246,8 +260,8 @@ class _PermissoesNotificacoesPageState extends State<PermissoesNotificacoesPage>
           Expanded(
             child: Text(
               isPermanent
-                  ? 'A permissão do Android está bloqueada. As preferências do app ficam inativas até você habilitá-la nas configurações do sistema.'
-                  : 'Solicite a permissão do Android para ativar as preferências de notificação.',
+                  ? 'A permissão de notificações está bloqueada. As preferências do app ficam inativas até você habilitá-la nas configurações do sistema.'
+                  : 'Solicite a permissão do sistema para ativar as preferências de notificação.',
               style: TextStyle(fontSize: 12, color: color, height: 1.5),
             ),
           ),
@@ -287,7 +301,7 @@ class _PermissoesNotificacoesPageState extends State<PermissoesNotificacoesPage>
     );
   }
 
-  void _showAndroidBlockedDialog() {
+  void _showBlockedDialog() {
     showDialog(
       context: context,
       builder: (_) => Dialog(
@@ -304,30 +318,18 @@ class _PermissoesNotificacoesPageState extends State<PermissoesNotificacoesPage>
                   color: const Color(0xFFE53935).withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.block_rounded,
-                  color: Color(0xFFE53935),
-                  size: 26,
-                ),
+                child: const Icon(Icons.block_rounded, color: Color(0xFFE53935), size: 26),
               ),
               const SizedBox(height: 16),
               const Text(
                 'Permissão bloqueada',
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w700,
-                  color: _dark,
-                ),
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: _dark),
               ),
               const SizedBox(height: 8),
               Text(
-                'A permissão de notificações do Android está bloqueada. Habilite-a primeiro nas configurações do sistema.',
+                'A permissão de notificações está bloqueada. Habilite-a primeiro nas configurações do sistema.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey[500],
-                  height: 1.5,
-                ),
+                style: TextStyle(fontSize: 13, color: Colors.grey[500], height: 1.5),
               ),
               const SizedBox(height: 24),
               Row(
@@ -342,10 +344,7 @@ class _PermissoesNotificacoesPageState extends State<PermissoesNotificacoesPage>
                           side: BorderSide(color: Colors.grey.shade200),
                         ),
                       ),
-                      child: Text(
-                        'Cancelar',
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
+                      child: Text('Cancelar', style: TextStyle(color: Colors.grey[600])),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -360,13 +359,10 @@ class _PermissoesNotificacoesPageState extends State<PermissoesNotificacoesPage>
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 13),
                         elevation: 0,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: const Text(
-                        'Abrir configurações',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
+                      child: const Text('Abrir configurações',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
                     ),
                   ),
                 ],
@@ -380,12 +376,11 @@ class _PermissoesNotificacoesPageState extends State<PermissoesNotificacoesPage>
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// _PermissionCard
+// Widgets auxiliares
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _PermissionCard extends StatelessWidget {
   final List<Widget> children;
-
   const _PermissionCard({required this.children});
 
   @override
@@ -409,12 +404,7 @@ class _PermissionCard extends StatelessWidget {
             children: [
               e.value,
               if (!isLast)
-                Divider(
-                  height: 1,
-                  indent: 60,
-                  endIndent: 20,
-                  color: Colors.grey.shade100,
-                ),
+                Divider(height: 1, indent: 60, endIndent: 20, color: Colors.grey.shade100),
             ],
           );
         }).toList(),
@@ -423,18 +413,14 @@ class _PermissionCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// _PermissionTile
-// ─────────────────────────────────────────────────────────────────────────────
-
 class _PermissionTile extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final String title;
-  final String subtitle;
-  final Widget action;
-  final Widget? statusWidget;
-  final Widget? _actionWidget;
+  final IconData  icon;
+  final Color     iconColor;
+  final String    title;
+  final String    subtitle;
+  final Widget    action;
+  final Widget?   statusWidget;
+  final Widget?   _actionWidget;
 
   _PermissionTile({
     required this.icon,
@@ -443,7 +429,7 @@ class _PermissionTile extends StatelessWidget {
     required this.subtitle,
     required Widget? action,
     this.statusWidget,
-  })  : action = action ?? const SizedBox.shrink(),
+  })  : action        = action ?? const SizedBox.shrink(),
         _actionWidget = action;
 
   @override
@@ -482,14 +468,8 @@ class _PermissionTile extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[500],
-                    height: 1.4,
-                  ),
-                ),
+                Text(subtitle,
+                    style: TextStyle(fontSize: 12, color: Colors.grey[500], height: 1.4)),
                 if (_actionWidget != null) ...[
                   const SizedBox(height: 12),
                   _actionWidget!,
@@ -503,14 +483,9 @@ class _PermissionTile extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// _AndroidStatusBadge
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _AndroidStatusBadge extends StatelessWidget {
+class _StatusBadge extends StatelessWidget {
   final AuthorizationStatus status;
-
-  const _AndroidStatusBadge({required this.status});
+  const _StatusBadge({required this.status});
 
   @override
   Widget build(BuildContext context) {
@@ -530,26 +505,18 @@ class _AndroidStatusBadge extends StatelessWidget {
       child: Text(
         label,
         style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          color: color,
-          letterSpacing: 0.3,
-        ),
+            fontSize: 11, fontWeight: FontWeight.w700, color: color, letterSpacing: 0.3),
       ),
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// _ActionButton
-// ─────────────────────────────────────────────────────────────────────────────
-
 class _ActionButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final Color color;
+  final String       label;
+  final IconData     icon;
+  final Color        color;
   final VoidCallback onTap;
-  final bool outlined;
+  final bool         outlined;
 
   const _ActionButton({
     required this.label,
@@ -572,10 +539,8 @@ class _ActionButton extends StatelessWidget {
           foregroundColor: color,
           side: BorderSide(color: color.withOpacity(0.4)),
           padding: const EdgeInsets.symmetric(horizontal: 14),
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10)),
-          textStyle: const TextStyle(
-              fontSize: 13, fontWeight: FontWeight.w600),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
         ),
       )
           : ElevatedButton.icon(
@@ -587,10 +552,8 @@ class _ActionButton extends StatelessWidget {
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 14),
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10)),
-          textStyle: const TextStyle(
-              fontSize: 13, fontWeight: FontWeight.w600),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
         ),
       ),
     );

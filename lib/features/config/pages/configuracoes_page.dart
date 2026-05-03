@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:orcamentos_app/features/config/pages/gastos_automaticos_page.dart';
 import 'package:orcamentos_app/features/config/pages/permissoes_notificacoes_page.dart';
@@ -68,21 +70,23 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
               ),
             ),
           ]),
-          const SizedBox(height: 20),
-          _buildSectionLabel('Automação'),
-          _buildCard([
-            _buildTile(
-              context,
-              icon: Icons.auto_awesome_outlined,
-              color: _mid,
-              title: 'Gastos Automáticos',
-              subtitle: 'Captura notificações do banco em tempo real',
-              onTap: () => Navigator.push(
+          if (Platform.isAndroid) ...[
+            const SizedBox(height: 20),
+            _buildSectionLabel('Automação'),
+            _buildCard([
+              _buildTile(
                 context,
-                MaterialPageRoute(builder: (_) => const GastosAutomaticosPage()),
+                icon: Icons.auto_awesome_outlined,
+                color: _mid,
+                title: 'Gastos Automáticos',
+                subtitle: 'Captura notificações do banco em tempo real',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const GastosAutomaticosPage()),
+                ),
               ),
-            ),
-          ]),
+            ]),
+          ],
           const SizedBox(height: 20),
           _buildSectionLabel('Sobre'),
           _buildCard([
