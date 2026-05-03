@@ -1,3 +1,12 @@
+# [1.13.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.12.0...v1.13.0) (2026-05-03)
+
+
+### Features
+
+* cria foreground service para android ([f830843](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/f8308431b779aa4460ead23d729a036af5c22158))
+* cria foreground service para android ([b0fad82](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/b0fad8277578968821eba817af17d46433bc669f))
+* cria foreground service para android ([dce75cd](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/dce75cdca5a0e11e5c44c22c734305fff088482a))
+
 # [1.12.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.11.0...v1.12.0) (2026-04-25)
 
 
