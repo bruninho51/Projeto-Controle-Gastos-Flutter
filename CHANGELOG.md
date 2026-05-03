@@ -1,3 +1,10 @@
+# [1.14.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.13.0...v1.14.0) (2026-05-03)
+
+
+### Features
+
+* corrige notificações na web ([22beef5](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/22beef5c7b65ec1b74790c6fe45e99530d13f153))
+
 # [1.13.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.12.0...v1.13.0) (2026-05-03)
 
 
