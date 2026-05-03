@@ -1,11 +1,11 @@
 {
-    "name": "orcamentos_app",
-    "short_name": "orcamentos_app",
+    "name": "Orçamentos App",
+    "short_name": "Orçamentos",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#1A237E",
     "theme_color": "#1A237E",
-    "description": "A new Flutter project.",
+    "description": "App de orçamentos",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
