@@ -1,3 +1,10 @@
+## [1.14.3](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.14.2...v1.14.3) (2026-05-03)
+
+
+### Bug Fixes
+
+* corrige nome ao instalar o aplicativo como PWA ([6c445fb](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/6c445fbcffabefea8af3f4bfd087a054c489e2b0))
+
 ## [1.14.2](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.14.1...v1.14.2) (2026-05-03)
 
 
