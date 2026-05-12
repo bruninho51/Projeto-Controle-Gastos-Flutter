@@ -1,9 +1,8 @@
-// lib/features/configuracoes/gastos_automaticos_page.dart
-
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:orcamentos_app/components/common/shared_appbar.dart';
+import 'package:orcamentos_app/features/bridge/monitor_bridge.dart';
 
 class GastosAutomaticosPage extends StatefulWidget {
   const GastosAutomaticosPage({super.key});
@@ -23,8 +22,6 @@ class _GastosAutomaticosPageState extends State<GastosAutomaticosPage>
     Color(0xFF283593),
     Color(0xFF3949AB),
   ];
-
-  static const _channel = MethodChannel('com.bapps.orcamentos/permissions');
 
   bool _notificationListenerEnabled = false;
   bool _batteryOptimizationExempt   = false;
@@ -72,19 +69,14 @@ class _GastosAutomaticosPageState extends State<GastosAutomaticosPage>
   }
 
   Future<void> _loadStatus() async {
-    // não mostra loading no polling — só na primeira carga
     final isFirstLoad = _loading;
-    if (!isFirstLoad) {
-      // atualiza silenciosamente
-    } else {
-      setState(() => _loading = true);
-    }
+    if (isFirstLoad) setState(() => _loading = true);
 
     try {
-      final listener = await _channel.invokeMethod<bool>('isNotificationListenerEnabled') ?? false;
-      final battery  = await _channel.invokeMethod<bool>('isBatteryOptimizationExempt') ?? false;
-      final post     = await _channel.invokeMethod<bool>('isPostNotificationsGranted') ?? false;
-      final running  = await _channel.invokeMethod<bool>('isServiceRunning') ?? false;
+      final listener = await MonitorChannel.isNotificationListenerEnabled();
+      final battery  = await MonitorChannel.isBatteryOptimizationExempt();
+      final post     = await MonitorChannel.isPostNotificationsGranted();
+      final running  = await MonitorChannel.isServiceRunning();
 
       if (!mounted) return;
       setState(() {
@@ -106,9 +98,9 @@ class _GastosAutomaticosPageState extends State<GastosAutomaticosPage>
     }
   }
 
-  Future<void> _requestPermission(String type) async {
+  Future<void> _requestPermission(Future<void> Function() request) async {
     try {
-      await _channel.invokeMethod(type);
+      await request();
     } on PlatformException catch (e) {
       _showErrorSnack(e.message ?? 'Erro ao solicitar permissão.');
     }
@@ -120,7 +112,11 @@ class _GastosAutomaticosPageState extends State<GastosAutomaticosPage>
       return;
     }
     try {
-      await _channel.invokeMethod(value ? 'startService' : 'stopService');
+      if (value) {
+        await MonitorChannel.startService();
+      } else {
+        await MonitorChannel.stopService();
+      }
       setState(() => _serviceRunning = value);
     } on PlatformException catch (e) {
       _showErrorSnack(e.message ?? 'Erro ao alterar o serviço.');
@@ -159,7 +155,7 @@ class _GastosAutomaticosPageState extends State<GastosAutomaticosPage>
               _buildBlockedBanner(),
             ],
             const SizedBox(height: 20),
-            _buildSectionLabel('Serviço de captura'),
+            _buildSectionLabel('Segundo plano'),
             _buildServiceCard(),
             const SizedBox(height: 20),
             _buildSectionLabel('Como funciona'),
@@ -198,17 +194,18 @@ class _GastosAutomaticosPageState extends State<GastosAutomaticosPage>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Cadastro automático',
+                  'Cadastro automático de gastos',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: _dark,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
-                  'O app lê notificações dos seus bancos e cadastra os gastos automaticamente no orçamento ativo.',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600], height: 1.4),
+                  'Com o app aberto, os gastos são capturados automaticamente das notificações bancárias. '
+                      'Ative o serviço em segundo plano para que isso funcione mesmo com o app fechado.',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600], height: 1.5),
                 ),
               ],
             ),
@@ -245,7 +242,7 @@ class _GastosAutomaticosPageState extends State<GastosAutomaticosPage>
           label: 'Conceder acesso',
           icon: Icons.open_in_new_rounded,
           color: _mid,
-          onTap: () => _requestPermission('notificationListener'),
+          onTap: () => _requestPermission(MonitorChannel.requestNotificationListener),
         ),
       ),
 
@@ -272,7 +269,7 @@ class _GastosAutomaticosPageState extends State<GastosAutomaticosPage>
           label: 'Conceder acesso',
           icon: Icons.open_in_new_rounded,
           color: _mid,
-          onTap: () => _requestPermission('batteryOptimization'),
+          onTap: () => _requestPermission(MonitorChannel.requestBatteryOptimization),
         ),
       ),
 
@@ -285,8 +282,8 @@ class _GastosAutomaticosPageState extends State<GastosAutomaticosPage>
             : const Color(0xFFE53935),
         title: 'Exibir notificações',
         subtitle: _postNotificationsGranted
-            ? 'O app pode exibir notificações de status do serviço'
-            : 'Necessário para manter o serviço visível em segundo plano',
+            ? 'O app pode exibir a notificação de status do serviço em segundo plano'
+            : 'Necessário para manter o serviço visível na bandeja do sistema',
         statusWidget: _StatusBadge(
           label: _postNotificationsGranted ? 'Permitido' : 'Bloqueado',
           color: _postNotificationsGranted
@@ -299,7 +296,7 @@ class _GastosAutomaticosPageState extends State<GastosAutomaticosPage>
           label: 'Conceder acesso',
           icon: Icons.open_in_new_rounded,
           color: _mid,
-          onTap: () => _requestPermission('postNotifications'),
+          onTap: () => _requestPermission(MonitorChannel.requestPostNotifications),
         ),
       ),
     ]);
@@ -316,10 +313,10 @@ class _GastosAutomaticosPageState extends State<GastosAutomaticosPage>
               ? Icons.sync_rounded
               : Icons.sync_disabled_rounded,
           iconColor: _serviceRunning ? _light : Colors.grey,
-          title: 'Captura automática de gastos',
+          title: 'Capturar com app fechado',
           subtitle: _serviceRunning
-              ? 'Monitorando notificações bancárias em segundo plano'
-              : 'Ative para registrar gastos automaticamente ao receber notificações do banco',
+              ? 'Serviço ativo — gastos são capturados mesmo com o app fechado'
+              : 'Desativado — a captura só funciona enquanto o app estiver aberto',
           statusWidget: _StatusBadge(
             label: _serviceRunning ? 'Ativo' : 'Inativo',
             color: _serviceRunning ? _light : Colors.grey,
@@ -346,8 +343,8 @@ class _GastosAutomaticosPageState extends State<GastosAutomaticosPage>
     if (!_postNotificationsGranted)    missing.add('exibição de notificações');
 
     final text = missing.length == 1
-        ? 'Conceda a permissão de ${missing[0]} para ativar o serviço.'
-        : 'Conceda as permissões pendentes para ativar o serviço de captura automática.';
+        ? 'Conceda a permissão de ${missing[0]} para ativar o serviço em segundo plano.'
+        : 'Conceda as permissões pendentes para ativar o serviço em segundo plano.';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -376,8 +373,8 @@ class _GastosAutomaticosPageState extends State<GastosAutomaticosPage>
   Widget _buildHowItWorksCard() {
     const steps = [
       (Icons.notifications_outlined, 'Notificação recebida',  'Seu banco envia uma notificação de débito ou compra'),
-      (Icons.search_outlined,        'Leitura automática',    'O aplicativo lê e interpreta o valor e a descrição'),
-      (Icons.add_circle_outline,     'Cadastro no orçamento', 'O gasto é cadastrado automaticamente no orçamento ativo'),
+      (Icons.search_outlined,        'Leitura automática',    'O app lê e interpreta o valor e a descrição da transação'),
+      (Icons.add_circle_outline,     'Cadastro no orçamento', 'O gasto é lançado automaticamente no orçamento ativo'),
       (Icons.check_circle_outline,   'Revisão disponível',    'Você pode revisar ou excluir qualquer gasto capturado'),
     ];
 
@@ -492,7 +489,7 @@ class _GastosAutomaticosPageState extends State<GastosAutomaticosPage>
               ),
               const SizedBox(height: 8),
               Text(
-                'Conceda todas as permissões pendentes antes de ativar o serviço.',
+                'Conceda todas as permissões pendentes antes de ativar o serviço em segundo plano.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 13, color: Colors.grey[500], height: 1.5),
               ),

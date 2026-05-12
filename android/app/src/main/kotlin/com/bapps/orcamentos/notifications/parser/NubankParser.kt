@@ -1,0 +1,39 @@
+package com.bapps.orcamentos.notifications.parser
+
+class NubankParser : NotificationParser {
+
+    // Exemplos Nubank:
+    // title: "Nubank" | content: "Compra de R$ 47,90 no MERCADO LIVRE"
+    // title: "Nubank" | content: "Você usou R$ 12,00 no UBER *EATS"
+
+    override fun parse(title: String, content: String): ParsedNotification {
+        return ParsedNotification(
+            valor     = extractValor(content),
+            descricao = extractDescricao(content),
+        )
+    }
+
+    private fun extractValor(content: String): Double? {
+        val regex = Regex("""R\$\s*(\d{1,3}(?:\.\d{3})*,\d{2})""")
+        val match = regex.find(content) ?: return null
+        return match.groupValues[1]
+            .replace(".", "")
+            .replace(",", ".")
+            .toDoubleOrNull()
+    }
+
+    private fun extractDescricao(content: String): String? {
+        // Tenta pegar o que vem depois de "no " ou "na "
+        val regexPrep = Regex("""(?:no|na|em)\s+(.+)$""", RegexOption.IGNORE_CASE)
+        val matchPrep = regexPrep.find(content)
+        if (matchPrep != null) return matchPrep.groupValues[1].trim()
+
+        // Fallback: maiúsculas
+        val regex = Regex("""[A-ZÁÉÍÓÚÃÕÂÊÎÔÛÀÇ]{4,}(?:\s+[A-ZÁÉÍÓÚÃÕÂÊÎÔÛÀÇ*]+)*""")
+        return regex.findAll(content)
+            .map { it.value.trim() }
+            .filter { it.replace(" ", "").length >= 4 }
+            .joinToString(" ")
+            .ifEmpty { content }
+    }
+}
