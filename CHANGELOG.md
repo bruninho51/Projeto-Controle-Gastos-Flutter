@@ -1,3 +1,10 @@
+# [1.15.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.14.3...v1.15.0) (2026-05-26)
+
+
+### Features
+
+* adiciona suporte a captura de notificações bancárias ([2ae0517](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/2ae0517b9c84933689b172b1f191fde777e2f397))
+
 ## [1.14.3](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.14.2...v1.14.3) (2026-05-03)
 
 
