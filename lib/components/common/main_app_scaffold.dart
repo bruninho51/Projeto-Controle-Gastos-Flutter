@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:orcamentos_app/components/investimentos_page/investimentos_page.dart';
+import 'package:orcamentos_app/components/notificacoes_page/notificacoes_page.dart';
 import 'package:orcamentos_app/components/orcamentos_page/orcamentos_page.dart';
 import 'package:orcamentos_app/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
@@ -20,11 +21,12 @@ class _MainAppScaffoldState extends State<MainAppScaffold> {
   bool _railExtended = true;
 
   final List<NavigationItem> _navigationItems = const [
-    NavigationItem(icon: Icons.dashboard_outlined, activeIcon: Icons.dashboard_rounded, label: 'Dashboard', page: DashboardPage()),
+    NavigationItem(icon: Icons.dashboard_outlined, activeIcon: Icons.dashboard_rounded, label: 'Início', page: DashboardPage()),
     NavigationItem(icon: Icons.account_balance_wallet_outlined, activeIcon: Icons.account_balance_wallet_rounded, label: 'Orçamentos', page: OrcamentosPage()),
-    NavigationItem(icon: Icons.savings_outlined, activeIcon: Icons.savings_rounded, label: 'Investimentos', page: InvestimentosPage()),
+    NavigationItem(icon: Icons.savings_outlined, activeIcon: Icons.savings_rounded, label: 'Invest', page: InvestimentosPage()),
+    NavigationItem(icon: Icons.notifications_outlined, activeIcon: Icons.notifications_rounded, label: 'Bancos', page: NotificacoesPage()),
     NavigationItem(icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, label: 'Perfil', page: PerfilPage()),
-    NavigationItem(icon: Icons.settings_outlined, activeIcon: Icons.settings, label: 'Configurações', page: ConfiguracoesPage()),
+    NavigationItem(icon: Icons.settings_outlined, activeIcon: Icons.settings, label: 'Ajustes', page: ConfiguracoesPage()),
   ];
 
   @override
@@ -172,7 +174,7 @@ class _MainAppScaffoldState extends State<MainAppScaffold> {
     return SafeArea(
       // SafeArea garante que o nav nunca cobre conteúdo do sistema
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
         child: Container(
           height: 64,
           decoration: BoxDecoration(
@@ -181,7 +183,7 @@ class _MainAppScaffoldState extends State<MainAppScaffold> {
               end: Alignment.centerRight,
               colors: [Color(0xFF1A237E), Color(0xFF3949AB)],
             ),
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
                 color: const Color(0xFF1A237E).withOpacity(0.45),
@@ -453,7 +455,7 @@ class _BottomNavItemState extends State<_BottomNavItem>
                 fontWeight: widget.selected ? FontWeight.w700 : FontWeight.w400,
                 color: widget.selected ? Colors.white : Colors.white.withOpacity(0.45),
               ),
-              child: Text(widget.item.label),
+              child: Text(widget.item.label, textAlign: TextAlign.center,),
             ),
           ],
         ),

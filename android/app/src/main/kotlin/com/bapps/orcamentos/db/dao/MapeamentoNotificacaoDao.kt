@@ -16,4 +16,19 @@ interface MapeamentoNotificacaoDao {
 
     @Query("UPDATE mapeamentos_notificacoes SET ultimo_uso = :agora, data_atualizacao = :agora WHERE id = :id")
     suspend fun atualizarUltimoUso(id: Long, agora: Long)
+
+    @Query("""
+        UPDATE mapeamentos_notificacoes
+        SET descricao_normalizada = :descricaoNormalizada,
+            gasto_id = :gastoId,
+            ultimo_uso = :agora,
+            data_atualizacao = :agora
+        WHERE descricao_original = :descricaoOriginal AND soft_delete = 0
+    """)
+    suspend fun updateByDescricaoOriginal(
+        descricaoOriginal: String,
+        descricaoNormalizada: String,
+        gastoId: Long?,
+        agora: Long
+    )
 }

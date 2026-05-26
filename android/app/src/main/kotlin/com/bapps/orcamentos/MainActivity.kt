@@ -7,6 +7,7 @@ import com.bapps.orcamentos.monitor.MonitorFlutterCallReceiver
 import com.bapps.orcamentos.monitor.MonitorForegroundService
 import com.bapps.orcamentos.monitor.MonitorPrefs
 import com.bapps.orcamentos.notifications.NotificationBridge
+import com.bapps.orcamentos.notificacoes.NotificacoesFlutterCallReceiver
 import com.bapps.orcamentos.permissions.PermissionChecker
 
 class MainActivity : FlutterActivity() {
@@ -18,6 +19,8 @@ class MainActivity : FlutterActivity() {
         monitorHandler = MonitorFlutterCallReceiver(this)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, MonitorFlutterCallReceiver.CHANNEL)
             .setMethodCallHandler(monitorHandler)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, NotificacoesFlutterCallReceiver.CHANNEL)
+            .setMethodCallHandler(NotificacoesFlutterCallReceiver(this))
     }
 
     override fun onResume() {
