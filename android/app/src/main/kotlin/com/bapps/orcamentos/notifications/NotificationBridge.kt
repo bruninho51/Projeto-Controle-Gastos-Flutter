@@ -1,4 +1,4 @@
-package com.bapps.orcamentos
+package com.bapps.orcamentos.notifications
 
 import android.os.Handler
 import android.os.Looper

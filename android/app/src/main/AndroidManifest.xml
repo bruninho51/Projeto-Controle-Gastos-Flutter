@@ -8,22 +8,22 @@
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <application
-        android:label="Orçamentos"
-        android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+            android:label="Orçamentos"
+            android:name="${applicationName}"
+            android:icon="@mipmap/ic_launcher">
 
         <activity
-            android:name=".MainActivity"
-            android:exported="true"
-            android:launchMode="singleTop"
-            android:taskAffinity=""
-            android:theme="@style/LaunchTheme"
-            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
-            android:hardwareAccelerated="true"
-            android:windowSoftInputMode="adjustResize">
+                android:name=".MainActivity"
+                android:exported="true"
+                android:launchMode="singleTop"
+                android:taskAffinity=""
+                android:theme="@style/LaunchTheme"
+                android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+                android:hardwareAccelerated="true"
+                android:windowSoftInputMode="adjustResize">
             <meta-data
-                android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme" />
+                    android:name="io.flutter.embedding.android.NormalTheme"
+                    android:resource="@style/NormalTheme" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -32,16 +32,16 @@
 
         <!-- Foreground service that keeps the process alive -->
         <service
-            android:name="com.bapps.orcamentos.MonitorForegroundService"
-            android:exported="false"
-            android:foregroundServiceType="dataSync" />
+                android:name="com.bapps.orcamentos.monitor.MonitorForegroundService"
+                android:exported="false"
+                android:foregroundServiceType="dataSync" />
 
         <!-- NotificationListenerService — requires user to grant access in system settings -->
         <service
-            android:name="com.bapps.orcamentos.NotificationListener"
-            android:exported="true"
-            android:label="Orçamentos - Leitor de Notificações"
-            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+                android:name="com.bapps.orcamentos.notifications.NotificationListener"
+                android:exported="true"
+                android:label="Orçamentos - Leitor de Notificações"
+                android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <intent-filter>
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
@@ -49,8 +49,8 @@
 
         <!-- Restarts the foreground service after device reboot -->
         <receiver
-            android:name="com.bapps.orcamentos.BootReceiver"
-            android:exported="true">
+                android:name="com.bapps.orcamentos.monitor.BootReceiver"
+                android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
@@ -58,8 +58,8 @@
 
         <!-- Flutter embedding v2 marker -->
         <meta-data
-            android:name="flutterEmbedding"
-            android:value="2" />
+                android:name="flutterEmbedding"
+                android:value="2" />
     </application>
 
     <queries>

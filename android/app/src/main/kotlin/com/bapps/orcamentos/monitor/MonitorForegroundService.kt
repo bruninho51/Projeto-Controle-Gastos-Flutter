@@ -1,4 +1,4 @@
-package com.bapps.orcamentos
+package com.bapps.orcamentos.monitor
 
 import android.app.*
 import android.content.Context
@@ -7,11 +7,12 @@ import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.os.*
 import androidx.core.app.NotificationCompat
+import com.bapps.orcamentos.R
 
 class MonitorForegroundService : Service() {
 
     companion object {
-        private const val CHANNEL_ID   = "notification_monitor_channel"
+        private const val CHANNEL_ID      = "notification_monitor_channel"
         private const val NOTIFICATION_ID = 1001
 
         @Volatile
@@ -40,14 +41,11 @@ class MonitorForegroundService : Service() {
             return
         }
 
-        // só marca running depois que o foreground subiu com sucesso
         isRunning = true
         handler.postDelayed(watchdogRunnable, 5_000)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // onCreate já fez tudo; onStartCommand só precisa garantir
-        // que o serviço continue vivo se o sistema o reiniciar
         if (!isRunning) {
             stopSelf()
             return START_NOT_STICKY
@@ -62,15 +60,10 @@ class MonitorForegroundService : Service() {
         super.onDestroy()
     }
 
-    override fun onTaskRemoved(rootIntent: Intent?) {
-        // usuário fechou o app pelo recentes — para limpo
-        teardown()
-        stopSelf()
-        super.onTaskRemoved(rootIntent)
-    }
+    // onTaskRemoved REMOVIDO — fechar o app pelo recentes não derruba o serviço
 
     // ─────────────────────────────
-    // TEARDOWN CENTRALIZADO
+    // TEARDOWN
     // ─────────────────────────────
 
     private fun teardown() {
@@ -84,8 +77,6 @@ class MonitorForegroundService : Service() {
 
     private val watchdogRunnable = object : Runnable {
         override fun run() {
-            // checa isRunning antes de qualquer coisa —
-            // evita repostar depois de teardown()
             if (!isRunning) return
 
             if (!isServiceAllowed()) {
@@ -94,8 +85,6 @@ class MonitorForegroundService : Service() {
             }
 
             ensureNotificationVisible()
-
-            // reagenda somente se ainda estiver rodando
             handler.postDelayed(this, 5_000)
         }
     }
@@ -150,7 +139,6 @@ class MonitorForegroundService : Service() {
         val exists  = manager.activeNotifications.any { it.id == NOTIFICATION_ID }
 
         if (!exists) {
-            // notificação sumiu (ex: usuário deslizou) — recria
             startAsForegroundSafe()
         }
     }
@@ -166,7 +154,7 @@ class MonitorForegroundService : Service() {
                 "Monitor de notificações",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description      = "Serviço de captura de gastos automáticos"
+                description          = "Serviço de captura de gastos automáticos"
                 setShowBadge(false)
                 lockscreenVisibility = Notification.VISIBILITY_SECRET
             }
@@ -181,7 +169,6 @@ class MonitorForegroundService : Service() {
     // ─────────────────────────────
 
     private fun buildNotification(): Notification {
-        // toca na tela principal ao clicar na notificação
         val pendingIntent = packageManager
             .getLaunchIntentForPackage(packageName)
             ?.let { launchIntent ->
