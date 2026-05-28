@@ -31,8 +31,8 @@ em `_LoginPageState` e são passados como parâmetros.
 
 ### Verification
 
-- [ ] `flutter analyze` sem warnings/errors
-- [ ] A animação de ondas aparece e se move corretamente na tela de login
+- [x] `flutter analyze` sem warnings/errors
+- [x] A animação de ondas aparece e se move corretamente na tela de login
 
 ---
 
@@ -50,8 +50,8 @@ o container branco com sombra que envolve o ícone do app.
 
 ### Verification
 
-- [ ] `flutter analyze` sem warnings/errors
-- [ ] A logo aparece com a animação de escala correta ao abrir a tela
+- [x] `flutter analyze` sem warnings/errors
+- [x] A logo aparece com a animação de escala correta ao abrir a tela
 
 ---
 
@@ -72,19 +72,19 @@ recebe `onSignIn` e `isLoading` como parâmetros, sem dependência direta do `Au
 
 ### Verification
 
-- [ ] `flutter analyze` sem warnings/errors
-- [ ] Botão Google Sign-In funciona e exibe o loading spinner durante autenticação
-- [ ] Card renderiza com aparência idêntica ao estado anterior
+- [x] `flutter analyze` sem warnings/errors
+- [x] Botão Google Sign-In funciona e exibe o loading spinner durante autenticação
+- [x] Card renderiza com aparência idêntica ao estado anterior
 
 ---
 
 ## Final Verification
 
-- [ ] Todos os critérios de aceitação da spec atendidos
-- [ ] `lib/features/auth/components/` contém exatamente 3 arquivos: `login_background_animation.dart`, `login_logo.dart`, `login_card.dart`
-- [ ] `login_page.dart` contém apenas: ciclo de vida, AnimationControllers, layout principal, carregamento de versão e métodos de texto simples (`_buildWelcomeText`, `_buildDescriptionText`, `_buildTermsText`, `_buildVersion`)
-- [ ] `flutter analyze` limpo
-- [ ] Comportamento visual idêntico verificado manualmente (animações, card, botão, logo)
+- [x] Todos os critérios de aceitação da spec atendidos
+- [x] `lib/features/auth/components/` contém exatamente 3 arquivos: `login_background_animation.dart`, `login_logo.dart`, `login_card.dart`
+- [x] `login_page.dart` contém apenas: ciclo de vida, AnimationControllers, layout principal, carregamento de versão e métodos de texto simples (`_buildWelcomeText`, `_buildDescriptionText`, `_buildTermsText`, `_buildVersion`)
+- [x] `flutter analyze` limpo
+- [x] Comportamento visual idêntico verificado manualmente (animações, card, botão, logo)
 
 ---
 
