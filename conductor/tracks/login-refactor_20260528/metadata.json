@@ -1,0 +1,19 @@
+{
+  "id": "login-refactor_20260528",
+  "title": "Refactor — Extração de Componentes da Tela de Login",
+  "type": "refactor",
+  "status": "in_progress",
+  "created": "2026-05-28T00:00:00.000Z",
+  "updated": "2026-05-28T00:00:00.000Z",
+  "current_phase": 1,
+  "current_task": "1.1",
+  "phases": {
+    "total": 3,
+    "completed": 0
+  },
+  "tasks": {
+    "total": 6,
+    "completed": 0
+  },
+  "commits": []
+}
