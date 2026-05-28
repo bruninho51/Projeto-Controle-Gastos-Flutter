@@ -1,8 +1,7 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:orcamentos_app/providers/auth_provider.dart';
+import 'package:orcamentos_app/features/auth/components/login_background_animation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class LoginPage extends StatefulWidget {
@@ -104,19 +103,7 @@ class _LoginPageState extends State<LoginPage>
         ),
         child: Stack(
           children: [
-            // Ondas de fundo
-            Positioned.fill(
-              child: AnimatedBuilder(
-                animation: Listenable.merge([_wave1, _wave2, _wave3]),
-                builder: (_, __) => CustomPaint(
-                  painter: _BackgroundWavePainter(
-                    w1: _wave1.value,
-                    w2: _wave2.value,
-                    w3: _wave3.value,
-                  ),
-                ),
-              ),
-            ),
+            LoginBackgroundAnimation(w1: _wave1, w2: _wave2, w3: _wave3),
             // Conteúdo
             SafeArea(
               child: Column(
@@ -181,7 +168,7 @@ class _LoginPageState extends State<LoginPage>
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: _dark.withOpacity(0.35),
+              color: _dark.withValues(alpha: 0.35),
               blurRadius: 24,
               spreadRadius: 2,
               offset: const Offset(0, 8),
@@ -247,7 +234,7 @@ class _LoginPageState extends State<LoginPage>
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: _dark.withOpacity(0.25),
+            color: _dark.withValues(alpha: 0.25),
             blurRadius: 32,
             spreadRadius: 2,
             offset: const Offset(0, -4),
@@ -376,51 +363,4 @@ class _LoginPageState extends State<LoginPage>
       ),
     );
   }
-}
-
-// ── Ondas de fundo ────────────────────────────────────────
-
-class _BackgroundWavePainter extends CustomPainter {
-  final double w1, w2, w3;
-  const _BackgroundWavePainter({
-    required this.w1,
-    required this.w2,
-    required this.w3,
-  });
-
-  Path _wave(Size size, double t, double baseY, double amp, double freq) {
-    final path = Path();
-    path.moveTo(0, baseY + sin(t * pi) * amp);
-    for (double x = 0; x <= size.width; x++) {
-      final y = baseY + sin((x / size.width * freq * pi) + t * pi) * amp;
-      path.lineTo(x, y);
-    }
-    path.lineTo(size.width, size.height);
-    path.lineTo(0, size.height);
-    path.close();
-    return path;
-  }
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // Onda superior — leve, suave, quase invisível
-    canvas.drawPath(
-      _wave(size, w1, size.height * 0.18, 28, 1.8),
-      Paint()..color = const Color(0xFF3949AB).withOpacity(0.18),
-    );
-    // Onda média — flutua no meio da tela
-    canvas.drawPath(
-      _wave(size, w2, size.height * 0.38, 22, 2.2),
-      Paint()..color = const Color(0xFF1A237E).withOpacity(0.20),
-    );
-    // Onda inferior — ancora o rodapé
-    canvas.drawPath(
-      _wave(size, w3, size.height * 0.72, 18, 1.5),
-      Paint()..color = const Color(0xFF1A237E).withOpacity(0.28),
-    );
-  }
-
-  @override
-  bool shouldRepaint(_BackgroundWavePainter old) =>
-      old.w1 != w1 || old.w2 != w2 || old.w3 != w3;
 }
