@@ -1,0 +1,39 @@
+{
+  "status": "complete",
+  "project_type": "brownfield",
+  "current_section": "done",
+  "current_question": 0,
+  "completed_sections": ["product", "guidelines", "tech_stack", "workflow", "styleguides"],
+  "answers": {
+    "project_name": "Orçamentos App",
+    "description": "Aplicativo de finanças pessoais para gerenciamento de orçamentos e despesas",
+    "problem_statement": "Usuários frequentemente têm dificuldade em acompanhar e organizar seus gastos pessoais, o que pode levar a despesas acima do orçamento disponível e comprometer o pagamento de contas fixas.",
+    "target_users": "Pessoas físicas que desejam organizar e controlar suas finanças pessoais",
+    "key_goals": "Facilitar o acompanhamento de despesas em tempo real; oferecer visualizações claras do orçamento disponível; suportar múltiplas plataformas (mobile e web)",
+    "voice_tone": "Profissional, amigável e acessível, utilizando linguagem clara e simples",
+    "design_principles": "Confiabilidade e segurança dos dados financeiros em primeiro lugar. Simplicidade, clareza visual.",
+    "languages": "Dart (Flutter ^3.6.1), Kotlin",
+    "framework": "Flutter (Android, iOS, Web, Linux, macOS, Windows)",
+    "backend": "REST API (projeto separado) + GraphQL API para analytics (projeto separado)",
+    "local_storage": "SQLite + shared_preferences",
+    "deployment": "Docker + Kubernetes + Nginx + Firebase Hosting",
+    "tdd_strictness": "flexible",
+    "commit_strategy": "conventional_commits",
+    "code_review": "optional",
+    "verification_checkpoints": "after_each_phase",
+    "style_guides": ["dart_flutter", "kotlin"],
+    "existing_configs": "fresh"
+  },
+  "files_created": [
+    "conductor/index.md",
+    "conductor/product.md",
+    "conductor/product-guidelines.md",
+    "conductor/tech-stack.md",
+    "conductor/workflow.md",
+    "conductor/tracks.md",
+    "conductor/code_styleguides/dart_flutter.md",
+    "conductor/code_styleguides/kotlin.md"
+  ],
+  "started_at": "2026-05-28T00:00:00Z",
+  "last_updated": "2026-05-28T00:00:00Z"
+}
