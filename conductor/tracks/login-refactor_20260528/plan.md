@@ -43,9 +43,9 @@ o container branco com sombra que envolve o ícone do app.
 
 ### Tasks
 
-- [ ] Task 2.1: Criar `lib/features/auth/components/login_logo.dart` com o
+- [x] Task 2.1: Criar `lib/features/auth/components/login_logo.dart` com o
   widget `LoginLogo`, contendo o `TweenAnimationBuilder` e o `Container` com sombra
-- [ ] Task 2.2: Atualizar `login_page.dart` — substituir a chamada `_buildLogo()`
+- [x] Task 2.2: Atualizar `login_page.dart` — substituir a chamada `_buildLogo()`
   por `const LoginLogo()` e remover o método `_buildLogo`
 
 ### Verification
