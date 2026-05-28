@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:orcamentos_app/providers/auth_provider.dart';
 import 'package:orcamentos_app/features/auth/components/login_background_animation.dart';
+import 'package:orcamentos_app/features/auth/components/login_logo.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class LoginPage extends StatefulWidget {
@@ -115,7 +116,7 @@ class _LoginPageState extends State<LoginPage>
                       position: _slideUp,
                       child: Column(
                         children: [
-                          _buildLogo(),
+                          const LoginLogo(),
                           const SizedBox(height: 32),
                           _buildWelcomeText(),
                           const SizedBox(height: 12),
@@ -149,33 +150,6 @@ class _LoginPageState extends State<LoginPage>
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  // ── Logo ──────────────────────────────────────────────
-
-  Widget _buildLogo() {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.7, end: 1.0),
-      duration: const Duration(milliseconds: 800),
-      curve: Curves.elasticOut,
-      builder: (_, scale, child) => Transform.scale(scale: scale, child: child),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: _dark.withValues(alpha: 0.35),
-              blurRadius: 24,
-              spreadRadius: 2,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Image.asset('assets/icon.png', width: 96, height: 96),
       ),
     );
   }
