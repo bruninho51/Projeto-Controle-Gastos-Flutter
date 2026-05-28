@@ -63,10 +63,10 @@ recebe `onSignIn` e `isLoading` como parâmetros, sem dependência direta do `Au
 
 ### Tasks
 
-- [ ] Task 3.1: Criar `lib/features/auth/components/login_card.dart` com o widget
+- [x] Task 3.1: Criar `lib/features/auth/components/login_card.dart` com o widget
   `LoginCard({required VoidCallback onSignIn, required bool isLoading})`, contendo
   o `Container` de card, botão Google, divider e termos
-- [ ] Task 3.2: Atualizar `login_page.dart` — substituir `_buildCard(context)` por
+- [x] Task 3.2: Atualizar `login_page.dart` — substituir `_buildCard(context)` por
   `Consumer<AuthState>` que constrói `LoginCard(onSignIn: ..., isLoading: auth.isLoading)`;
   remover os métodos `_buildCard`, `_buildGoogleSignInButton` e `_buildDivider`
 

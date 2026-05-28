@@ -5,18 +5,20 @@
   "status": "in_progress",
   "created": "2026-05-28T00:00:00.000Z",
   "updated": "2026-05-28T00:00:00.000Z",
-  "current_phase": 2,
-  "current_task": "2.1",
+  "current_phase": 3,
+  "current_task": "3.2",
   "phases": {
     "total": 3,
-    "completed": 1
+    "completed": 2
   },
   "tasks": {
     "total": 6,
-    "completed": 2
+    "completed": 6
   },
   "commits": [
     "4cfc6f0: refactor(auth): extrai LoginBackgroundAnimation em componente próprio (login-refactor_20260528)",
-    "dfdf3df: chore: marca fase 1 concluída (login-refactor_20260528)"
+    "dfdf3df: chore: marca fase 1 concluída (login-refactor_20260528)",
+    "fa88f74: refactor(auth): extrai LoginLogo em componente próprio (login-refactor_20260528)",
+    "92625a8: chore: marca fase 2 concluída (login-refactor_20260528)"
   ]
 }
