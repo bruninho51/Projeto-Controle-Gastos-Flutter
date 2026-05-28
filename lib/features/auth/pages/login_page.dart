@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:orcamentos_app/providers/auth_provider.dart';
 import 'package:orcamentos_app/features/auth/components/login_background_animation.dart';
 import 'package:orcamentos_app/features/auth/components/login_logo.dart';
+import 'package:orcamentos_app/features/auth/components/login_card.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class LoginPage extends StatefulWidget {
@@ -25,10 +26,9 @@ class _LoginPageState extends State<LoginPage>
 
   String _version = '';
 
-  static const _dark   = Color(0xFF1A237E);
-  static const _mid    = Color(0xFF283593);
-  static const _light  = Color(0xFF3949AB);
-  static const _accent = Color(0xFF7986CB);
+  static const _dark  = Color(0xFF1A237E);
+  static const _mid   = Color(0xFF283593);
+  static const _light = Color(0xFF3949AB);
 
   @override
   void initState() {
@@ -133,7 +133,12 @@ class _LoginPageState extends State<LoginPage>
                         parent: _intro,
                         curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
                       ),
-                      child: _buildCard(context),
+                      child: Consumer<AuthState>(
+                        builder: (context, auth, _) => LoginCard(
+                          onSignIn: () => auth.login(),
+                          isLoading: auth.isLoading,
+                        ),
+                      ),
                     ),
                   ),
                   const Spacer(),
@@ -193,133 +198,6 @@ class _LoginPageState extends State<LoginPage>
           color: Colors.white60,
           height: 1.5,
         ),
-      ),
-    );
-  }
-
-  // ── Card inferior ─────────────────────────────────────
-
-  Widget _buildCard(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: _dark.withValues(alpha: 0.25),
-            blurRadius: 32,
-            spreadRadius: 2,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text(
-            'Entrar na sua conta',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: _mid,
-              letterSpacing: -0.3,
-            ),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'Use sua conta Google para continuar',
-            style: TextStyle(fontSize: 13, color: Colors.black38),
-          ),
-          const SizedBox(height: 28),
-          _buildGoogleSignInButton(context),
-          const SizedBox(height: 20),
-          _buildDivider(),
-          const SizedBox(height: 20),
-          _buildTermsText(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDivider() {
-    return const Row(
-      children: [
-        Expanded(child: Divider(color: Colors.black12, thickness: 0.8)),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 12),
-          child: Text(
-            'acesso seguro',
-            style: TextStyle(fontSize: 11, color: Colors.black26),
-          ),
-        ),
-        Expanded(child: Divider(color: Colors.black12, thickness: 0.8)),
-      ],
-    );
-  }
-
-  // ── Botão Google ──────────────────────────────────────
-
-  Widget _buildGoogleSignInButton(BuildContext context) {
-    return Consumer<AuthState>(
-      builder: (context, auth, _) {
-        return SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: auth.isLoading ? null : () => _handleLogin(context),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _mid,
-              foregroundColor: Colors.white,
-              disabledBackgroundColor: _accent,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-              elevation: 0,
-            ),
-            child: auth.isLoading
-                ? const SizedBox(
-              height: 22, width: 22,
-              child: CircularProgressIndicator(
-                strokeWidth: 2, color: Colors.white,
-              ),
-            )
-                : Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset('assets/google.png', height: 22),
-                const SizedBox(width: 12),
-                const Text(
-                  'Entrar com Google',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.2,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _handleLogin(BuildContext context) async {
-    await context.read<AuthState>().login();
-  }
-
-  // ── Termos ────────────────────────────────────────────
-
-  Widget _buildTermsText() {
-    return const Text(
-      'Ao continuar, você concorda com nossos\nTermos e Política de Privacidade',
-      textAlign: TextAlign.center,
-      style: TextStyle(
-        fontSize: 11,
-        color: Colors.black38,
-        height: 1.6,
       ),
     );
   }
