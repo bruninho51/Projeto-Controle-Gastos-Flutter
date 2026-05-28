@@ -1,3 +1,10 @@
+# [1.16.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.15.0...v1.16.0) (2026-05-28)
+
+
+### Features
+
+* adiciona conductor ([c89a07a](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/c89a07a05a409caa352be4b2997021d762d4a4a9))
+
 # [1.15.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.14.3...v1.15.0) (2026-05-26)
 
 
