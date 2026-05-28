@@ -1,8 +1,9 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:orcamentos_app/providers/auth_provider.dart';
+import 'package:orcamentos_app/features/auth/components/login_background_animation.dart';
+import 'package:orcamentos_app/features/auth/components/login_logo.dart';
+import 'package:orcamentos_app/features/auth/components/login_card.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class LoginPage extends StatefulWidget {
@@ -25,10 +26,9 @@ class _LoginPageState extends State<LoginPage>
 
   String _version = '';
 
-  static const _dark   = Color(0xFF1A237E);
-  static const _mid    = Color(0xFF283593);
-  static const _light  = Color(0xFF3949AB);
-  static const _accent = Color(0xFF7986CB);
+  static const _dark  = Color(0xFF1A237E);
+  static const _mid   = Color(0xFF283593);
+  static const _light = Color(0xFF3949AB);
 
   @override
   void initState() {
@@ -104,19 +104,7 @@ class _LoginPageState extends State<LoginPage>
         ),
         child: Stack(
           children: [
-            // Ondas de fundo
-            Positioned.fill(
-              child: AnimatedBuilder(
-                animation: Listenable.merge([_wave1, _wave2, _wave3]),
-                builder: (_, __) => CustomPaint(
-                  painter: _BackgroundWavePainter(
-                    w1: _wave1.value,
-                    w2: _wave2.value,
-                    w3: _wave3.value,
-                  ),
-                ),
-              ),
-            ),
+            LoginBackgroundAnimation(w1: _wave1, w2: _wave2, w3: _wave3),
             // Conteúdo
             SafeArea(
               child: Column(
@@ -128,7 +116,7 @@ class _LoginPageState extends State<LoginPage>
                       position: _slideUp,
                       child: Column(
                         children: [
-                          _buildLogo(),
+                          const LoginLogo(),
                           const SizedBox(height: 32),
                           _buildWelcomeText(),
                           const SizedBox(height: 12),
@@ -145,7 +133,12 @@ class _LoginPageState extends State<LoginPage>
                         parent: _intro,
                         curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
                       ),
-                      child: _buildCard(context),
+                      child: Consumer<AuthState>(
+                        builder: (context, auth, _) => LoginCard(
+                          onSignIn: () => auth.login(),
+                          isLoading: auth.isLoading,
+                        ),
+                      ),
                     ),
                   ),
                   const Spacer(),
@@ -162,33 +155,6 @@ class _LoginPageState extends State<LoginPage>
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  // ── Logo ──────────────────────────────────────────────
-
-  Widget _buildLogo() {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.7, end: 1.0),
-      duration: const Duration(milliseconds: 800),
-      curve: Curves.elasticOut,
-      builder: (_, scale, child) => Transform.scale(scale: scale, child: child),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: _dark.withOpacity(0.35),
-              blurRadius: 24,
-              spreadRadius: 2,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Image.asset('assets/icon.png', width: 96, height: 96),
       ),
     );
   }
@@ -236,133 +202,6 @@ class _LoginPageState extends State<LoginPage>
     );
   }
 
-  // ── Card inferior ─────────────────────────────────────
-
-  Widget _buildCard(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: _dark.withOpacity(0.25),
-            blurRadius: 32,
-            spreadRadius: 2,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text(
-            'Entrar na sua conta',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: _mid,
-              letterSpacing: -0.3,
-            ),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'Use sua conta Google para continuar',
-            style: TextStyle(fontSize: 13, color: Colors.black38),
-          ),
-          const SizedBox(height: 28),
-          _buildGoogleSignInButton(context),
-          const SizedBox(height: 20),
-          _buildDivider(),
-          const SizedBox(height: 20),
-          _buildTermsText(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDivider() {
-    return const Row(
-      children: [
-        Expanded(child: Divider(color: Colors.black12, thickness: 0.8)),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 12),
-          child: Text(
-            'acesso seguro',
-            style: TextStyle(fontSize: 11, color: Colors.black26),
-          ),
-        ),
-        Expanded(child: Divider(color: Colors.black12, thickness: 0.8)),
-      ],
-    );
-  }
-
-  // ── Botão Google ──────────────────────────────────────
-
-  Widget _buildGoogleSignInButton(BuildContext context) {
-    return Consumer<AuthState>(
-      builder: (context, auth, _) {
-        return SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: auth.isLoading ? null : () => _handleLogin(context),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _mid,
-              foregroundColor: Colors.white,
-              disabledBackgroundColor: _accent,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-              ),
-              elevation: 0,
-            ),
-            child: auth.isLoading
-                ? const SizedBox(
-              height: 22, width: 22,
-              child: CircularProgressIndicator(
-                strokeWidth: 2, color: Colors.white,
-              ),
-            )
-                : Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset('assets/google.png', height: 22),
-                const SizedBox(width: 12),
-                const Text(
-                  'Entrar com Google',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.2,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _handleLogin(BuildContext context) async {
-    await context.read<AuthState>().login();
-  }
-
-  // ── Termos ────────────────────────────────────────────
-
-  Widget _buildTermsText() {
-    return const Text(
-      'Ao continuar, você concorda com nossos\nTermos e Política de Privacidade',
-      textAlign: TextAlign.center,
-      style: TextStyle(
-        fontSize: 11,
-        color: Colors.black38,
-        height: 1.6,
-      ),
-    );
-  }
-
   // ── Versão ────────────────────────────────────────────
 
   Widget _buildVersion() {
@@ -376,51 +215,4 @@ class _LoginPageState extends State<LoginPage>
       ),
     );
   }
-}
-
-// ── Ondas de fundo ────────────────────────────────────────
-
-class _BackgroundWavePainter extends CustomPainter {
-  final double w1, w2, w3;
-  const _BackgroundWavePainter({
-    required this.w1,
-    required this.w2,
-    required this.w3,
-  });
-
-  Path _wave(Size size, double t, double baseY, double amp, double freq) {
-    final path = Path();
-    path.moveTo(0, baseY + sin(t * pi) * amp);
-    for (double x = 0; x <= size.width; x++) {
-      final y = baseY + sin((x / size.width * freq * pi) + t * pi) * amp;
-      path.lineTo(x, y);
-    }
-    path.lineTo(size.width, size.height);
-    path.lineTo(0, size.height);
-    path.close();
-    return path;
-  }
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // Onda superior — leve, suave, quase invisível
-    canvas.drawPath(
-      _wave(size, w1, size.height * 0.18, 28, 1.8),
-      Paint()..color = const Color(0xFF3949AB).withOpacity(0.18),
-    );
-    // Onda média — flutua no meio da tela
-    canvas.drawPath(
-      _wave(size, w2, size.height * 0.38, 22, 2.2),
-      Paint()..color = const Color(0xFF1A237E).withOpacity(0.20),
-    );
-    // Onda inferior — ancora o rodapé
-    canvas.drawPath(
-      _wave(size, w3, size.height * 0.72, 18, 1.5),
-      Paint()..color = const Color(0xFF1A237E).withOpacity(0.28),
-    );
-  }
-
-  @override
-  bool shouldRepaint(_BackgroundWavePainter old) =>
-      old.w1 != w1 || old.w2 != w2 || old.w3 != w3;
 }
