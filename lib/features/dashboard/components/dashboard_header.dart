@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:orcamentos_app/features/dashboard/components/pill_segmented_control.dart';
-import 'package:orcamentos_app/providers/auth_provider.dart';
+import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
 
 class DashboardHeader extends StatelessWidget {
   final AuthState auth;

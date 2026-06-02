@@ -9,7 +9,7 @@ import 'package:orcamentos_app/utils/http.dart';
 import 'package:orcamentos_app/components/investimentos_page/investimento_card.dart';
 import 'package:orcamentos_app/components/investimentos_page/investimentos_page_empty_state.dart';
 import 'package:orcamentos_app/components/orcamentos_encerrados_page/orcamentos_encerrados_page.dart';
-import 'package:orcamentos_app/providers/auth_provider.dart';
+import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
 import 'package:orcamentos_app/components/investimentos_page/investimentos_fab.dart';
 import 'package:orcamentos_app/components/common/orcamentos_appbar.dart';
 

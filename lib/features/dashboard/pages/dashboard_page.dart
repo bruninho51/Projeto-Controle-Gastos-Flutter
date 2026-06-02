@@ -7,7 +7,7 @@ import 'package:orcamentos_app/features/dashboard/components/dashboard_card_grid
 import 'package:orcamentos_app/features/dashboard/components/dashboard_header.dart';
 import 'package:orcamentos_app/features/dashboard/models/dashboard_data.dart';
 import 'package:orcamentos_app/features/dashboard/services/dashboard_service.dart';
-import 'package:orcamentos_app/providers/auth_provider.dart';
+import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});

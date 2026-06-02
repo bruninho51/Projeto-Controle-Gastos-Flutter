@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:orcamentos_app/components/common/app_bottom_nav.dart';
 import 'package:orcamentos_app/components/common/app_navigation_items.dart';
 import 'package:orcamentos_app/components/common/app_navigation_rail.dart';
-import 'package:orcamentos_app/providers/auth_provider.dart';
+import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
 
 class MainAppScaffold extends StatefulWidget {
   const MainAppScaffold({super.key});

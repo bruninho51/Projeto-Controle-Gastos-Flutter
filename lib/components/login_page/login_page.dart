@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:orcamentos_app/providers/auth_provider.dart';
+import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});

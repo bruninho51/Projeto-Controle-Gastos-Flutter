@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:orcamentos_app/providers/auth_provider.dart';
+import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
 import 'package:orcamentos_app/shared/auth_service.dart';
 import 'package:orcamentos_app/shared/config/app_config.dart';

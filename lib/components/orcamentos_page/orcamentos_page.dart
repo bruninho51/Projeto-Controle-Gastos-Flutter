@@ -13,7 +13,7 @@ import 'package:orcamentos_app/components/orcamentos_encerrados_page/orcamentos_
 import 'package:orcamentos_app/components/orcamentos_page/orcamento_card.dart';
 import 'package:orcamentos_app/components/orcamentos_page/orcamentos_fab.dart';
 import 'package:orcamentos_app/components/orcamentos_page/orcamentos_page_empty_state.dart';
-import 'package:orcamentos_app/providers/auth_provider.dart';
+import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
 import 'package:orcamentos_app/shared/api_models.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
 

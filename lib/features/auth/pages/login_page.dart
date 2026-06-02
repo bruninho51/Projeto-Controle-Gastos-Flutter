@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:orcamentos_app/providers/auth_provider.dart';
+import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
 import 'package:orcamentos_app/features/auth/components/login_background_animation.dart';
 import 'package:orcamentos_app/features/auth/components/login_logo.dart';
 import 'package:orcamentos_app/features/auth/components/login_card.dart';

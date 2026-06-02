@@ -7,7 +7,7 @@ import 'package:orcamentos_app/components/common/orcamentos_snackbar.dart';
 import 'package:orcamentos_app/components/investimento_detalhes_page/investimento_detalhes_fab.dart';
 import 'package:orcamentos_app/utils/formatters.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
-import 'package:orcamentos_app/providers/auth_provider.dart';
+import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
 import 'package:orcamentos_app/utils/http.dart';
 import 'package:orcamentos_app/components/investimento_detalhes_page/action_button.dart';
 import 'package:provider/provider.dart';

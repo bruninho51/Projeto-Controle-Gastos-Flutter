@@ -7,7 +7,7 @@ import 'package:orcamentos_app/utils/formatters.dart';
 import 'dart:convert';
 import 'package:orcamentos_app/utils/http.dart';
 import 'package:provider/provider.dart';
-import 'package:orcamentos_app/providers/auth_provider.dart';
+import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
 
 import '../common/orcamentos_loading.dart';
 

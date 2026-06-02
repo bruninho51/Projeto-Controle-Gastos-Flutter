@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:orcamentos_app/features/notificacoes/notificacoes_channel.dart';
 import 'package:orcamentos_app/components/notificacoes_page/notificacao_edicao_page.dart';
 import 'package:orcamentos_app/components/common/orcamentos_loading.dart';
-import 'package:orcamentos_app/providers/auth_provider.dart';
+import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 
 class NotificacoesPage extends StatefulWidget {

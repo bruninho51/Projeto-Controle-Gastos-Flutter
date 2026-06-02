@@ -7,7 +7,7 @@ import 'package:orcamentos_app/components/gastos_variados_page/gastos_page_empty
 import 'package:orcamentos_app/utils/http.dart';
 import 'package:orcamentos_app/components/common/orcamentos_snackbar.dart';
 import 'package:provider/provider.dart';
-import 'package:orcamentos_app/providers/auth_provider.dart';
+import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
 
 import '../common/orcamentos_loading.dart';
 
