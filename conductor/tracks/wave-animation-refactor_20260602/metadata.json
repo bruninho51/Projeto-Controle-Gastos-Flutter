@@ -2,15 +2,20 @@
   "id": "wave-animation-refactor_20260602",
   "title": "Refactor — Wave Animation e Decomposição do LoadingScreen",
   "type": "refactor",
-  "status": "pending",
+  "status": "complete",
   "created": "2026-06-02T00:00:00.000Z",
   "updated": "2026-06-02T00:00:00.000Z",
   "phases": {
     "total": 3,
-    "completed": 0
+    "completed": 3
   },
   "tasks": {
     "total": 13,
-    "completed": 0
-  }
+    "completed": 13
+  },
+  "commits": [
+    "4962864: refactor(shared): cria AnimatedWaveBackground e WaveLayer reutilizáveis",
+    "2e8e858: refactor(auth): migra LoginBackgroundAnimation para AnimatedWaveBackground",
+    "99bca0d: refactor(loading): decompõe LoadingScreen em componentes e move para features/loading"
+  ]
 }
