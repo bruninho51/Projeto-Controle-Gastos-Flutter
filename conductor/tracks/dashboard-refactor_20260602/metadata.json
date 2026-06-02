@@ -2,18 +2,23 @@
   "id": "dashboard-refactor_20260602",
   "title": "Refactor — Dashboard e MainAppScaffold (Clean Architecture)",
   "type": "refactor",
-  "status": "in_progress",
+  "status": "complete",
   "created": "2026-06-02T00:00:00.000Z",
   "updated": "2026-06-02T00:00:00.000Z",
-  "current_phase": 1,
-  "current_task": "1.1",
+  "current_phase": 4,
+  "current_task": "4.6",
   "phases": {
     "total": 4,
-    "completed": 0
+    "completed": 4
   },
   "tasks": {
     "total": 16,
-    "completed": 0
+    "completed": 16
   },
-  "commits": []
+  "commits": [
+    "a269c1f: refactor(dashboard): adiciona modelos e constantes de configuração dos cards",
+    "d0d09d8: refactor(dashboard): centraliza acesso a dados em repository e service",
+    "75d6341: refactor(dashboard): extrai componentes para arquivos dedicados",
+    "833429d: refactor(dashboard,navigation): simplifica DashboardPage e MainAppScaffold"
+  ]
 }

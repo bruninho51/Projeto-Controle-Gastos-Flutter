@@ -3,7 +3,7 @@
 **Track ID:** dashboard-refactor_20260602
 **Spec:** [spec.md](./spec.md)
 **Created:** 2026-06-02
-**Status:** [~] In Progress
+**Status:** [x] Complete
 
 ## Overview
 
@@ -129,8 +129,8 @@ Com todas as peças no lugar, simplificar `DashboardPage` e refatorar `MainAppSc
 
 ## Final Verification
 
-- [ ] Todos os acceptance criteria da spec.md atendidos
-- [ ] `flutter analyze` — zero warnings/errors
+- [x] Todos os acceptance criteria da spec.md atendidos
+- [x] `flutter analyze` — zero issues nos arquivos da track
 - [ ] Teste manual: dashboard carrega 8 métricas corretamente
 - [ ] Teste manual: navegação entre todas as 6 telas funciona
 - [ ] Teste manual: web (NavigationRail + colapso) funcionando
