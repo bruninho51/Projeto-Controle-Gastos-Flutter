@@ -28,7 +28,8 @@ class NotificationListener : NotificationListenerService() {
             "com.bradesco",
             "com.itau",
             "one.inter",
-            "com.mand.notitest"
+            "com.mand.notitest",
+            "br.com.ifood.benefits"
         )
     }
 

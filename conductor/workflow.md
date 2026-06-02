@@ -33,6 +33,13 @@ Exemplos:
 - `fix(auth): corrige loop de autenticação no logout`
 - `chore(deps): atualiza firebase_auth para 5.4.2`
 
+Ao criar commits git:
+
+- Não adicionar linhas Co-Authored-By
+- Não adicionar assinatura de IA
+- Não adicionar referências a Claude, Anthropic ou agentes
+- Utilizar apenas a mensagem de commit solicitada
+
 ## Code Review
 
 **Opcional / Auto-revisão OK**
