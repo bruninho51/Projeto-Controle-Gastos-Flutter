@@ -75,9 +75,9 @@ Mover toda a lógica de acesso a dados e agregação. Fase de maior risco — pr
 ### Verification
 
 - [x] `flutter analyze` sem erros
-- [ ] Substituir temporariamente `_fetchDashboardData` em `DashboardPage` pelo `DashboardService` e confirmar que os dados carregam corretamente no app
-- [ ] Counts de orçamentos ativos/encerrados batem com o comportamento original
-- [ ] Erro de API continua sendo propagado corretamente para o `FutureBuilder`
+- [x] Substituir temporariamente `_fetchDashboardData` em `DashboardPage` pelo `DashboardService` e confirmar que os dados carregam corretamente no app
+- [x] Counts de orçamentos ativos/encerrados batem com o comportamento original
+- [x] Erro de API continua sendo propagado corretamente para o `FutureBuilder`
 
 ---
 
@@ -95,11 +95,11 @@ Extrair os componentes significativos de `dashboard_page.dart` para arquivos ded
 ### Verification
 
 - [x] `flutter analyze` sem erros
-- [ ] Visual do dashboard idêntico ao original (inspeção manual)
-- [ ] Animação de entrada dos cards funcionando
-- [ ] Hover nos cards funcionando (web)
-- [ ] Pill segmented control animando suavemente com swipe e toque
-- [ ] Avatar do usuário carregando corretamente
+- [x] Visual do dashboard idêntico ao original (inspeção manual)
+- [x] Animação de entrada dos cards funcionando
+- [x] Hover nos cards funcionando (web)
+- [x] Pill segmented control animando suavemente com swipe e toque
+- [x] Avatar do usuário carregando corretamente
 
 ---
 
@@ -119,11 +119,11 @@ Com todas as peças no lugar, simplificar `DashboardPage` e refatorar `MainAppSc
 ### Verification
 
 - [x] `flutter analyze` — zero issues nos arquivos desta track
-- [ ] Navegação mobile: BottomNav funcionando, todas as abas acessíveis
-- [ ] Navegação web: NavigationRail funcionando, colapso/expansão funcionando
-- [ ] Logout funcionando pelo botão "Sair" no rail
-- [ ] Dashboard carrega métricas corretamente
-- [ ] Todos os fluxos principais testados manualmente
+- [x] Navegação mobile: BottomNav funcionando, todas as abas acessíveis
+- [x] Navegação web: NavigationRail funcionando, colapso/expansão funcionando
+- [x] Logout funcionando pelo botão "Sair" no rail
+- [x] Dashboard carrega métricas corretamente
+- [x] Todos os fluxos principais testados manualmente
 
 ---
 
@@ -131,11 +131,11 @@ Com todas as peças no lugar, simplificar `DashboardPage` e refatorar `MainAppSc
 
 - [x] Todos os acceptance criteria da spec.md atendidos
 - [x] `flutter analyze` — zero issues nos arquivos da track
-- [ ] Teste manual: dashboard carrega 8 métricas corretamente
-- [ ] Teste manual: navegação entre todas as 6 telas funciona
-- [ ] Teste manual: web (NavigationRail + colapso) funcionando
-- [ ] Teste manual: mobile (BottomNav flutuante) funcionando
-- [ ] Nenhuma funcionalidade existente quebrada
+- [x] Teste manual: dashboard carrega 8 métricas corretamente
+- [x] Teste manual: navegação entre todas as 6 telas funciona
+- [x] Teste manual: web (NavigationRail + colapso) funcionando
+- [x] Teste manual: mobile (BottomNav flutuante) funcionando
+- [x] Nenhuma funcionalidade existente quebrada
 
 ---
 

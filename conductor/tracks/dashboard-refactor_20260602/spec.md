@@ -3,7 +3,7 @@
 **Track ID:** dashboard-refactor_20260602
 **Type:** Refactor
 **Created:** 2026-06-02
-**Status:** Draft
+**Status:** Complete
 
 ## Summary
 
@@ -31,19 +31,19 @@ O app Orçamentos já possui estrutura de features iniciada (`lib/features/`). O
 
 ## Acceptance Criteria
 
-- [ ] Todas as chamadas HTTP/GraphQL do Dashboard centralizadas em `DashboardRepository`
-- [ ] Lógica de agregação de dados (contagens, mapeamento de campos) em `DashboardService`
-- [ ] As duas chamadas REST idênticas unificadas em uma única chamada no repositório
-- [ ] Modelos `DashboardData` e `DashboardCardConfig` em arquivos dedicados
-- [ ] Configuração dos cards (ordem, ícone, cor, label) em `dashboard_cards.dart`
-- [ ] Componentes `DashboardHeader`, `DashboardCardGrid`, `DashboardCard`, `PillSegmentedControl` em arquivos dedicados dentro de `components/`
-- [ ] `DashboardPage` simplificado: apenas TabController, FutureBuilder e orquestração
-- [ ] `NavigationItem` extraído para arquivo dedicado em `lib/components/common/`
-- [ ] Items de navegação extraídos para constantes em arquivo dedicado
-- [ ] `AppNavigationRail` e `AppBottomNav` como componentes dedicados
-- [ ] `MainAppScaffold` simplificado: apenas `currentIndex`, decisão de layout e renderização
-- [ ] Comportamento visual e funcional 100% idêntico ao original
-- [ ] `flutter analyze` — zero warnings/errors
+- [x] Todas as chamadas HTTP/GraphQL do Dashboard centralizadas em `DashboardRepository`
+- [x] Lógica de agregação de dados (contagens, mapeamento de campos) em `DashboardService`
+- [x] As duas chamadas REST idênticas unificadas em uma única chamada no repositório
+- [x] Modelos `DashboardData` e `DashboardCardConfig` em arquivos dedicados
+- [x] Configuração dos cards (ordem, ícone, cor, label) em `dashboard_cards.dart`
+- [x] Componentes `DashboardHeader`, `DashboardCardGrid`, `DashboardCard`, `PillSegmentedControl` em arquivos dedicados dentro de `components/`
+- [x] `DashboardPage` simplificado: apenas TabController, FutureBuilder e orquestração
+- [x] `NavigationItem` extraído para arquivo dedicado em `lib/components/common/`
+- [x] Items de navegação extraídos para constantes em arquivo dedicado
+- [x] `AppNavigationRail` e `AppBottomNav` como componentes dedicados
+- [x] `MainAppScaffold` simplificado: apenas `currentIndex`, decisão de layout e renderização
+- [x] Comportamento visual e funcional 100% idêntico ao original
+- [x] `flutter analyze` — zero warnings/errors
 
 ## Dependencies
 

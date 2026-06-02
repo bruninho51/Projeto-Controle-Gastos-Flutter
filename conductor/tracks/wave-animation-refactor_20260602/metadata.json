@@ -1,0 +1,16 @@
+{
+  "id": "wave-animation-refactor_20260602",
+  "title": "Refactor — Wave Animation e Decomposição do LoadingScreen",
+  "type": "refactor",
+  "status": "pending",
+  "created": "2026-06-02T00:00:00.000Z",
+  "updated": "2026-06-02T00:00:00.000Z",
+  "phases": {
+    "total": 3,
+    "completed": 0
+  },
+  "tasks": {
+    "total": 13,
+    "completed": 0
+  }
+}

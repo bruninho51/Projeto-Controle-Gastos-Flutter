@@ -6,4 +6,6 @@
 
 | [x] | dashboard-refactor_20260602 | Refactor — Dashboard e MainAppScaffold (Clean Architecture) | 2026-06-02 | 2026-06-02 |
 
+| [ ] | wave-animation-refactor_20260602 | Refactor — Wave Animation e Decomposição do LoadingScreen | 2026-06-02 | 2026-06-02 |
+
 <!-- Tracks registered by /conductor:new-track -->
