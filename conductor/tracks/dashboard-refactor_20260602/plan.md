@@ -63,18 +63,18 @@ Mover toda a lógica de acesso a dados e agregação. Fase de maior risco — pr
 
 ### Tasks
 
-- [ ] Task 2.1: Criar `repositories/dashboard_repository.dart` — classe `DashboardRepository` com:
+- [x] Task 2.1: Criar `repositories/dashboard_repository.dart` — classe `DashboardRepository` com:
   - `fetchOrcamentos(String token) → Future<List<dynamic>>` (chamada REST)
   - `fetchConsolidado(String token) → Future<Map<String, dynamic>>` (chamada GraphQL — mesma query)
-- [ ] Task 2.2: Criar `services/dashboard_service.dart` — classe `DashboardService` com:
+- [x] Task 2.2: Criar `services/dashboard_service.dart` — classe `DashboardService` com:
   - `getDashboardData(String token) → Future<DashboardData>`
   - Faz uma única chamada a `fetchOrcamentos`, aplica os dois filtros (ativo/encerrado) sobre o mesmo resultado
   - Mapeia campos do consolidado para `DashboardData`
-- [ ] Task 2.3: Verificar que a query GraphQL e os nomes de campos REST estão idênticos ao original
+- [x] Task 2.3: Verificar que a query GraphQL e os nomes de campos REST estão idênticos ao original
 
 ### Verification
 
-- [ ] `flutter analyze` sem erros
+- [x] `flutter analyze` sem erros
 - [ ] Substituir temporariamente `_fetchDashboardData` em `DashboardPage` pelo `DashboardService` e confirmar que os dados carregam corretamente no app
 - [ ] Counts de orçamentos ativos/encerrados batem com o comportamento original
 - [ ] Erro de API continua sendo propagado corretamente para o `FutureBuilder`
