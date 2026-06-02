@@ -109,16 +109,16 @@ Com todas as peças no lugar, simplificar `DashboardPage` e refatorar `MainAppSc
 
 ### Tasks
 
-- [ ] Task 4.1: Atualizar `dashboard_page.dart` — remover todas as classes privadas e métodos de API extraídos. Importar e usar `DashboardService`, `DashboardHeader`, `DashboardCardGrid`. A page deve ter apenas: `TabController`, `FutureBuilder`, e montagem do `Scaffold`.
-- [ ] Task 4.2: Criar `lib/components/common/navigation_item.dart` — mover o modelo `NavigationItem` para arquivo próprio
-- [ ] Task 4.3: Criar `lib/components/common/app_navigation_items.dart` — extrair a lista `_navigationItems` para constante `kNavigationItems`
-- [ ] Task 4.4: Criar `lib/components/common/app_navigation_rail.dart` — extrair `_buildNavigationRail` como widget `AppNavigationRail`. Manter `_RailItem` e `_RailFooterButton` no mesmo arquivo como classes privadas.
-- [ ] Task 4.5: Criar `lib/components/common/app_bottom_nav.dart` — extrair `_buildFloatingBottomNav` como widget `AppBottomNav`. Manter `_BottomNavItem` no mesmo arquivo como classe privada.
-- [ ] Task 4.6: Simplificar `main_app_scaffold.dart` — remover código extraído, importar novos arquivos. O scaffold deve ter apenas: `currentIndex`, `railExtended`, decisão `useRail`, e composição com `AppNavigationRail`/`AppBottomNav`.
+- [x] Task 4.1: Atualizar `dashboard_page.dart` — remover todas as classes privadas e métodos de API extraídos. Importar e usar `DashboardService`, `DashboardHeader`, `DashboardCardGrid`. A page deve ter apenas: `TabController`, `FutureBuilder`, e montagem do `Scaffold`.
+- [x] Task 4.2: Criar `lib/components/common/navigation_item.dart` — mover o modelo `NavigationItem` para arquivo próprio
+- [x] Task 4.3: Criar `lib/components/common/app_navigation_items.dart` — extrair a lista `_navigationItems` para constante `kNavigationItems`
+- [x] Task 4.4: Criar `lib/components/common/app_navigation_rail.dart` — extrair `_buildNavigationRail` como widget `AppNavigationRail`. Manter `_RailItem` e `_RailFooterButton` no mesmo arquivo como classes privadas.
+- [x] Task 4.5: Criar `lib/components/common/app_bottom_nav.dart` — extrair `_buildFloatingBottomNav` como widget `AppBottomNav`. Manter `_BottomNavItem` no mesmo arquivo como classe privada.
+- [x] Task 4.6: Simplificar `main_app_scaffold.dart` — remover código extraído, importar novos arquivos. O scaffold deve ter apenas: `currentIndex`, `railExtended`, decisão `useRail`, e composição com `AppNavigationRail`/`AppBottomNav`.
 
 ### Verification
 
-- [ ] `flutter analyze` — zero warnings/errors em todo o projeto
+- [x] `flutter analyze` — zero issues nos arquivos desta track
 - [ ] Navegação mobile: BottomNav funcionando, todas as abas acessíveis
 - [ ] Navegação web: NavigationRail funcionando, colapso/expansão funcionando
 - [ ] Logout funcionando pelo botão "Sair" no rail
