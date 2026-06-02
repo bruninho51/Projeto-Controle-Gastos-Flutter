@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:orcamentos_app/providers/auth_provider.dart';
@@ -13,8 +14,7 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage>
-    with TickerProviderStateMixin {
+class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   late final AnimationController _intro;
   late final AnimationController _wave1;
   late final AnimationController _wave2;
@@ -72,7 +72,6 @@ class _LoginPageState extends State<LoginPage>
     try {
       final info = await PackageInfo.fromPlatform();
       final year = DateTime.now().year;
-
       setState(() {
         _version = 'Orçamentos App $year · Todos os direitos reservados · v${info.version}';
       });
@@ -105,57 +104,117 @@ class _LoginPageState extends State<LoginPage>
         child: Stack(
           children: [
             LoginBackgroundAnimation(w1: _wave1, w2: _wave2, w3: _wave3),
-            // Conteúdo
             SafeArea(
-              child: Column(
-                children: [
-                  const Spacer(flex: 2),
-                  FadeTransition(
-                    opacity: _fadeIn,
-                    child: SlideTransition(
-                      position: _slideUp,
-                      child: Column(
-                        children: [
-                          const LoginLogo(),
-                          const SizedBox(height: 32),
-                          _buildWelcomeText(),
-                          const SizedBox(height: 12),
-                          _buildDescriptionText(),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const Spacer(flex: 2),
-                  SlideTransition(
-                    position: _slideCard,
-                    child: FadeTransition(
-                      opacity: CurvedAnimation(
-                        parent: _intro,
-                        curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
-                      ),
-                      child: Consumer<AuthState>(
-                        builder: (context, auth, _) => LoginCard(
-                          onSignIn: () => auth.login(),
-                          isLoading: auth.isLoading,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const Spacer(),
-                  FadeTransition(
-                    opacity: CurvedAnimation(
-                      parent: _intro,
-                      curve: const Interval(0.7, 1.0, curve: Curves.easeOut),
-                    ),
-                    child: _buildVersion(),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-              ),
+              child: kIsWeb ? _buildWebLayout() : _buildMobileLayout(),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  // ── Layout Web ────────────────────────────────────────
+
+  Widget _buildWebLayout() {
+    return Center(
+      child: SingleChildScrollView(
+        child: FadeTransition(
+          opacity: _fadeIn,
+          child: SlideTransition(
+            position: _slideUp,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 620),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const LoginLogo(),
+                    const SizedBox(height: 32),
+                    _buildWelcomeText(),
+                    const SizedBox(height: 12),
+                    _buildDescriptionText(),
+                    const SizedBox(height: 40),
+                    SlideTransition(
+                      position: _slideCard,
+                      child: FadeTransition(
+                        opacity: CurvedAnimation(
+                          parent: _intro,
+                          curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
+                        ),
+                        child: Consumer<AuthState>(
+                          builder: (context, auth, _) => LoginCard(
+                            onSignIn: () => auth.login(),
+                            isLoading: auth.isLoading,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    FadeTransition(
+                      opacity: CurvedAnimation(
+                        parent: _intro,
+                        curve: const Interval(0.7, 1.0, curve: Curves.easeOut),
+                      ),
+                      child: _buildVersion(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Layout Mobile/Desktop ─────────────────────────────
+
+  Widget _buildMobileLayout() {
+    return Column(
+      children: [
+        const Spacer(flex: 2),
+        FadeTransition(
+          opacity: _fadeIn,
+          child: SlideTransition(
+            position: _slideUp,
+            child: Column(
+              children: [
+                const LoginLogo(),
+                const SizedBox(height: 32),
+                _buildWelcomeText(),
+                const SizedBox(height: 12),
+                _buildDescriptionText(),
+              ],
+            ),
+          ),
+        ),
+        const Spacer(flex: 2),
+        SlideTransition(
+          position: _slideCard,
+          child: FadeTransition(
+            opacity: CurvedAnimation(
+              parent: _intro,
+              curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
+            ),
+            child: Consumer<AuthState>(
+              builder: (context, auth, _) => LoginCard(
+                onSignIn: () => auth.login(),
+                isLoading: auth.isLoading,
+              ),
+            ),
+          ),
+        ),
+        const Spacer(),
+        FadeTransition(
+          opacity: CurvedAnimation(
+            parent: _intro,
+            curve: const Interval(0.7, 1.0, curve: Curves.easeOut),
+          ),
+          child: _buildVersion(),
+        ),
+        const SizedBox(height: 16),
+      ],
     );
   }
 
