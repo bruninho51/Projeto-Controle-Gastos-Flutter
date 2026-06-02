@@ -1,3 +1,11 @@
+# [1.17.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.16.0...v1.17.0) (2026-06-02)
+
+
+### Features
+
+* corrige layout da login page na web ([4493caa](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/4493caa4820988cc60a75de9a63ab5b481b0a1b6))
+* lê notificações do Ifood Beneficios ([8a1cfb6](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/8a1cfb664ad8b523dbf77ed268f63946fc9458e4))
+
 # [1.16.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.15.0...v1.16.0) (2026-05-28)
 
 
