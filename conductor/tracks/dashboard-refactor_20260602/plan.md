@@ -87,14 +87,14 @@ Extrair os componentes significativos de `dashboard_page.dart` para arquivos ded
 
 ### Tasks
 
-- [ ] Task 3.1: Criar `components/pill_segmented_control.dart` — classe pública `PillSegmentedControl` (era `_PillSegmentedControl`). Mesma lógica de animação com `tabController.animation`.
-- [ ] Task 3.2: Criar `components/dashboard_card.dart` — classe pública `DashboardCard` (era `_DashboardCard`). Recebe `DashboardCardConfig` em vez de `_CardData`. Mantém animação de entrada e hover.
-- [ ] Task 3.3: Criar `components/dashboard_card_grid.dart` — widget público `DashboardCardGrid` (era `_buildDashboardCards`). Recebe `DashboardData`, chama `buildCardConfigs`, renderiza o grid responsivo.
-- [ ] Task 3.4: Criar `components/dashboard_header.dart` — classe pública `DashboardHeader` (era `_DashboardHeader`). Recebe `AuthState` e `TabController`.
+- [x] Task 3.1: Criar `components/pill_segmented_control.dart` — classe pública `PillSegmentedControl` (era `_PillSegmentedControl`). Mesma lógica de animação com `tabController.animation`.
+- [x] Task 3.2: Criar `components/dashboard_card.dart` — classe pública `DashboardCard` (era `_DashboardCard`). Recebe `DashboardCardConfig` em vez de `_CardData`. Mantém animação de entrada e hover.
+- [x] Task 3.3: Criar `components/dashboard_card_grid.dart` — widget público `DashboardCardGrid` (era `_buildDashboardCards`). Recebe `DashboardData`, chama `buildCardConfigs`, renderiza o grid responsivo.
+- [x] Task 3.4: Criar `components/dashboard_header.dart` — classe pública `DashboardHeader` (era `_DashboardHeader`). Recebe `AuthState` e `TabController`.
 
 ### Verification
 
-- [ ] `flutter analyze` sem erros
+- [x] `flutter analyze` sem erros
 - [ ] Visual do dashboard idêntico ao original (inspeção manual)
 - [ ] Animação de entrada dos cards funcionando
 - [ ] Hover nos cards funcionando (web)
