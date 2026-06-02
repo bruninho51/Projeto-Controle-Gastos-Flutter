@@ -46,7 +46,7 @@ Substituir `BackgroundWavePainter` pelo `AnimatedWaveBackground` criado na Phase
 ### Verification
 
 - [x] `flutter analyze` sem erros
-- [ ] Verificar visualmente a tela de login: ondas com mesmo movimento, posições e opacidades
+- [x] Verificar visualmente a tela de login: ondas com mesmo movimento, posições e opacidades
 
 ---
 
@@ -92,7 +92,7 @@ Extrair os 3 componentes visuais do LoadingScreen, mover a tela para `features/l
 ### Verification
 
 - [x] `flutter analyze` sem warnings ou erros
-- [ ] Verificar visualmente a tela de loading: ondas no rodapé, moeda girando, frases alternando com fade, barras animando
+- [x] Verificar visualmente a tela de loading: ondas no rodapé, moeda girando, frases alternando com fade, barras animando
 - [x] Confirmar que `_WavePainter` e `BackgroundWavePainter` não existem mais em nenhum arquivo do projeto
 - [x] Confirmar que `grep -r "class.*WavePainter" lib/` retorna apenas `WaveBackgroundPainter`
 
@@ -103,8 +103,8 @@ Extrair os 3 componentes visuais do LoadingScreen, mover a tela para `features/l
 - [x] Todos os acceptance criteria da spec marcados como concluídos
 - [x] `flutter analyze` sem warnings ou erros
 - [x] Apenas uma implementação do algoritmo de ondas no projeto
-- [ ] Login visualmente idêntico ao original
-- [ ] Loading visualmente idêntico ao original
+- [x] Login visualmente idêntico ao original
+- [x] Loading visualmente idêntico ao original
 - [x] AuthWrapper compila e exibe LoadingScreen corretamente
 - [x] Nenhum arquivo `.dart` órfão ou import quebrado
 
