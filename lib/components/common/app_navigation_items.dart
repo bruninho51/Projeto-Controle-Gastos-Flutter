@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:orcamentos_app/components/common/navigation_item.dart';
 import 'package:orcamentos_app/components/investimentos_page/investimentos_page.dart';
-import 'package:orcamentos_app/components/notificacoes_page/notificacoes_page.dart';
+import 'package:orcamentos_app/features/notifications/pages/notifications_page.dart';
 import 'package:orcamentos_app/components/orcamentos_page/orcamentos_page.dart';
 import 'package:orcamentos_app/components/perfil_page/perfil_page.dart';
 import 'package:orcamentos_app/features/config/pages/configuracoes_page.dart';
@@ -31,7 +31,7 @@ const List<NavigationItem> kNavigationItems = [
     icon: Icons.notifications_outlined,
     activeIcon: Icons.notifications_rounded,
     label: 'Bancos',
-    page: NotificacoesPage(),
+    page: NotificationsPage(),
   ),
   NavigationItem(
     icon: Icons.person_outline_rounded,
