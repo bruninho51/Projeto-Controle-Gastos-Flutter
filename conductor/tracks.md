@@ -12,4 +12,6 @@
 
 | [x] | categories-refactor_20260603 | Refactor — Categories Feature | 2026-06-03 | 2026-06-03 |
 
+| [x] | investimentos-appbar_20260603 | Refactor — InvestimentosPage para SharedAppBar | 2026-06-03 | 2026-06-03 |
+
 <!-- Tracks registered by /conductor:new-track -->

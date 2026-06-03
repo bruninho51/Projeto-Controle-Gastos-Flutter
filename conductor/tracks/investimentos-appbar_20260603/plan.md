@@ -3,7 +3,7 @@
 **Track ID:** investimentos-appbar_20260603
 **Spec:** [spec.md](./spec.md)
 **Created:** 2026-06-03
-**Status:** [ ] Not Started
+**Status:** [x] Complete
 
 ## Overview
 
@@ -38,20 +38,20 @@ Com a migração concluída, o arquivo legado pode ser deletado com segurança.
 
 ### Tasks
 
-- [ ] Task 2.1: Deletar `lib/components/common/orcamentos_appbar.dart`
-- [ ] Task 2.2: Verificar se o diretório `lib/components/common/` ficou vazio e, se sim, deletá-lo também
+- [x] Task 2.1: Deletar `lib/components/common/orcamentos_appbar.dart`
+- [x] Task 2.2: Verificar se o diretório `lib/components/common/` ficou vazio e, se sim, deletá-lo também
 
 ### Verification
 
-- [ ] `flutter analyze` — zero warnings/errors após a deleção
-- [ ] Nenhuma outra tela quebrou (sem imports pendentes)
+- [x] `flutter analyze` — zero warnings/errors após a deleção
+- [x] Nenhuma outra tela quebrou (sem imports pendentes)
 
 ## Final Verification
 
-- [ ] Todos os acceptance criteria da spec atendidos
-- [ ] `flutter analyze` limpo
+- [x] Todos os acceptance criteria da spec atendidos
+- [x] `flutter analyze` limpo
 - [ ] Fluxo da InvestimentosPage testado manualmente (mobile ou web)
-- [ ] Nenhuma funcionalidade existente quebrada
+- [x] Nenhuma funcionalidade existente quebrada
 
 ---
 
