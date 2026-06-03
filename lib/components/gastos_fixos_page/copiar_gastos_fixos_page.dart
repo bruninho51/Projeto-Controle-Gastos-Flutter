@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:orcamentos_app/components/common/orcamentos_loading.dart';
+import 'package:orcamentos_app/features/shared/components/orcamentos_loading.dart';
 import 'package:orcamentos_app/shared/api_models.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
 import 'package:orcamentos_app/components/common/orcamentos_snackbar.dart';

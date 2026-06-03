@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:orcamentos_app/components/common/orcamentos_loading.dart';
+import 'package:orcamentos_app/features/shared/components/orcamentos_loading.dart';
 import 'package:orcamentos_app/components/common/orcamentos_snackbar.dart';
 import 'package:orcamentos_app/components/common/confirmation_dialog.dart';
 import 'package:orcamentos_app/components/common/shared_appbar.dart';

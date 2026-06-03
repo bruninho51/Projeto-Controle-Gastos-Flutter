@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:orcamentos_app/components/common/orcamentos_loading.dart';
+import 'package:orcamentos_app/features/shared/components/orcamentos_loading.dart';
 import 'package:orcamentos_app/utils/formatters.dart';
 import 'dart:convert';
 import 'package:orcamentos_app/utils/http.dart';

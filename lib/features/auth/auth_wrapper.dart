@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:orcamentos_app/features/auth/pages/login_page.dart';
 import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
-import 'package:orcamentos_app/features/loading/pages/loading_screen.dart';
+import 'package:orcamentos_app/features/splash/pages/splash_screen.dart';
 import 'package:provider/provider.dart';
 
 class AuthWrapper extends StatelessWidget {
@@ -17,7 +17,7 @@ class AuthWrapper extends StatelessWidget {
     final auth = context.watch<AuthState>();
 
     return switch (auth) {
-      AuthState(isLoading: true) => const LoadingScreen(),
+      AuthState(isLoading: true) => const SplashScreen(),
       AuthState(isLoggedIn: false) => const LoginPage(),
       _ => home,
     };

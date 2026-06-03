@@ -9,7 +9,7 @@ import 'package:orcamentos_app/utils/http.dart';
 import 'package:provider/provider.dart';
 import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
 
-import '../common/orcamentos_loading.dart';
+import '../../features/shared/components/orcamentos_loading.dart';
 
 class GastosFixosPage extends StatefulWidget {
   final int orcamentoId;

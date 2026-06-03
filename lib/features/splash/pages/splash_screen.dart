@@ -1,18 +1,18 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:orcamentos_app/features/loading/components/animated_bar_chart.dart';
-import 'package:orcamentos_app/features/loading/components/animated_coin.dart';
-import 'package:orcamentos_app/features/loading/components/animated_phrase.dart';
+import 'package:orcamentos_app/features/splash/components/animated_bar_chart.dart';
+import 'package:orcamentos_app/features/splash/components/animated_coin.dart';
+import 'package:orcamentos_app/features/splash/components/animated_phrase.dart';
 import 'package:orcamentos_app/features/shared/components/animated_wave_background.dart';
 
-class LoadingScreen extends StatefulWidget {
-  const LoadingScreen({super.key});
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
 
   @override
-  State<LoadingScreen> createState() => _LoadingScreenState();
+  State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _LoadingScreenState extends State<LoadingScreen>
+class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
   late final AnimationController _wave1;
   late final AnimationController _wave2;

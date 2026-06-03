@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:convert';
 import 'package:intl/intl.dart';
-import 'package:orcamentos_app/components/common/orcamentos_loading.dart';
+import 'package:orcamentos_app/features/shared/components/orcamentos_loading.dart';
 import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
 import 'package:orcamentos_app/utils/formatters.dart';
 import 'package:orcamentos_app/components/gastos_fixos_page/gastos_fixos_page.dart';
