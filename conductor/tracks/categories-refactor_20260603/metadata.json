@@ -1,0 +1,19 @@
+{
+  "id": "categories-refactor_20260603",
+  "title": "Refactor — Categories Feature",
+  "type": "refactor",
+  "status": "in_progress",
+  "created": "2026-06-03T00:00:00.000Z",
+  "updated": "2026-06-03T00:00:00.000Z",
+  "current_phase": 1,
+  "current_task": "1.1",
+  "phases": {
+    "total": 3,
+    "completed": 0
+  },
+  "tasks": {
+    "total": 9,
+    "completed": 0
+  },
+  "commits": []
+}
