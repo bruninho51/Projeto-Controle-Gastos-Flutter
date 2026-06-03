@@ -150,10 +150,10 @@ diretórios legados.
 
 - [x] Todos os acceptance criteria da spec atendidos
 - [x] `flutter analyze` — zero issues nos arquivos da track
-- [ ] NotificationsPage funcionando (listagem, agrupamento, filtro, refresh)
-- [ ] NotificationEditPage funcionando (salvar, apagar, cadastrar como gasto)
-- [ ] SharedAppBar azul exibido corretamente em ambas as páginas
-- [ ] Nenhuma funcionalidade existente quebrada
+- [x] NotificationsPage funcionando (listagem, agrupamento, filtro, refresh)
+- [x] NotificationEditPage funcionando (salvar, apagar, cadastrar como gasto)
+- [x] SharedAppBar azul exibido corretamente em ambas as páginas
+- [x] Nenhuma funcionalidade existente quebrada
 
 ---
 
