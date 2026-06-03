@@ -108,9 +108,14 @@ class InvestimentosPageState extends State<InvestimentosPage> {
         gradientColors: _gradientColors,
         actionButtons: [
           SharedAppBar.headerButton(
-            child: const Icon(Icons.refresh_rounded, color: Colors.white),
             onTap: () => _fetchApiData(_token),
-            tooltip: 'Recarregar',
+            tooltip: 'Recarregar lista',
+            isSquare: true,
+            child: Icon(
+              Icons.refresh_rounded,
+              color: Colors.white.withValues(alpha: _isLoading ? 1 : 0.9),
+              size: 18,
+            ),
           ),
         ],
       ),
