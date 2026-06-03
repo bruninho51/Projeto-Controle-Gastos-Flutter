@@ -113,10 +113,10 @@ class _CategoriesPageState extends State<CategoriesPage>
       await _categoriesService
           .createCategoria(CategoriaGastoCreateDto(nome: nomeCategoria));
       if (!mounted) return;
+      Navigator.of(context).pop(); // pop PRIMEIRO
       OrcamentosSnackBar.success(
           context: context, message: 'Categoria criada com sucesso!');
-      _fetchCategorias();
-      Navigator.of(context).pop();
+      await _fetchCategorias(); // depois busca (já tem o guard mounted interno)
     } catch (e) {
       if (!mounted) return;
       OrcamentosSnackBar.error(
@@ -138,7 +138,7 @@ class _CategoriesPageState extends State<CategoriesPage>
       ),
       child: Container(
         key: ValueKey(_categorias.length),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), // ligeiramente reduzido
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.13),
           borderRadius: BorderRadius.circular(20),
@@ -147,15 +147,18 @@ class _CategoriesPageState extends State<CategoriesPage>
           mainAxisSize: MainAxisSize.min,
           children: [
             const PulseDot.positive(),
-            const SizedBox(width: 7),
-            Text(
-              _categorias.isEmpty
-                  ? 'Nenhuma'
-                  : '${_categorias.length} ${_categorias.length == 1 ? 'categoria' : 'categorias'}',
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600),
+            const SizedBox(width: 6),
+            Flexible( // <-- envolve o Text com Flexible
+              child: Text(
+                _categorias.isEmpty
+                    ? 'Nenhuma'
+                    : '${_categorias.length} ${_categorias.length == 1 ? 'categoria' : 'categorias'}',
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600),
+                overflow: TextOverflow.ellipsis, // segurança extra
+              ),
             ),
           ],
         ),
