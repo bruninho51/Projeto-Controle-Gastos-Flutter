@@ -3,15 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:orcamentos_app/components/categorias_investimentos_page/categorias_investimentos_page.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_snackbar.dart';
+import 'package:orcamentos_app/features/shared/components/shared_appbar.dart';
 import 'package:orcamentos_app/components/form_investimento_page/form_investimento_page.dart';
 import 'package:provider/provider.dart';
 import 'package:orcamentos_app/utils/http.dart';
 import 'package:orcamentos_app/components/investimentos_page/investimento_card.dart';
 import 'package:orcamentos_app/components/investimentos_page/investimentos_page_empty_state.dart';
-import 'package:orcamentos_app/components/orcamentos_encerrados_page/orcamentos_encerrados_page.dart';
 import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
 import 'package:orcamentos_app/components/investimentos_page/investimentos_fab.dart';
-import 'package:orcamentos_app/components/common/orcamentos_appbar.dart';
 
 class InvestimentosPage extends StatefulWidget {
   const InvestimentosPage({super.key});
@@ -25,6 +24,12 @@ class InvestimentosPageState extends State<InvestimentosPage> {
   bool _isLoading = false;
   bool _isMenuOpen = false;
   final _animationDuration = const Duration(milliseconds: 300);
+
+  static const _gradientColors = [
+    Color(0xFF1A237E),
+    Color(0xFF283593),
+    Color(0xFF3949AB),
+  ];
 
   AuthState get _auth => Provider.of<AuthState>(context, listen: false);
   String get _token => _auth.apiToken!;
@@ -64,6 +69,7 @@ class InvestimentosPageState extends State<InvestimentosPage> {
       }
     } catch (e) {
       setState(() => _isLoading = false);
+      if (!mounted) return;
       OrcamentosSnackBar.error(
         context: context,
         message: 'Error: ${e.toString()}',
@@ -91,71 +97,23 @@ class InvestimentosPageState extends State<InvestimentosPage> {
     );
   }
 
-  void _navigateToArquivados(String apiToken) async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => OrcamentosEncerradosPage(),
-      ),
-    );
-
-    _fetchApiData(apiToken);
-  }
-
-  PreferredSizeWidget _buildAppBar() {
-    final auth = Provider.of<AuthState>(context);
-
-    return OrcamentosAppBar(
-      appTitle: "Investimentos Ativos",
-      isWeb: kIsWeb,
-      userAvatar: kIsWeb
-          ? CircleAvatar(
-        backgroundColor: Colors.indigo[100],
-        radius: 20,
-        child: auth.user?.photoURL != null
-            ? ClipOval(
-          child: Image.network(
-            auth.user!.photoURL!,
-            width: 40,
-            height: 40,
-            fit: BoxFit.cover,
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return CircularProgressIndicator(
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded /
-                    loadingProgress.expectedTotalBytes!
-                    : null,
-              );
-            },
-            errorBuilder: (context, error, stackTrace) {
-              return Icon(Icons.person,
-                  color: Colors.indigo[700]);
-            },
-          ),
-        )
-            : Icon(Icons.person, color: Colors.indigo[700]),
-      )
-          : null,
-      actions: [
-        IconButton(
-          icon: Icon(
-            Icons.refresh,
-            color: kIsWeb ? Colors.indigo[700] : Colors.white,
-          ),
-          tooltip: 'Recarregar',
-          onPressed: () => _fetchApiData(_token),
-        ),
-      ],
-      webNavItems: [],
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      appBar: _buildAppBar(),
+      appBar: SharedAppBar(
+        title: 'Investimentos Ativos',
+        subtitle: 'Acompanhe seus investimentos',
+        mainIcon: Icons.savings_rounded,
+        gradientColors: _gradientColors,
+        actionButtons: [
+          SharedAppBar.headerButton(
+            child: const Icon(Icons.refresh_rounded, color: Colors.white),
+            onTap: () => _fetchApiData(_token),
+            tooltip: 'Recarregar',
+          ),
+        ],
+      ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _investimentos.isEmpty
