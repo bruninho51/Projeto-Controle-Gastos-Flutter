@@ -1,3 +1,10 @@
+## [1.17.1](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.17.0...v1.17.1) (2026-06-03)
+
+
+### Bug Fixes
+
+* **investimentos:** corrige overflow da SharedAppBar e deprecation withOpacity ([5fd649e](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/5fd649e174c4d41d904e933e1c55cac1087135bd))
+
 # [1.17.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.16.0...v1.17.0) (2026-06-02)
 
 
