@@ -8,4 +8,6 @@
 
 | [x] | wave-animation-refactor_20260602 | Refactor — Wave Animation e Decomposição do LoadingScreen | 2026-06-02 | 2026-06-02 |
 
+| [ ] | notifications-refactor_20260603 | Refactor — Notifications Feature | 2026-06-03 | 2026-06-03 |
+
 <!-- Tracks registered by /conductor:new-track -->

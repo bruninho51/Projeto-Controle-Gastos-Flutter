@@ -21,6 +21,7 @@ Navigation hub for project context.
 - [login-refactor_20260528](./tracks/login-refactor_20260528/index.md) — Refactor — Extração de Componentes da Tela de Login
 - [dashboard-refactor_20260602](./tracks/dashboard-refactor_20260602/index.md) — Refactor — Dashboard e MainAppScaffold (Clean Architecture)
 - [wave-animation-refactor_20260602](./tracks/wave-animation-refactor_20260602/index.md) — Refactor — Wave Animation e Decomposição do LoadingScreen
+- [notifications-refactor_20260603](./tracks/notifications-refactor_20260603/index.md) — Refactor — Notifications Feature
 
 ## Getting Started
 
