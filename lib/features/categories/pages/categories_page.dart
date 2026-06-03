@@ -4,6 +4,7 @@ import 'package:orcamentos_app/components/common/orcamentos_loading.dart';
 import 'package:orcamentos_app/components/common/orcamentos_snackbar.dart';
 import 'package:orcamentos_app/components/common/confirmation_dialog.dart';
 import 'package:orcamentos_app/components/common/shared_appbar.dart';
+import 'package:orcamentos_app/components/common/pulse_dot.dart';
 import 'package:orcamentos_app/shared/api_models.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
 import 'package:orcamentos_app/features/categories/services/categories_service.dart';
@@ -145,7 +146,7 @@ class _CategoriesPageState extends State<CategoriesPage>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const _PulseDot(),
+            const PulseDot.positive(),
             const SizedBox(width: 7),
             Text(
               _categorias.isEmpty
@@ -272,59 +273,6 @@ class _CategoriesPageState extends State<CategoriesPage>
           ),
         ),
       ],
-    );
-  }
-}
-
-// Mantido inline para o badge animado do header
-class _PulseDot extends StatefulWidget {
-  const _PulseDot();
-
-  @override
-  State<_PulseDot> createState() => _PulseDotState();
-}
-
-class _PulseDotState extends State<_PulseDot>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<double> _anim;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 1400))
-      ..repeat(reverse: true);
-    _anim = CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut);
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _anim,
-      builder: (_, __) => Container(
-        width: 7,
-        height: 7,
-        decoration: BoxDecoration(
-          color: Color.lerp(
-              const Color(0xFF69F0AE), const Color(0xFF00E676), _anim.value),
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF69F0AE)
-                  .withValues(alpha: 0.5 * _anim.value),
-              blurRadius: 6,
-              spreadRadius: 1,
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
