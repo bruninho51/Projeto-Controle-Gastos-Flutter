@@ -48,16 +48,16 @@ Extrair os três componentes visuais da page. Cada extração é independente e 
 
 ### Tasks
 
-- [ ] Task 2.1: Criar `lib/features/categories/components/category_card.dart`
+- [x] Task 2.1: Criar `lib/features/categories/components/category_card.dart`
   - Renomear `_CategoriaCard` para `CategoryCard` (widget público)
   - Preservar integralmente: `AnimationController`, `_fadeAnim`, `_slideAnim`, timing escalonado por índice (`300 + index * 60`), layout, cores, botão excluir, `InkWell` com splash/highlight
   - Props: `categoria`, `color`, `icon`, `index`, `onDelete`
 
-- [ ] Task 2.2: Criar `lib/features/categories/components/categories_empty_state.dart`
+- [x] Task 2.2: Criar `lib/features/categories/components/categories_empty_state.dart`
   - Extrair `_buildEmptyState()` para `class CategoriesEmptyState extends StatelessWidget`
   - Preservar: ícone, textos, espaçamentos, cores exatas
 
-- [ ] Task 2.3: Criar `lib/features/categories/components/category_create_dialog.dart`
+- [x] Task 2.3: Criar `lib/features/categories/components/category_create_dialog.dart`
   - Extrair toda a lógica de `_showCreateCategoriaDialog()` para uma função top-level:
     `Future<void> showCategoryCreateDialog({required BuildContext context, required Future<void> Function(String nome) onConfirm})`
   - O dialog gerencia internamente `TextEditingController` e `GlobalKey<FormState>`
