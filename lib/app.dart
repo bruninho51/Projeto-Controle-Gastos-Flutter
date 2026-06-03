@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:orcamentos_app/components/common/main_app_scaffold.dart';
+import 'package:orcamentos_app/features/shared/components/main_app_scaffold.dart';
 import 'package:orcamentos_app/features/auth/auth_wrapper.dart';
 import 'package:orcamentos_app/shared/config/global_providers.dart';
 import 'package:provider/provider.dart';

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:orcamentos_app/components/categorias_investimentos_page/categorias_investimentos_page.dart';
-import 'package:orcamentos_app/components/common/orcamentos_snackbar.dart';
+import 'package:orcamentos_app/features/shared/components/orcamentos_snackbar.dart';
 import 'package:orcamentos_app/components/form_investimento_page/form_investimento_page.dart';
 import 'package:provider/provider.dart';
 import 'package:orcamentos_app/utils/http.dart';

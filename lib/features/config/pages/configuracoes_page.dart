@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:orcamentos_app/features/config/pages/gastos_automaticos_page.dart';
 import 'package:orcamentos_app/features/config/pages/permissoes_notificacoes_page.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:orcamentos_app/components/common/shared_appbar.dart';
+import 'package:orcamentos_app/features/shared/components/shared_appbar.dart';
 import 'package:flutter/foundation.dart';
 
 class ConfiguracoesPage extends StatefulWidget {

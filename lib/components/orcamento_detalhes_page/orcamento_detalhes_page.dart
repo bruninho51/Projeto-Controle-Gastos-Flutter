@@ -7,13 +7,13 @@ import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
 import 'package:orcamentos_app/utils/formatters.dart';
 import 'package:orcamentos_app/components/gastos_fixos_page/gastos_fixos_page.dart';
 import 'package:orcamentos_app/components/gastos_variados_page/gastos_variados_page.dart';
-import 'package:orcamentos_app/components/common/grafico_gasto_categorias.dart';
+import 'package:orcamentos_app/features/categories/components/charts/grafico_gasto_categorias.dart';
 import 'package:orcamentos_app/components/orcamento_detalhes_page/info_state_widget.dart';
 import 'package:orcamentos_app/utils/http.dart';
 import 'package:orcamentos_app/utils/graphql.dart';
-import 'package:orcamentos_app/components/common/orcamentos_snackbar.dart';
+import 'package:orcamentos_app/features/shared/components/orcamentos_snackbar.dart';
 import 'package:provider/provider.dart';
-import 'package:orcamentos_app/components/common/confirmation_dialog.dart';
+import 'package:orcamentos_app/features/shared/components/confirmation_dialog.dart';
 
 class OrcamentoDetalhesPage extends StatefulWidget {
   final int orcamentoId;

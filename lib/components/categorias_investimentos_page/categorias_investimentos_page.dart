@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_loading.dart';
 import 'dart:convert';
 import 'package:orcamentos_app/utils/http.dart';
-import 'package:orcamentos_app/components/common/orcamentos_snackbar.dart';
-import 'package:orcamentos_app/components/common/confirmation_dialog.dart';
+import 'package:orcamentos_app/features/shared/components/orcamentos_snackbar.dart';
+import 'package:orcamentos_app/features/shared/components/confirmation_dialog.dart';
 
 class CategoriasDeInvestimentoPage extends StatefulWidget {
   final String apiToken;

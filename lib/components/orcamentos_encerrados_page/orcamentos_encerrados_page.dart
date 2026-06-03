@@ -4,7 +4,7 @@ import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
 import 'package:orcamentos_app/utils/http.dart';
 import 'package:orcamentos_app/components/orcamento_detalhes_page/info_state_widget.dart';
 import 'package:orcamentos_app/components/orcamentos_encerrados_page/orcamento_encerrado_card.dart';
-import 'package:orcamentos_app/components/common/orcamentos_snackbar.dart';
+import 'package:orcamentos_app/features/shared/components/orcamentos_snackbar.dart';
 import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'package:orcamentos_app/components/orcamento_detalhes_page/orcamento_detalhes_page.dart';

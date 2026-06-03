@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:orcamentos_app/components/common/app_navigation_items.dart';
-import 'package:orcamentos_app/components/common/navigation_item.dart';
+import 'package:orcamentos_app/features/shared/navigation/app_navigation_items.dart';
+import 'package:orcamentos_app/features/shared/navigation/navigation_item.dart';
 
 class AppBottomNav extends StatelessWidget {
   final int currentIndex;

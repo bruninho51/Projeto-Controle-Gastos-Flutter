@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:orcamentos_app/components/common/confirmation_dialog.dart';
+import 'package:orcamentos_app/features/shared/components/confirmation_dialog.dart';
 import 'package:orcamentos_app/utils/formatters.dart';
 
 class OrcamentoEncerradoCard extends StatelessWidget {

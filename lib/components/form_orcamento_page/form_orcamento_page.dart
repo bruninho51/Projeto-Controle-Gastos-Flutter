@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:orcamentos_app/utils/http.dart';
-import 'package:orcamentos_app/components/common/orcamentos_snackbar.dart';
-import 'package:orcamentos_app/components/common/shared_appbar.dart';
+import 'package:orcamentos_app/features/shared/components/orcamentos_snackbar.dart';
+import 'package:orcamentos_app/features/shared/components/shared_appbar.dart';
 
 class FormularioOrcamentoPage extends StatefulWidget {
   final String apiToken;

@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 import 'package:orcamentos_app/utils/http.dart';
-import 'package:orcamentos_app/components/common/orcamentos_snackbar.dart';
-import 'package:orcamentos_app/components/common/shared_appbar.dart';
-import 'package:orcamentos_app/components/common/status_badge.dart';
+import 'package:orcamentos_app/features/shared/components/orcamentos_snackbar.dart';
+import 'package:orcamentos_app/features/shared/components/shared_appbar.dart';
+import 'package:orcamentos_app/features/shared/components/status_badge.dart';
 
 class CriacaoGastoVariadoPage extends StatefulWidget {
   final int orcamentoId;

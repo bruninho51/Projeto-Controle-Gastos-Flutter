@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:orcamentos_app/components/common/shared_appbar.dart';
+import 'package:orcamentos_app/features/shared/components/shared_appbar.dart';
 import 'package:orcamentos_app/features/bridge/monitor_bridge.dart';
 
 class GastosAutomaticosPage extends StatefulWidget {

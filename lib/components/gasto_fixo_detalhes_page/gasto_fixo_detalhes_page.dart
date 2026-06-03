@@ -4,8 +4,8 @@ import 'package:orcamentos_app/features/shared/components/orcamentos_loading.dar
 import 'package:orcamentos_app/utils/formatters.dart';
 import 'dart:convert';
 import 'package:orcamentos_app/utils/http.dart';
-import 'package:orcamentos_app/components/common/orcamentos_snackbar.dart';
-import 'package:orcamentos_app/components/common/confirmation_dialog.dart';
+import 'package:orcamentos_app/features/shared/components/orcamentos_snackbar.dart';
+import 'package:orcamentos_app/features/shared/components/confirmation_dialog.dart';
 
 class DetalhesGastoFixoPage extends StatefulWidget {
   final int gastoId;

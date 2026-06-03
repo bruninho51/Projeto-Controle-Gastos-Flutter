@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_loading.dart';
-import 'package:orcamentos_app/components/common/shared_appbar.dart';
+import 'package:orcamentos_app/features/shared/components/shared_appbar.dart';
 import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
 import 'package:orcamentos_app/features/notifications/components/notifications_list.dart';
 import 'package:orcamentos_app/features/notifications/components/notifications_states.dart';

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:orcamentos_app/components/common/orcamentos_snackbar.dart';
-import 'package:orcamentos_app/components/common/shared_appbar.dart';
+
+import 'package:orcamentos_app/features/shared/components/orcamentos_snackbar.dart';
+import 'package:orcamentos_app/features/shared/components/shared_appbar.dart';
+import 'package:orcamentos_app/features/shared/components/confirmation_dialog.dart';
+
 import 'package:orcamentos_app/features/notifications/models/notification_model.dart';
 import 'package:orcamentos_app/features/notifications/notifications_channel.dart';
 import 'package:orcamentos_app/shared/api_models.dart';
@@ -33,6 +36,7 @@ class _NotificationEditPageState extends State<NotificationEditPage> {
     Color(0xFF283593),
     Color(0xFF3949AB),
   ];
+
   final _fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
   final _dateFmt = DateFormat("d 'de' MMMM 'de' yyyy 'às' HH:mm", 'pt_BR');
 
@@ -53,6 +57,7 @@ class _NotificationEditPageState extends State<NotificationEditPage> {
       final mapeamento = await NotificationsChannel.buscarMapeamento(
         widget.notificacao.descricaoOriginal,
       );
+
       if (mapeamento != null &&
           mapeamento.descricaoNormalizada.isNotEmpty &&
           mapeamento.descricaoNormalizada !=
@@ -82,8 +87,10 @@ class _NotificationEditPageState extends State<NotificationEditPage> {
   String get _descricaoEfetiva {
     final digitado = _descNormalizadaCtrl.text.trim();
     if (digitado.isNotEmpty) return digitado;
+
     final salvo = widget.notificacao.descricaoNormalizada;
     if (salvo != null && salvo.isNotEmpty) return salvo;
+
     return widget.notificacao.descricaoOriginal;
   }
 
@@ -100,6 +107,7 @@ class _NotificationEditPageState extends State<NotificationEditPage> {
 
   Future<void> _salvar() async {
     final desc = _descNormalizadaCtrl.text.trim();
+
     if (desc.isEmpty) {
       OrcamentosSnackBar.error(
         context: context,
@@ -107,26 +115,34 @@ class _NotificationEditPageState extends State<NotificationEditPage> {
       );
       return;
     }
+
     setState(() => _isSaving = true);
+
     try {
       await NotificationsChannel.update(
         id: widget.notificacao.id,
         valor: _parsedValor(),
         descricaoNormalizada: desc,
       );
+
       await NotificationsChannel.salvarMapeamento(
         descricaoOriginal: widget.notificacao.descricaoOriginal,
         descricaoNormalizada: desc,
       );
+
       if (mounted) {
         OrcamentosSnackBar.success(
-            context: context, message: 'Notificação atualizada!');
+          context: context,
+          message: 'Notificação atualizada!',
+        );
         Navigator.of(context).pop();
       }
     } catch (e) {
       if (mounted) {
         OrcamentosSnackBar.error(
-            context: context, message: 'Erro ao salvar: $e');
+          context: context,
+          message: 'Erro ao salvar: $e',
+        );
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -134,47 +150,33 @@ class _NotificationEditPageState extends State<NotificationEditPage> {
   }
 
   Future<void> _apagar() async {
-    final confirmar = await showDialog<bool>(
+    final confirmar = await ConfirmationDialog.show(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Apagar notificação?',
-          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 17),
-        ),
-        content: Text(
+      title: 'Apagar notificação?',
+      message:
           'A notificação "${widget.notificacao.descricaoOriginal}" será removida permanentemente.',
-          style: const TextStyle(fontSize: 14),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text('Cancelar',
-                style: TextStyle(color: Colors.grey[600])),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text(
-              'Apagar',
-              style: TextStyle(
-                  color: Colors.red, fontWeight: FontWeight.w700),
-            ),
-          ),
-        ],
-      ),
+      confirmText: 'Apagar',
+      cancelText: 'Cancelar',
     );
+
     if (confirmar != true) return;
+
     try {
       await NotificationsChannel.delete(widget.notificacao.id);
+
       if (mounted) {
         OrcamentosSnackBar.success(
-            context: context, message: 'Notificação apagada.');
+          context: context,
+          message: 'Notificação apagada.',
+        );
         Navigator.of(context).pop();
       }
     } catch (e) {
       if (mounted) {
         OrcamentosSnackBar.error(
-            context: context, message: 'Erro ao apagar: $e');
+          context: context,
+          message: 'Erro ao apagar: $e',
+        );
       }
     }
   }
@@ -193,7 +195,9 @@ class _NotificationEditPageState extends State<NotificationEditPage> {
             id: widget.notificacao.id,
             gastoId: gastoId,
           );
+
           final desc = _descricaoEfetiva;
+
           if (desc != widget.notificacao.descricaoOriginal) {
             await NotificationsChannel.salvarMapeamento(
               descricaoOriginal: widget.notificacao.descricaoOriginal,
@@ -201,6 +205,7 @@ class _NotificationEditPageState extends State<NotificationEditPage> {
               gastoId: gastoId,
             );
           }
+
           if (mounted) {
             OrcamentosSnackBar.success(
               context: context,
@@ -281,49 +286,18 @@ class _NotificationEditPageState extends State<NotificationEditPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Valor',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey[500],
-                                letterSpacing: 0.5,
-                              ),
-                            ),
+                            const Text('Valor'),
                             const SizedBox(height: 8),
                             TextField(
                               controller: _valorCtrl,
-                              keyboardType: TextInputType.number,
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.w600),
-                              decoration: InputDecoration(
-                                filled: true,
-                                fillColor: Colors.grey[50],
-                                contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 14, vertical: 13),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide:
-                                      BorderSide(color: Colors.grey[200]!),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide:
-                                      BorderSide(color: Colors.grey[200]!),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                      color: _blue, width: 1.5),
-                                ),
-                              ),
                               onChanged: (v) {
                                 final formatted = _formatarValor(v);
                                 if (formatted != v) {
                                   _valorCtrl.value = TextEditingValue(
                                     text: formatted,
                                     selection: TextSelection.collapsed(
-                                        offset: formatted.length),
+                                      offset: formatted.length,
+                                    ),
                                   );
                                 }
                               },
@@ -337,44 +311,10 @@ class _NotificationEditPageState extends State<NotificationEditPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Descrição normalizada',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey[500],
-                                letterSpacing: 0.5,
-                              ),
-                            ),
+                            const Text('Descrição normalizada'),
                             const SizedBox(height: 8),
                             TextField(
                               controller: _descNormalizadaCtrl,
-                              style: const TextStyle(fontSize: 15),
-                              decoration: InputDecoration(
-                                hintText:
-                                    'Ex: Almoço restaurante, Netflix, Mercado…',
-                                hintStyle: TextStyle(
-                                    color: Colors.grey[400], fontSize: 14),
-                                filled: true,
-                                fillColor: Colors.grey[50],
-                                contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 14, vertical: 13),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide:
-                                      BorderSide(color: Colors.grey[200]!),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide:
-                                      BorderSide(color: Colors.grey[200]!),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                      color: _blue, width: 1.5),
-                                ),
-                              ),
                             ),
                           ],
                         ),
@@ -387,27 +327,13 @@ class _NotificationEditPageState extends State<NotificationEditPage> {
                     child: ElevatedButton.icon(
                       onPressed: _isSaving ? null : _salvar,
                       icon: _isSaving
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
+                          ? const CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
                             )
-                          : const Icon(Icons.save_rounded, size: 18),
+                          : const Icon(Icons.save_rounded),
                       label: Text(
                         _isSaving ? 'Salvando…' : 'Salvar alterações',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w700, fontSize: 15),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _blue,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
                       ),
                     ),
                   ),
@@ -417,49 +343,8 @@ class _NotificationEditPageState extends State<NotificationEditPage> {
                       width: double.infinity,
                       child: OutlinedButton.icon(
                         onPressed: _abrirCadastroComoGasto,
-                        icon: const Icon(Icons.add_shopping_cart_rounded,
-                            size: 18),
-                        label: const Text(
-                          'Cadastrar como gasto variado',
-                          style: TextStyle(
-                              fontWeight: FontWeight.w700, fontSize: 15),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: _blue,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          side: const BorderSide(color: _blue, width: 1.5),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
-                        ),
-                      ),
-                    ),
-                  ] else ...[
-                    const SizedBox(height: 12),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 14, horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.green[50],
-                        borderRadius: BorderRadius.circular(14),
-                        border:
-                            Border.all(color: Colors.green[200]!, width: 1),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.check_circle_rounded,
-                              color: Colors.green[700], size: 18),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Já vinculada a um gasto',
-                            style: TextStyle(
-                              color: Colors.green[700],
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
+                        icon: const Icon(Icons.add_shopping_cart_rounded),
+                        label: const Text('Cadastrar como gasto variado'),
                       ),
                     ),
                   ],

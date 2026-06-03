@@ -2,9 +2,9 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:orcamentos_app/components/common/app_bottom_nav.dart';
-import 'package:orcamentos_app/components/common/app_navigation_items.dart';
-import 'package:orcamentos_app/components/common/app_navigation_rail.dart';
+import 'package:orcamentos_app/features/shared/components/app_bottom_nav.dart';
+import 'package:orcamentos_app/features/shared/navigation/app_navigation_items.dart';
+import 'package:orcamentos_app/features/shared/components/app_navigation_rail.dart';
 import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
 
 class MainAppScaffold extends StatefulWidget {
