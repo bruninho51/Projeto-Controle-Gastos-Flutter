@@ -2,20 +2,21 @@
   "id": "categories-refactor_20260603",
   "title": "Refactor — Categories Feature",
   "type": "refactor",
-  "status": "in_progress",
+  "status": "complete",
   "created": "2026-06-03T00:00:00.000Z",
   "updated": "2026-06-03T00:00:00.000Z",
-  "current_phase": 2,
-  "current_task": "2.1",
+  "current_phase": 3,
+  "current_task": "3.3",
   "phases": {
     "total": 3,
-    "completed": 1
+    "completed": 3
   },
   "tasks": {
     "total": 9,
-    "completed": 2
+    "completed": 9
   },
   "commits": [
-    "42cf1ec: refactor(categories): cria CategoryIconMapper e CategoriesService"
+    "42cf1ec: refactor(categories): cria CategoryIconMapper e CategoriesService",
+    "f5f2023: refactor(categories): extrai CategoryCard, CategoriesEmptyState e CategoryCreateDialog"
   ]
 }

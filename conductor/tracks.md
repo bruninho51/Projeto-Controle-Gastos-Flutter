@@ -10,6 +10,6 @@
 
 | [x] | notifications-refactor_20260603 | Refactor — Notifications Feature | 2026-06-03 | 2026-06-03 |
 
-| [~] | categories-refactor_20260603 | Refactor — Categories Feature | 2026-06-03 | 2026-06-03 |
+| [x] | categories-refactor_20260603 | Refactor — Categories Feature | 2026-06-03 | 2026-06-03 |
 
 <!-- Tracks registered by /conductor:new-track -->

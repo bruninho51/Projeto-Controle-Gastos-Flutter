@@ -3,7 +3,7 @@
 **Track ID:** categories-refactor_20260603
 **Spec:** [spec.md](./spec.md)
 **Created:** 2026-06-03
-**Status:** [ ] Not Started
+**Status:** [x] Complete
 
 ## Overview
 
@@ -77,7 +77,7 @@ Conectar todos os artefatos criados e migrar o header legado para `SharedAppBar`
 
 ### Tasks
 
-- [ ] Task 3.1: Substituir `_CategoriasHeader` por `SharedAppBar` na page
+- [x] Task 3.1: Substituir `_CategoriasHeader` por `SharedAppBar` na page
   - Configurar `SharedAppBar`:
     ```dart
     SharedAppBar(
@@ -99,7 +99,7 @@ Conectar todos os artefatos criados e migrar o header legado para `SharedAppBar`
   - `_PulseDot` pode ser mantido como widget privado inline na page para uso no badge
   - NÃO modificar o código do `SharedAppBar`
 
-- [ ] Task 3.2: Atualizar a page para usar `CategoriesService` e componentes extraídos
+- [x] Task 3.2: Atualizar a page para usar `CategoriesService` e componentes extraídos
   - Instanciar `CategoriesService` com `Provider.of<ApiService>(context, listen: false)` no `initState`
   - Substituir todas as chamadas diretas ao `apiService` por chamadas ao `_categoriesService`
   - Substituir `_CategoriaCard` por `CategoryCard`
@@ -108,7 +108,7 @@ Conectar todos os artefatos criados e migrar o header legado para `SharedAppBar`
   - Usar `CategoryIconMapper.getIcon(categoria.nome)` no lugar de `_getIconForCategoria`
   - Remover `_formKey` e `_nomeCategoriaController` (agora gerenciados pelo dialog)
 
-- [ ] Task 3.3: Limpar código legado e imports
+- [x] Task 3.3: Limpar código legado e imports
   - Remover classes `_CategoriasHeader`, `_HeaderButton`, `_PulseDot` (exceto se `_PulseDot` for mantido para o badge)
   - Remover `_CategoriaCard` (substituído por `CategoryCard`)
   - Remover `_getIconForCategoria` e `_containsAny` (substituídos por `CategoryIconMapper`)
