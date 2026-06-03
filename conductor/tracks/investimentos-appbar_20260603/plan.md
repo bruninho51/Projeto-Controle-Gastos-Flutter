@@ -50,7 +50,7 @@ Com a migração concluída, o arquivo legado pode ser deletado com segurança.
 
 - [x] Todos os acceptance criteria da spec atendidos
 - [x] `flutter analyze` limpo
-- [ ] Fluxo da InvestimentosPage testado manualmente (mobile ou web)
+- [x] Fluxo da InvestimentosPage testado manualmente (mobile ou web)
 - [x] Nenhuma funcionalidade existente quebrada
 
 ---

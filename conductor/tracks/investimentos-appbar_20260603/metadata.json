@@ -15,6 +15,7 @@
   },
   "commits": [
     "41cb519: refactor(investimentos): migra InvestimentosPage para SharedAppBar",
-    "7ac5071: refactor(investimentos): remove OrcamentosAppBar sem consumidores"
+    "7ac5071: refactor(investimentos): remove OrcamentosAppBar sem consumidores",
+    "5fd649e: fix(investimentos): corrige overflow da SharedAppBar e deprecation withOpacity"
   ]
 }
