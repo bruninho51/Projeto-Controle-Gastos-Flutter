@@ -3,7 +3,7 @@
 **Track ID:** notifications-refactor_20260603
 **Spec:** [spec.md](./spec.md)
 **Created:** 2026-06-03
-**Status:** [ ] Not Started
+**Status:** [x] Complete
 
 ## Overview
 
@@ -21,21 +21,21 @@ local importando os modelos externos. Nenhum arquivo existente é modificado nes
 
 ### Tasks
 
-- [ ] Task 1.1: Criar diretório `lib/features/notifications/models/` e criar
+- [x] Task 1.1: Criar diretório `lib/features/notifications/models/` e criar
   `notification_model.dart` com `NotificacaoBancariaModel` (exatamente como está em
   `notificacoes_channel.dart`, incluindo `fromMap`, `dataNotificacaoDateTime`,
   `vinculado` e `nomeBanco`)
-- [ ] Task 1.2: Criar `models/mapping_model.dart` com `MapeamentoModel` (exatamente
+- [x] Task 1.2: Criar `models/mapping_model.dart` com `MapeamentoModel` (exatamente
   como está no channel atual, incluindo `fromMap`)
-- [ ] Task 1.3: Criar `lib/features/notifications/notifications_channel.dart` com
+- [x] Task 1.3: Criar `lib/features/notifications/notifications_channel.dart` com
   `NotificationsChannel` — mesma implementação do channel atual, removendo as duas
   classes de modelo e adicionando imports de `notification_model.dart` e
   `mapping_model.dart`. Renomear classe `NotificacoesChannel` → `NotificationsChannel`
 
 ### Verification
 
-- [ ] `flutter analyze` sem erros nos 3 novos arquivos
-- [ ] Nenhum arquivo existente modificado nesta fase
+- [x] `flutter analyze` sem erros nos 3 novos arquivos
+- [x] Nenhum arquivo existente modificado nesta fase
 
 ---
 
@@ -46,32 +46,32 @@ atual. Todos os novos arquivos importam do novo channel e modelos.
 
 ### Tasks
 
-- [ ] Task 2.1: Criar `lib/features/notifications/utils/notifications_grouping.dart`
+- [x] Task 2.1: Criar `lib/features/notifications/utils/notifications_grouping.dart`
   com função pura `groupByDay(List<NotificacaoBancariaModel> lista)`
   extraída de `_ListaNotificacoes._agruparPorDia()`
 
-- [ ] Task 2.2: Criar `components/notification_list_item.dart` com `NotificationListItem`
+- [x] Task 2.2: Criar `components/notification_list_item.dart` com `NotificationListItem`
   (widget público, era `_NotificacaoItem`). Preservar exatamente: ícones por banco,
   cores por banco, badge "Vinculado", separador entre itens, interação `InkWell`.
   Substituir `.withOpacity()` por `.withValues(alpha:)`
 
-- [ ] Task 2.3: Criar `components/notification_day_group.dart` com `NotificationDayGroup`
+- [x] Task 2.3: Criar `components/notification_day_group.dart` com `NotificationDayGroup`
   (widget público, era `_DiaGroup`). Preservar: `_diaLabel`, `_diaSemana`, cálculo
   de total, card branco com sombra. Substituir `.withOpacity()` por `.withValues(alpha:)`
 
-- [ ] Task 2.4: Criar `components/notifications_list.dart` com `NotificationsList`
+- [x] Task 2.4: Criar `components/notifications_list.dart` com `NotificationsList`
   (widget público, era `_ListaNotificacoes`). Usa `groupByDay()` e `NotificationDayGroup`.
   Preservar: `CustomScrollView`, `BouncingScrollPhysics`, padding `fromLTRB(16,12,16,100)`
 
-- [ ] Task 2.5: Criar `components/notifications_states.dart` com 3 widgets públicos:
+- [x] Task 2.5: Criar `components/notifications_states.dart` com 3 widgets públicos:
   `NotificationsEmptyState` (era `_EmptyState`), `NotificationsErrorState`
   (era `_ErrorState`), `NotificationsWebUnsupportedState` (era `_WebUnsupported`).
   Substituir `.withOpacity()` por `.withValues(alpha:)`
 
 ### Verification
 
-- [ ] `flutter analyze` sem erros nos 5 novos arquivos
-- [ ] Nenhum arquivo existente modificado nesta fase
+- [x] `flutter analyze` sem erros nos 5 novos arquivos
+- [x] Nenhum arquivo existente modificado nesta fase
 
 ---
 
@@ -82,7 +82,7 @@ existem nesta fase — serão removidos na Phase 4.
 
 ### Tasks
 
-- [ ] Task 3.1: Criar `lib/features/notifications/pages/notifications_page.dart`
+- [x] Task 3.1: Criar `lib/features/notifications/pages/notifications_page.dart`
   com `NotificationsPage`:
   - Importa channel, componentes e states do novo local
   - Substitui `_NotificacoesHeader` por `SharedAppBar`:
@@ -98,7 +98,7 @@ existem nesta fase — serão removidos na Phase 4.
     `_apenasNaoVinculadas`, `_fetch()`, `_abrirEdicao()`, `_handleRefresh()`
   - Navega para `NotificationEditPage` (novo)
 
-- [ ] Task 3.2: Criar `lib/features/notifications/pages/notification_edit_page.dart`
+- [x] Task 3.2: Criar `lib/features/notifications/pages/notification_edit_page.dart`
   com `NotificationEditPage`:
   - Move conteúdo de `notificacao_edicao_page.dart`
   - Renomeia classe `NotificacaoEdicaoPage` → `NotificationEditPage`
@@ -115,9 +115,9 @@ existem nesta fase — serão removidos na Phase 4.
 
 ### Verification
 
-- [ ] `flutter analyze` nos 2 novos arquivos
-- [ ] Verificar que `NotificationsPage` usa apenas imports de `lib/features/notifications/`
-- [ ] Verificar que `NotificationEditPage` usa apenas imports de `lib/features/notifications/`
+- [x] `flutter analyze` nos 2 novos arquivos
+- [x] Verificar que `NotificationsPage` usa apenas imports de `lib/features/notifications/`
+- [x] Verificar que `NotificationEditPage` usa apenas imports de `lib/features/notifications/`
 
 ---
 
@@ -128,28 +128,28 @@ diretórios legados.
 
 ### Tasks
 
-- [ ] Task 4.1: Atualizar `lib/components/common/app_navigation_items.dart`:
+- [x] Task 4.1: Atualizar `lib/components/common/app_navigation_items.dart`:
   - Substituir import de `notificacoes_page.dart` pelo novo path
   - Substituir `NotificacoesPage()` por `NotificationsPage()`
 
-- [ ] Task 4.2: Deletar `lib/components/notificacoes_page/notificacoes_page.dart`
-- [ ] Task 4.3: Deletar `lib/components/notificacoes_page/notificacao_edicao_page.dart`
-- [ ] Task 4.4: Remover diretório `lib/components/notificacoes_page/`
-- [ ] Task 4.5: Deletar `lib/features/notificacoes/notificacoes_channel.dart`
-- [ ] Task 4.6: Remover diretório `lib/features/notificacoes/`
+- [x] Task 4.2: Deletar `lib/components/notificacoes_page/notificacoes_page.dart`
+- [x] Task 4.3: Deletar `lib/components/notificacoes_page/notificacao_edicao_page.dart`
+- [x] Task 4.4: Remover diretório `lib/components/notificacoes_page/`
+- [x] Task 4.5: Deletar `lib/features/notificacoes/notificacoes_channel.dart`
+- [x] Task 4.6: Remover diretório `lib/features/notificacoes/`
 
 ### Verification
 
-- [ ] `flutter analyze lib/` sem issues nos arquivos desta track
-- [ ] `grep -r "notificacoes_page\|notificacoes_channel\|NotificacoesPage\|NotificacoesChannel" lib/` retorna vazio
-- [ ] Diretórios `lib/components/notificacoes_page/` e `lib/features/notificacoes/` não existem mais
+- [x] `flutter analyze lib/` sem issues nos arquivos desta track
+- [x] `grep -r "notificacoes_page\|notificacoes_channel\|NotificacoesPage\|NotificacoesChannel" lib/` retorna vazio (hits restantes são `PermissoesNotificacoesPage` — feature independente de config)
+- [x] Diretórios `lib/components/notificacoes_page/` e `lib/features/notificacoes/` não existem mais
 
 ---
 
 ## Final Verification
 
-- [ ] Todos os acceptance criteria da spec atendidos
-- [ ] `flutter analyze` — zero issues nos arquivos da track
+- [x] Todos os acceptance criteria da spec atendidos
+- [x] `flutter analyze` — zero issues nos arquivos da track
 - [ ] NotificationsPage funcionando (listagem, agrupamento, filtro, refresh)
 - [ ] NotificationEditPage funcionando (salvar, apagar, cadastrar como gasto)
 - [ ] SharedAppBar azul exibido corretamente em ambas as páginas
