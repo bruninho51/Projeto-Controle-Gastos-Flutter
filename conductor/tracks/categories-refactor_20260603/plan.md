@@ -117,29 +117,29 @@ Conectar todos os artefatos criados e migrar o header legado para `SharedAppBar`
 
 ### Verification
 
-- [ ] `flutter analyze` sem erros ou warnings introduzidos
-- [ ] `flutter test` — todos os testes passando
-- [ ] Verificação manual dos fluxos:
-  - [ ] Carregar lista de categorias ao abrir a tela
-  - [ ] Refresh via botão no header
-  - [ ] Criar nova categoria via dialog (incluindo validação de campo vazio)
-  - [ ] Excluir categoria com confirmação
-  - [ ] Exibir estado vazio quando não há categorias
-  - [ ] Animações fade/slide dos cards ao carregar
-  - [ ] Navegação de retorno
-- [ ] Código do `SharedAppBar` não foi modificado
+- [x] `flutter analyze` sem erros ou warnings introduzidos
+- [x] `flutter test` — todos os testes passando
+- [x] Verificação manual dos fluxos:
+  - [x] Carregar lista de categorias ao abrir a tela
+  - [x] Refresh via botão no header
+  - [x] Criar nova categoria via dialog (incluindo validação de campo vazio)
+  - [x] Excluir categoria com confirmação
+  - [x] Exibir estado vazio quando não há categorias
+  - [x] Animações fade/slide dos cards ao carregar
+  - [x] Navegação de retorno
+- [x] Código do `SharedAppBar` não foi modificado
 
 ---
 
 ## Final Verification
 
-- [ ] Todos os critérios de aceitação do `spec.md` atendidos
-- [ ] Estrutura de arquivos corresponde exatamente ao definido no spec
-- [ ] `flutter analyze` sem erros introduzidos pela refatoração
-- [ ] Imports antigos removidos; sem código morto
-- [ ] Page não depende diretamente de `ApiService`
-- [ ] `SharedAppBar` em uso; header legado completamente removido
-- [ ] Comportamento visual e funcional equivalente ao original
+- [x] Todos os critérios de aceitação do `spec.md` atendidos
+- [x] Estrutura de arquivos corresponde exatamente ao definido no spec
+- [x] `flutter analyze` sem erros introduzidos pela refatoração
+- [x] Imports antigos removidos; sem código morto
+- [x] Page não depende diretamente de `ApiService`
+- [x] `SharedAppBar` em uso; header legado completamente removido
+- [x] Comportamento visual e funcional equivalente ao original
 
 ---
 
