@@ -8,7 +8,7 @@ import 'package:orcamentos_app/features/shared/components/orcamentos_snackbar.da
 import 'package:orcamentos_app/features/shared/components/pulse_dot.dart';
 import 'package:orcamentos_app/features/shared/components/shared_appbar.dart';
 import 'package:orcamentos_app/features/shared/components/status_badge.dart';
-import 'package:orcamentos_app/components/form_orcamento_page/form_orcamento_page.dart';
+import 'package:orcamentos_app/features/budgets/pages/form_orcamento_page.dart';
 import 'package:orcamentos_app/components/orcamentos_encerrados_page/orcamentos_encerrados_page.dart';
 import 'package:orcamentos_app/features/budgets/components/orcamento_card.dart';
 import 'package:orcamentos_app/features/budgets/components/orcamentos_fab.dart';

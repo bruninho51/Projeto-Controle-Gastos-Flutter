@@ -1,24 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:orcamentos_app/shared/api_models.dart';
+import 'package:orcamentos_app/shared/api_service.dart';
 import 'package:orcamentos_app/utils/formatters.dart';
-import 'dart:convert';
-import 'package:orcamentos_app/utils/http.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_snackbar.dart';
 
 class FormOrcamentoValorInicialPage extends StatefulWidget {
-  final String apiToken;
   final double valorInicial;
   final int orcamentoId;
 
   const FormOrcamentoValorInicialPage({
-    Key? key,
-    required this.apiToken,
+    super.key,
     required this.orcamentoId,
     required this.valorInicial,
-  }) : super(key: key);
+  });
 
   @override
-  _FormOrcamentoValorInicialPageState createState() =>
+  State<FormOrcamentoValorInicialPage> createState() =>
       _FormOrcamentoValorInicialPageState();
 }
 
@@ -28,8 +26,6 @@ class _FormOrcamentoValorInicialPageState
   final _formKey = GlobalKey<FormState>();
   late double _valorInicial;
   bool _isSubmitting = false;
-
-  final _formatador = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
   @override
   void initState() {
@@ -43,45 +39,20 @@ class _FormOrcamentoValorInicialPageState
     super.dispose();
   }
 
-  String _formatarValor(String value) {
-    final cleaned = value.replaceAll(RegExp(r'[^0-9]'), '');
-    if (cleaned.isNotEmpty) {
-      final parsed = (double.tryParse(cleaned) ?? 0.0) / 100;
-      return _formatador.format(parsed);
-    }
-    return '';
-  }
-
-  String _converterParaNumerico(String valorFormatado) {
-    return valorFormatado
-        .replaceAll('R\$', '')
-        .trim()
-        .replaceAll('.', '')
-        .replaceAll(',', '.');
-  }
+  ApiService get _api => Provider.of<ApiService>(context, listen: false);
 
   Future<void> _updateValorInicial(int orcamentoId, double valor) async {
     setState(() => _isSubmitting = true);
     try {
-      final client = await MyHttpClient.create();
-      final response = await client.patch(
-        'orcamentos/$orcamentoId',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${widget.apiToken}',
-        },
-        body: jsonEncode({'valor_inicial': valor.toString()}),
+      await _api.updateOrcamento(
+        orcamentoId,
+        OrcamentoUpdateDto(valorInicial: valor.toString()),
       );
-
-      if (response.statusCode >= 200 && response.statusCode <= 299) {
-        OrcamentosSnackBar.success(
-          context: context,
-          message: 'Valor inicial atualizado com sucesso!',
-        );
-        Navigator.pop(context, true);
-      } else {
-        throw Exception('Falha ao atualizar: ${response.statusCode}');
-      }
+      OrcamentosSnackBar.success(
+        context: context,
+        message: 'Valor inicial atualizado com sucesso!',
+      );
+      Navigator.pop(context, true);
     } catch (e) {
       OrcamentosSnackBar.error(context: context, message: 'Erro: ${e.toString()}');
     } finally {
@@ -157,7 +128,7 @@ class _FormOrcamentoValorInicialPageState
                     keyboardType: TextInputType.numberWithOptions(decimal: true),
                     style: const TextStyle(fontSize: 15),
                     onChanged: (value) {
-                      final formatted = _formatarValor(value);
+                      final formatted = formatarValorInput(value);
                       _valorController.value = TextEditingValue(
                         text: formatted,
                         selection: TextSelection.collapsed(offset: formatted.length),
@@ -238,7 +209,7 @@ class _FormOrcamentoValorInicialPageState
                             : () {
                           if (_formKey.currentState!.validate()) {
                             final valor = double.tryParse(
-                                _converterParaNumerico(
+                                converterValorParaNumerico(
                                     _valorController.text)) ??
                                 0.0;
                             double novoValor = _valorInicial;
