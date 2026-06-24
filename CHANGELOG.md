@@ -1,3 +1,10 @@
+# [1.18.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.17.1...v1.18.0) (2026-06-24)
+
+
+### Features
+
+* refatora app, adiciona total gasto e filtro de categoria ([fff8829](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/fff8829c413ffbffcfd824a3b8169671346d3a70))
+
 ## [1.17.1](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.17.0...v1.17.1) (2026-06-03)
 
 
