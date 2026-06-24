@@ -1,11 +1,10 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:orcamentos_app/components/form_gasto_variado_page/form_gasto_variado_page.dart';
 import 'package:orcamentos_app/components/gasto_variado_detalhes_page/gasto_variado_detalhes_page.dart';
 import 'package:orcamentos_app/components/gastos_variados_page/gastos_page_empty_state.dart';
-import 'package:orcamentos_app/utils/http.dart';
-import 'package:orcamentos_app/features/shared/components/orcamentos_snackbar.dart';
+import 'package:orcamentos_app/shared/api_models.dart';
+import 'package:orcamentos_app/shared/api_service.dart';
 import 'package:provider/provider.dart';
 import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
 
@@ -27,7 +26,7 @@ class GastosVariadosPage extends StatefulWidget {
 
 class _GastosVariadosPageState extends State<GastosVariadosPage>
     with SingleTickerProviderStateMixin {
-  late Future<List<Map<String, dynamic>>> _gastosVariaveis;
+  late Future<List<GastoVariadoResponseDto>> _gastosVariaveis;
   String _filtroNome = '';
   String? _filtroStatus;
   DateTime? _filtroData;
@@ -51,66 +50,38 @@ class _GastosVariadosPageState extends State<GastosVariadosPage>
     super.dispose();
   }
 
-  Future<List<Map<String, dynamic>>> _fetchGastos() async {
-    final client = await MyHttpClient.create();
-    final response = await client.get(
-      'orcamentos/${widget.orcamentoId}/gastos-variados',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ${widget.apiToken}',
-      },
-    );
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
-      final gastos = data.map((e) => e as Map<String, dynamic>).toList();
-      _aplicarOrdenacao(gastos);
-      return gastos;
-    }
-    throw Exception('Falha ao carregar os gastos variados');
+  ApiService get _api => Provider.of<ApiService>(context, listen: false);
+
+  Future<List<GastoVariadoResponseDto>> _fetchGastos() async {
+    final gastos = await _api.getGastosVariados(orcamentoId: widget.orcamentoId);
+    _aplicarOrdenacao(gastos);
+    return gastos;
   }
 
-  void _aplicarOrdenacao(List<Map<String, dynamic>> gastos) {
+  void _aplicarOrdenacao(List<GastoVariadoResponseDto> gastos) {
     gastos.sort((a, b) {
-      int cmp;
-      if (_ordenacaoCampo == 'descricao') {
-        cmp = a['descricao'].toString().compareTo(b['descricao'].toString());
-      } else {
-        final dA = a['data_pgto'] != null ? DateTime.tryParse(a['data_pgto']) : null;
-        final dB = b['data_pgto'] != null ? DateTime.tryParse(b['data_pgto']) : null;
-        if (dA == null && dB == null) cmp = 0;
-        else if (dA == null) cmp = 1;
-        else if (dB == null) cmp = -1;
-        else cmp = dA.compareTo(dB);
-      }
+      final cmp = _ordenacaoCampo == 'descricao'
+          ? a.descricao.compareTo(b.descricao)
+          : a.dataPgto.compareTo(b.dataPgto);
       return _ordenacaoAscendente ? cmp : -cmp;
     });
   }
 
-  List<Map<String, dynamic>> _filtrarGastos(List<Map<String, dynamic>> gastos) {
+  List<GastoVariadoResponseDto> _filtrarGastos(List<GastoVariadoResponseDto> gastos) {
     return gastos.where((g) {
-      final desc = g['descricao'].toString().toLowerCase();
-      final dtPgto = g['data_pgto'];
+      final desc = g.descricao.toLowerCase();
       final correspondeName = desc.contains(_filtroNome.toLowerCase());
       final correspondeStatus = _filtroStatus == null;
       final correspondeData = _filtroData == null ||
-          (dtPgto != null &&
-              DateTime.tryParse(dtPgto)?.day == _filtroData!.day &&
-              DateTime.tryParse(dtPgto)?.month == _filtroData!.month &&
-              DateTime.tryParse(dtPgto)?.year == _filtroData!.year);
+          (g.dataPgto.day == _filtroData!.day &&
+              g.dataPgto.month == _filtroData!.month &&
+              g.dataPgto.year == _filtroData!.year);
       return correspondeName && correspondeStatus && correspondeData;
     }).toList();
   }
 
-  Future<Map<String, dynamic>> _getOrcamento() async {
-    final client = await MyHttpClient.create();
-    final response = await client.get(
-      'orcamentos/${widget.orcamentoId}',
-      headers: {'Authorization': 'Bearer ${widget.apiToken}'},
-    );
-    if (response.statusCode >= 200 && response.statusCode <= 299) {
-      return jsonDecode(response.body);
-    }
-    return {};
+  Future<OrcamentoResponseDto> _getOrcamento() {
+    return _api.getOrcamentoById(widget.orcamentoId);
   }
 
   void _aplicarFiltros(String nome, String? status, DateTime? data,
@@ -176,14 +147,11 @@ class _GastosVariadosPageState extends State<GastosVariadosPage>
   }
 
   // ─── Agrupa gastos por dia ────────────────────────────────────────────────
-  Map<String, List<Map<String, dynamic>>> _agruparPorDia(
-      List<Map<String, dynamic>> gastos) {
-    final Map<String, List<Map<String, dynamic>>> grupos = {};
+  Map<String, List<GastoVariadoResponseDto>> _agruparPorDia(
+      List<GastoVariadoResponseDto> gastos) {
+    final Map<String, List<GastoVariadoResponseDto>> grupos = {};
     for (final g in gastos) {
-      final raw = g['data_pgto'] as String?;
-      final key = raw != null
-          ? DateFormat('yyyy-MM-dd').format(DateTime.parse(raw))
-          : 'sem_data';
+      final key = DateFormat('yyyy-MM-dd').format(g.dataPgto);
       grupos.putIfAbsent(key, () => []).add(g);
     }
     return grupos;
@@ -210,7 +178,7 @@ class _GastosVariadosPageState extends State<GastosVariadosPage>
 
           // ── Lista estilo extrato ────────────────────────────────────────────
           Expanded(
-            child: FutureBuilder<List<Map<String, dynamic>>>(
+            child: FutureBuilder<List<GastoVariadoResponseDto>>(
               future: _gastosVariaveis,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting &&
@@ -255,10 +223,7 @@ class _GastosVariadosPageState extends State<GastosVariadosPage>
                               final totalDia = itens.fold<double>(
                                 0,
                                     (sum, g) =>
-                                sum +
-                                    (double.tryParse(
-                                        g['valor']?.toString() ?? '0') ??
-                                        0),
+                                sum + (double.tryParse(g.valor) ?? 0),
                               );
                               return _DiaGroup(
                                 diaKey: dia,
@@ -269,8 +234,8 @@ class _GastosVariadosPageState extends State<GastosVariadosPage>
                                     context,
                                     MaterialPageRoute(
                                       builder: (_) => DetalhesGastoVariadoPage(
-                                        gastoId: gasto['id'],
-                                        orcamentoId: gasto['orcamento_id'],
+                                        gastoId: gasto.id,
+                                        orcamentoId: gasto.orcamentoId,
                                         apiToken: widget.apiToken,
                                       ),
                                     ),
@@ -294,11 +259,11 @@ class _GastosVariadosPageState extends State<GastosVariadosPage>
       ),
 
       // ── FAB ─────────────────────────────────────────────────────────────────
-      floatingActionButton: FutureBuilder<Map<String, dynamic>>(
+      floatingActionButton: FutureBuilder<OrcamentoResponseDto>(
         future: _getOrcamento(),
         builder: (context, snapshot) {
           final isAtivo = snapshot.hasData &&
-              snapshot.data!['data_encerramento'] == null;
+              snapshot.data!.dataEncerramento == null;
           if (!isAtivo) return const SizedBox.shrink();
           return FloatingActionButton.extended(
             onPressed: () async {
@@ -673,9 +638,9 @@ class _OrdemChip extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════════════════════════
 class _DiaGroup extends StatelessWidget {
   final String diaKey;
-  final List<Map<String, dynamic>> itens;
+  final List<GastoVariadoResponseDto> itens;
   final double totalDia;
-  final Future<void> Function(Map<String, dynamic>) onTapItem;
+  final Future<void> Function(GastoVariadoResponseDto) onTapItem;
 
   const _DiaGroup({
     required this.diaKey,
@@ -805,7 +770,7 @@ class _DiaGroup extends StatelessWidget {
 // Item individual do extrato
 // ═══════════════════════════════════════════════════════════════════════════════
 class _ExtratoItem extends StatelessWidget {
-  final Map<String, dynamic> gasto;
+  final GastoVariadoResponseDto gasto;
   final bool isLast;
   final VoidCallback onTap;
 
@@ -849,9 +814,9 @@ class _ExtratoItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-    final valor = double.tryParse(gasto['valor']?.toString() ?? '0') ?? 0;
-    final descricao = gasto['descricao']?.toString() ?? 'Sem descrição';
-    final categoriaNome = gasto['categoriaGasto']?['nome']?.toString();
+    final valor = double.tryParse(gasto.valor) ?? 0;
+    final descricao = gasto.descricao;
+    final categoriaNome = gasto.categoriaGasto.nome;
     final color = _colorForCategoria(categoriaNome);
 
     final radius = BorderRadius.vertical(
@@ -903,16 +868,14 @@ class _ExtratoItem extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        if (categoriaNome != null) ...[
-                          const SizedBox(height: 2),
-                          Text(
-                            categoriaNome,
-                            style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey[400],
-                                fontWeight: FontWeight.w400),
-                          ),
-                        ],
+                        const SizedBox(height: 2),
+                        Text(
+                          categoriaNome,
+                          style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey[400],
+                              fontWeight: FontWeight.w400),
+                        ),
                       ],
                     ),
                   ),

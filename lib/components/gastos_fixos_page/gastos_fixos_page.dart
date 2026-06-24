@@ -3,9 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:orcamentos_app/components/form_gasto_fixo_page/form_gasto_fixo_page.dart';
 import 'package:orcamentos_app/components/gasto_fixo_detalhes_page/gasto_fixo_detalhes_page.dart';
 import 'package:orcamentos_app/components/gastos_fixos_page/copiar_gastos_fixos_page.dart';
-import 'package:orcamentos_app/utils/formatters.dart';
-import 'dart:convert';
-import 'package:orcamentos_app/utils/http.dart';
+import 'package:orcamentos_app/shared/api_models.dart';
+import 'package:orcamentos_app/shared/api_service.dart';
 import 'package:provider/provider.dart';
 import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
 
@@ -27,7 +26,7 @@ class GastosFixosPage extends StatefulWidget {
 
 class _GastosFixosPageState extends State<GastosFixosPage>
     with SingleTickerProviderStateMixin {
-  late Future<List<Map<String, dynamic>>> _gastosFixos;
+  late Future<List<GastoFixoResponseDto>> _gastosFixos;
   String _filtroNome = '';
   String? _filtroStatus;
   DateTime? _filtroData;
@@ -49,30 +48,14 @@ class _GastosFixosPageState extends State<GastosFixosPage>
     super.dispose();
   }
 
-  Future<List<Map<String, dynamic>>> _fetchGastos() async {
-    final client = await MyHttpClient.create();
-    final r = await client.get(
-      'orcamentos/${widget.orcamentoId}/gastos-fixos',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ${widget.apiToken}',
-      },
-    );
-    if (r.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(r.body);
-      return data.map((e) => e as Map<String, dynamic>).toList();
-    }
-    throw Exception('Falha ao carregar os gastos fixos');
+  ApiService get _api => Provider.of<ApiService>(context, listen: false);
+
+  Future<List<GastoFixoResponseDto>> _fetchGastos() {
+    return _api.getGastosFixos(orcamentoId: widget.orcamentoId);
   }
 
-  Future<Map<String, dynamic>> _getOrcamento() async {
-    final client = await MyHttpClient.create();
-    final r = await client.get(
-      'orcamentos/${widget.orcamentoId}',
-      headers: {'Authorization': 'Bearer ${widget.apiToken}'},
-    );
-    if (r.statusCode >= 200 && r.statusCode <= 299) return jsonDecode(r.body);
-    return {};
+  Future<OrcamentoResponseDto> _getOrcamento() {
+    return _api.getOrcamentoById(widget.orcamentoId);
   }
 
   void _handleRefresh() async {
@@ -90,13 +73,13 @@ class _GastosFixosPageState extends State<GastosFixosPage>
     }
   }
 
-  Future<void> _navegar(Map<String, dynamic> g) async {
+  Future<void> _navegar(GastoFixoResponseDto g) async {
     await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => DetalhesGastoFixoPage(
-          gastoId: g['id'],
-          orcamentoId: g['orcamento_id'],
+          gastoId: g.id,
+          orcamentoId: g.orcamentoId,
           apiToken: widget.apiToken,
         ),
       ),
@@ -117,41 +100,35 @@ class _GastosFixosPageState extends State<GastosFixosPage>
     if (copiou == true) _handleRefresh();
   }
 
-  String _statusOf(Map<String, dynamic> g) {
-    if (g['valor'] != null) return 'PAGO';
-    final vencStr = g['data_venc'] as String?;
-    if (vencStr != null) {
-      try {
-        if (DateTime.parse(vencStr).isBefore(DateTime.now())) return 'VENCIDO';
-      } catch (_) {}
-    }
+  String _statusOf(GastoFixoResponseDto g) {
+    if (g.valor != null) return 'PAGO';
+    final venc = g.dataVenc;
+    if (venc != null && venc.isBefore(DateTime.now())) return 'VENCIDO';
     return 'PENDENTE';
   }
 
-  List<Map<String, dynamic>> _filtrar(List<Map<String, dynamic>> gastos) {
+  List<GastoFixoResponseDto> _filtrar(List<GastoFixoResponseDto> gastos) {
     return gastos.where((g) {
-      final desc = g['descricao'].toString().toLowerCase();
+      final desc = g.descricao.toLowerCase();
       final status = _statusOf(g);
       final nomeOk = desc.contains(_filtroNome.toLowerCase());
       final statusOk = _filtroStatus == null || _filtroStatus == status;
       final dataOk = _filtroData == null || (() {
-        final campo = status == 'PAGO' ? g['data_pgto'] : g['data_venc'];
+        final campo = status == 'PAGO' ? g.dataPgto : g.dataVenc;
         if (campo == null) return false;
-        final dt = DateTime.tryParse(campo);
-        if (dt == null) return false;
-        return dt.year == _filtroData!.year &&
-            dt.month == _filtroData!.month &&
-            dt.day == _filtroData!.day;
+        return campo.year == _filtroData!.year &&
+            campo.month == _filtroData!.month &&
+            campo.day == _filtroData!.day;
       })();
       return nomeOk && statusOk && dataOk;
     }).toList();
   }
 
-  Map<String, List<Map<String, dynamic>>> _agrupar(
-      List<Map<String, dynamic>> gastos) {
-    final vencidos = <Map<String, dynamic>>[];
-    final pendentes = <Map<String, dynamic>>[];
-    final pagos = <Map<String, dynamic>>[];
+  Map<String, List<GastoFixoResponseDto>> _agrupar(
+      List<GastoFixoResponseDto> gastos) {
+    final vencidos = <GastoFixoResponseDto>[];
+    final pendentes = <GastoFixoResponseDto>[];
+    final pagos = <GastoFixoResponseDto>[];
 
     for (final g in gastos) {
       final s = _statusOf(g);
@@ -160,22 +137,22 @@ class _GastosFixosPageState extends State<GastosFixosPage>
       else pagos.add(g);
     }
 
-    _sortByDate(vencidos, 'data_venc', asc: true);
-    _sortByDate(pendentes, 'data_venc', asc: true);
-    _sortByDate(pagos, 'data_pgto', asc: false);
+    _sortByDate(vencidos, (g) => g.dataVenc, asc: true);
+    _sortByDate(pendentes, (g) => g.dataVenc, asc: true);
+    _sortByDate(pagos, (g) => g.dataPgto, asc: false);
 
-    final map = <String, List<Map<String, dynamic>>>{};
+    final map = <String, List<GastoFixoResponseDto>>{};
     if (vencidos.isNotEmpty) map['VENCIDO'] = vencidos;
     if (pendentes.isNotEmpty) map['PENDENTE'] = pendentes;
     if (pagos.isNotEmpty) map['PAGO'] = pagos;
     return map;
   }
 
-  void _sortByDate(List<Map<String, dynamic>> list, String field,
-      {required bool asc}) {
+  void _sortByDate(List<GastoFixoResponseDto> list,
+      DateTime? Function(GastoFixoResponseDto) field, {required bool asc}) {
     list.sort((a, b) {
-      final dA = DateTime.tryParse(a[field] ?? '');
-      final dB = DateTime.tryParse(b[field] ?? '');
+      final dA = field(a);
+      final dB = field(b);
       if (dA == null && dB == null) return 0;
       if (dA == null) return 1;
       if (dB == null) return -1;
@@ -183,13 +160,13 @@ class _GastosFixosPageState extends State<GastosFixosPage>
     });
   }
 
-  Map<String, List<Map<String, dynamic>>> _agruparPorDia(
-      List<Map<String, dynamic>> pagos) {
-    final map = <String, List<Map<String, dynamic>>>{};
+  Map<String, List<GastoFixoResponseDto>> _agruparPorDia(
+      List<GastoFixoResponseDto> pagos) {
+    final map = <String, List<GastoFixoResponseDto>>{};
     for (final g in pagos) {
-      final raw = g['data_pgto'] as String?;
+      final raw = g.dataPgto;
       final key = raw != null
-          ? DateFormat('yyyy-MM-dd').format(DateTime.parse(raw))
+          ? DateFormat('yyyy-MM-dd').format(raw)
           : 'sem_data';
       map.putIfAbsent(key, () => []).add(g);
     }
@@ -238,7 +215,7 @@ class _GastosFixosPageState extends State<GastosFixosPage>
                 _filtroData != null,
           ),
           Expanded(
-            child: FutureBuilder<List<Map<String, dynamic>>>(
+            child: FutureBuilder<List<GastoFixoResponseDto>>(
               future: _gastosFixos,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting &&
@@ -283,7 +260,7 @@ class _GastosFixosPageState extends State<GastosFixosPage>
                     final totalPagos = itens.fold<double>(
                         0,
                             (s, g) => s +
-                            (double.tryParse(g['valor']?.toString() ?? '0') ?? 0));
+                            (double.tryParse(g.valor ?? '0') ?? 0));
                     widgets.add(_PagosHeader(
                         totalItens: itens.length, totalValor: totalPagos));
 
@@ -293,7 +270,7 @@ class _GastosFixosPageState extends State<GastosFixosPage>
                       final totalDia = diaItens.fold<double>(
                           0,
                               (s, g) =>
-                          s + (double.tryParse(g['valor']?.toString() ?? '0') ?? 0));
+                          s + (double.tryParse(g.valor ?? '0') ?? 0));
                       widgets.add(_PagosDiaGroup(
                         diaKey: diaKey,
                         itens: diaItens,
@@ -329,11 +306,11 @@ class _GastosFixosPageState extends State<GastosFixosPage>
           ),
         ],
       ),
-      floatingActionButton: FutureBuilder<Map<String, dynamic>>(
+      floatingActionButton: FutureBuilder<OrcamentoResponseDto>(
         future: _getOrcamento(),
         builder: (context, snapshot) {
           final isAtivo = snapshot.hasData &&
-              snapshot.data!['data_encerramento'] == null;
+              snapshot.data!.dataEncerramento == null;
           if (!isAtivo) return const SizedBox.shrink();
           return FloatingActionButton.extended(
             onPressed: () async {
@@ -366,8 +343,8 @@ class _GastosFixosPageState extends State<GastosFixosPage>
 // ═══════════════════════════════════════════════════════════════════════════════
 class _StatusGroup extends StatelessWidget {
   final String status;
-  final List<Map<String, dynamic>> itens;
-  final Future<void> Function(Map<String, dynamic>) onTapItem;
+  final List<GastoFixoResponseDto> itens;
+  final Future<void> Function(GastoFixoResponseDto) onTapItem;
 
   const _StatusGroup(
       {required this.status, required this.itens, required this.onTapItem});
@@ -378,7 +355,7 @@ class _StatusGroup extends StatelessWidget {
       ? Icons.warning_amber_rounded : Icons.schedule_rounded;
   String get _label => status == 'VENCIDO' ? 'Vencidos' : 'Pendentes';
   double get _totalPrevisto => itens.fold(
-      0, (s, g) => s + (double.tryParse(g['previsto']?.toString() ?? '0') ?? 0));
+      0, (s, g) => s + (double.tryParse(g.previsto) ?? 0));
 
   @override
   Widget build(BuildContext context) {
@@ -456,9 +433,9 @@ class _PagosHeader extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════════════════════════
 class _PagosDiaGroup extends StatelessWidget {
   final String diaKey;
-  final List<Map<String, dynamic>> itens;
+  final List<GastoFixoResponseDto> itens;
   final double totalDia;
-  final Future<void> Function(Map<String, dynamic>) onTapItem;
+  final Future<void> Function(GastoFixoResponseDto) onTapItem;
 
   const _PagosDiaGroup({required this.diaKey, required this.itens, required this.totalDia, required this.onTapItem});
 
@@ -514,18 +491,16 @@ class _PagosDiaGroup extends StatelessWidget {
 // Item individual
 // ═══════════════════════════════════════════════════════════════════════════════
 class _GastoFixoItem extends StatelessWidget {
-  final Map<String, dynamic> gasto;
+  final GastoFixoResponseDto gasto;
   final bool isLast;
   final VoidCallback onTap;
 
   const _GastoFixoItem({required this.gasto, required this.isLast, required this.onTap});
 
   String _statusOf() {
-    if (gasto['valor'] != null) return 'PAGO';
-    final v = gasto['data_venc'] as String?;
-    if (v != null) {
-      try { if (DateTime.parse(v).isBefore(DateTime.now())) return 'VENCIDO'; } catch (_) {}
-    }
+    if (gasto.valor != null) return 'PAGO';
+    final v = gasto.dataVenc;
+    if (v != null && v.isBefore(DateTime.now())) return 'VENCIDO';
     return 'PENDENTE';
   }
 
@@ -545,29 +520,28 @@ class _GastoFixoItem extends StatelessWidget {
     }
   }
 
-  String _fmtDate(String? iso) {
-    if (iso == null) return '';
-    try { return DateFormat('dd/MM/yyyy').format(DateTime.parse(iso)); } catch (_) { return ''; }
+  String _fmtDate(DateTime? data) {
+    if (data == null) return '';
+    return DateFormat('dd/MM/yyyy').format(data);
   }
 
   @override
   Widget build(BuildContext context) {
     final fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-    final previsto = double.tryParse(gasto['previsto']?.toString() ?? '0') ?? 0.0;
-    final valorPago = gasto['valor'] != null ? double.tryParse(gasto['valor'].toString()) ?? 0.0 : null;
-    final descricao = gasto['descricao']?.toString() ?? 'Sem descrição';
-    final categoriaNome = gasto['categoriaGasto']?['nome']?.toString();
+    final previsto = double.tryParse(gasto.previsto) ?? 0.0;
+    final valorPago = gasto.valor != null ? double.tryParse(gasto.valor!) ?? 0.0 : null;
+    final descricao = gasto.descricao;
+    final categoriaNome = gasto.categoriaGasto.nome;
     final status = _statusOf();
 
     String subtitulo = '';
-    if (status == 'PAGO') subtitulo = 'Pago em ${_fmtDate(gasto['data_pgto'])}';
-    else if (gasto['data_venc'] != null) {
+    if (status == 'PAGO') subtitulo = 'Pago em ${_fmtDate(gasto.dataPgto)}';
+    else if (gasto.dataVenc != null) {
       subtitulo = status == 'VENCIDO'
-          ? 'Venceu em ${_fmtDate(gasto['data_venc'])}'
-          : 'Vence em ${_fmtDate(gasto['data_venc'])}';
+          ? 'Venceu em ${_fmtDate(gasto.dataVenc)}'
+          : 'Vence em ${_fmtDate(gasto.dataVenc)}';
     }
-    if (categoriaNome != null && subtitulo.isNotEmpty) subtitulo = '$categoriaNome · $subtitulo';
-    else if (categoriaNome != null) subtitulo = categoriaNome;
+    subtitulo = subtitulo.isNotEmpty ? '$categoriaNome · $subtitulo' : categoriaNome;
 
     return Material(
       color: Colors.transparent,

@@ -10,9 +10,9 @@ import 'package:orcamentos_app/features/shared/components/shared_appbar.dart';
 import 'package:orcamentos_app/features/shared/components/status_badge.dart';
 import 'package:orcamentos_app/components/form_orcamento_page/form_orcamento_page.dart';
 import 'package:orcamentos_app/components/orcamentos_encerrados_page/orcamentos_encerrados_page.dart';
-import 'package:orcamentos_app/components/orcamentos_page/orcamento_card.dart';
-import 'package:orcamentos_app/components/orcamentos_page/orcamentos_fab.dart';
-import 'package:orcamentos_app/components/orcamentos_page/orcamentos_page_empty_state.dart';
+import 'package:orcamentos_app/features/budgets/components/orcamento_card.dart';
+import 'package:orcamentos_app/features/budgets/components/orcamentos_fab.dart';
+import 'package:orcamentos_app/features/budgets/components/orcamentos_page_empty_state.dart';
 import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
 import 'package:orcamentos_app/shared/api_models.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
@@ -90,7 +90,7 @@ class OrcamentosPageState extends State<OrcamentosPage> {
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (_) => FormularioOrcamentoPage(apiToken: _token),
+        builder: (_) => const FormularioOrcamentoPage(),
       ),
     );
 

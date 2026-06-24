@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:orcamentos_app/features/shared/navigation/navigation_item.dart';
 import 'package:orcamentos_app/components/investimentos_page/investimentos_page.dart';
 import 'package:orcamentos_app/features/notifications/pages/notifications_page.dart';
-import 'package:orcamentos_app/components/orcamentos_page/orcamentos_page.dart';
-import 'package:orcamentos_app/components/perfil_page/perfil_page.dart';
+import 'package:orcamentos_app/features/budgets/pages/orcamentos_page.dart';
+import 'package:orcamentos_app/features/profile/pages/perfil_page.dart';
 import 'package:orcamentos_app/features/config/pages/configuracoes_page.dart';
 import 'package:orcamentos_app/features/dashboard/pages/dashboard_page.dart';
 

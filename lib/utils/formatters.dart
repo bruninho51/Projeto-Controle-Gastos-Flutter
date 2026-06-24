@@ -19,6 +19,22 @@ String formatarValorDynamic(dynamic valor) {
   return formatter.format(numero);
 }
 
+String formatarValorInput(String value) {
+  final cleaned = value.replaceAll(RegExp(r'[^0-9]'), '');
+  if (cleaned.isEmpty) return '';
+
+  final parsed = (double.tryParse(cleaned) ?? 0) / 100;
+  return formatarValorDouble(parsed);
+}
+
+String converterValorParaNumerico(String valorFormatado) {
+  return valorFormatado
+      .replaceAll('R\$', '')
+      .trim()
+      .replaceAll('.', '')
+      .replaceAll(',', '.');
+}
+
 String formatarData(DateTime data) {
   return DateFormat('dd/MM/yyyy').format(data);
 }

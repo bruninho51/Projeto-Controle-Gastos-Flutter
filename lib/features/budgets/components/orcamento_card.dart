@@ -1,12 +1,15 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:provider/provider.dart';
 import 'package:orcamentos_app/components/gastos_fixos_page/gastos_fixos_page.dart';
 import 'package:orcamentos_app/components/gastos_variados_page/gastos_variados_page.dart';
 import 'package:orcamentos_app/shared/api_models.dart';
+import 'package:orcamentos_app/shared/api_service.dart';
 import 'package:orcamentos_app/utils/formatters.dart';
-import 'package:orcamentos_app/utils/http.dart';
-import '../orcamento_detalhes_page/orcamento_detalhes_page.dart';
+import '../../../components/orcamento_detalhes_page/orcamento_detalhes_page.dart';
+import '../utils/budget_progress.dart';
+import '../utils/card_entrance_animation.dart';
+import 'orcamento_card_action_tile.dart';
 
 class OrcamentoCard extends StatefulWidget {
   final OrcamentoResponseDto orcamento;
@@ -39,15 +42,12 @@ class _OrcamentoCardState extends State<OrcamentoCard>
   @override
   void initState() {
     super.initState();
-    _animController = AnimationController(
+    _animController = CardEntranceAnimation.createController(
       vsync: this,
-      duration: Duration(milliseconds: 300 + (widget.index * 60).clamp(0, 500)),
+      index: widget.index,
     );
-    _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
-    _slideAnim = Tween<Offset>(
-      begin: const Offset(0, 0.12),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
+    _fadeAnim = CardEntranceAnimation.fade(_animController);
+    _slideAnim = CardEntranceAnimation.slide(_animController);
     _animController.forward();
     _loadGastosCount();
   }
@@ -58,14 +58,16 @@ class _OrcamentoCardState extends State<OrcamentoCard>
     super.dispose();
   }
 
+  ApiService get _api => Provider.of<ApiService>(context, listen: false);
+
   Future<void> _loadGastosCount() async {
     try {
-      final fixos = await _fetchCount('orcamentos/${widget.orcamento.id}/gastos-fixos');
-      final variados = await _fetchCount('orcamentos/${widget.orcamento.id}/gastos-variados');
+      final fixos = await _api.getGastosFixos(orcamentoId: widget.orcamento.id);
+      final variados = await _api.getGastosVariados(orcamentoId: widget.orcamento.id);
       if (mounted) {
         setState(() {
-          _qtdGastosFixos = fixos;
-          _qtdGastosVariados = variados;
+          _qtdGastosFixos = fixos.length;
+          _qtdGastosVariados = variados.length;
           _isLoading = false;
         });
       }
@@ -74,31 +76,16 @@ class _OrcamentoCardState extends State<OrcamentoCard>
     }
   }
 
-  Future<int> _fetchCount(String path) async {
-    final client = await MyHttpClient.create();
-    final response = await client.get(path, headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ${widget.apiToken}',
-    });
-    if (response.statusCode == 200) return jsonDecode(response.body).length as int;
-    return 0;
-  }
-
-  Color _progressColor(double value) {
-    if (value < 0.5) return const Color(0xFF43A047);
-    if (value < 0.8) return const Color(0xFFF4511E);
-    return const Color(0xFFE53935);
-  }
-
   // ─── Card mobile ────────────────────────────────────────────────────────────
   Widget _buildMobileCard(BuildContext context) {
     final valorAtual = double.tryParse(widget.orcamento.valorAtual.toString()) ?? 0;
     final valorLivre = double.tryParse(widget.orcamento.valorLivre.toString()) ?? 0;
     final valorInicial = double.tryParse(widget.orcamento.valorInicial.toString()) ?? 0;
-    final progresso = valorInicial > 0
-        ? ((valorInicial - valorAtual) / valorInicial).clamp(0.0, 1.0)
-        : 0.0;
-    final progressColor = _progressColor(progresso);
+    final progresso = calculateBudgetProgress(
+      valorInicial: valorInicial,
+      valorAtual: valorAtual,
+    );
+    final progressColor = getBudgetProgressColor(progresso);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -272,7 +259,7 @@ class _OrcamentoCardState extends State<OrcamentoCard>
                   ? Center(
                   child: CircularProgressIndicator(
                       color: Colors.indigo[700], strokeWidth: 2))
-                  : _ActionTile(
+                  : OrcamentoCardActionTile(
                 title: 'Gastos Fixos',
                 count: _qtdGastosFixos,
                 color: const Color(0xFF3949AB),
@@ -306,7 +293,7 @@ class _OrcamentoCardState extends State<OrcamentoCard>
                   ? Center(
                   child: CircularProgressIndicator(
                       color: Colors.indigo[700], strokeWidth: 2))
-                  : _ActionTile(
+                  : OrcamentoCardActionTile(
                 title: 'Gastos Variados',
                 count: _qtdGastosVariados,
                 color: const Color(0xFF5E35B1),
@@ -339,105 +326,6 @@ class _OrcamentoCardState extends State<OrcamentoCard>
       child: SlideTransition(
         position: _slideAnim,
         child: (kIsWeb && !isSmallScreen) ? _buildWebCard(context) : _buildMobileCard(context),
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// Tile de ação (substitui OrcamentoAcaoCard) — alinhado ao design system indigo
-// ═══════════════════════════════════════════════════════════════════════════════
-class _ActionTile extends StatefulWidget {
-  final String title;
-  final int count;
-  final Color color;
-  final IconData icon;
-  final VoidCallback onTap;
-
-  const _ActionTile({
-    required this.title,
-    required this.count,
-    required this.color,
-    required this.icon,
-    required this.onTap,
-  });
-
-  @override
-  State<_ActionTile> createState() => _ActionTileState();
-}
-
-class _ActionTileState extends State<_ActionTile> {
-  bool _hovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        decoration: BoxDecoration(
-          color: _hovered ? widget.color.withOpacity(0.04) : Colors.transparent,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(14),
-          child: InkWell(
-            onTap: widget.onTap,
-            borderRadius: BorderRadius.circular(14),
-            splashColor: widget.color.withOpacity(0.08),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: widget.color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(widget.icon, color: widget.color, size: 20),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${widget.count}',
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.w800,
-                          color: const Color(0xFF1A1F36),
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              widget.title,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[500],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                          Icon(Icons.arrow_forward_ios_rounded,
-                              size: 12, color: Colors.grey[400]),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }
