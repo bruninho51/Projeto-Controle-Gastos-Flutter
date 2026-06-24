@@ -12,12 +12,10 @@ import '../../features/shared/components/orcamentos_loading.dart';
 
 class GastosFixosPage extends StatefulWidget {
   final int orcamentoId;
-  final String apiToken;
 
   const GastosFixosPage({
     super.key,
     required this.orcamentoId,
-    required this.apiToken,
   });
 
   @override
@@ -30,6 +28,8 @@ class _GastosFixosPageState extends State<GastosFixosPage>
   String _filtroNome = '';
   String? _filtroStatus;
   DateTime? _filtroData;
+  int? _filtroCategoriaId;
+  List<CategoriaGastoResponseDto> _categorias = [];
 
   late AnimationController _refreshCtrl;
   bool _isRefreshing = false;
@@ -40,6 +40,7 @@ class _GastosFixosPageState extends State<GastosFixosPage>
     _refreshCtrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 700));
     _gastosFixos = _fetchGastos();
+    _fetchCategorias();
   }
 
   @override
@@ -56,6 +57,13 @@ class _GastosFixosPageState extends State<GastosFixosPage>
 
   Future<OrcamentoResponseDto> _getOrcamento() {
     return _api.getOrcamentoById(widget.orcamentoId);
+  }
+
+  Future<void> _fetchCategorias() async {
+    try {
+      final categorias = await _api.getCategorias();
+      if (mounted) setState(() => _categorias = categorias);
+    } catch (_) {}
   }
 
   void _handleRefresh() async {
@@ -80,11 +88,10 @@ class _GastosFixosPageState extends State<GastosFixosPage>
         builder: (_) => DetalhesGastoFixoPage(
           gastoId: g.id,
           orcamentoId: g.orcamentoId,
-          apiToken: widget.apiToken,
         ),
       ),
     );
-    setState(() => _handleRefresh());
+    _handleRefresh();
   }
 
   void _abrirCopiarGastos() async {
@@ -93,7 +100,6 @@ class _GastosFixosPageState extends State<GastosFixosPage>
       MaterialPageRoute(
         builder: (_) => CopiarGastosFixosPage(
           orcamentoDestinoId: widget.orcamentoId,
-          apiToken: widget.apiToken,
         ),
       ),
     );
@@ -120,7 +126,9 @@ class _GastosFixosPageState extends State<GastosFixosPage>
             campo.month == _filtroData!.month &&
             campo.day == _filtroData!.day;
       })();
-      return nomeOk && statusOk && dataOk;
+      final categoriaOk =
+          _filtroCategoriaId == null || g.categoriaId == _filtroCategoriaId;
+      return nomeOk && statusOk && dataOk && categoriaOk;
     }).toList();
   }
 
@@ -182,15 +190,19 @@ class _GastosFixosPageState extends State<GastosFixosPage>
         filtroNome: _filtroNome,
         filtroStatus: _filtroStatus,
         filtroData: _filtroData,
-        onAplicar: (nome, status, data) => setState(() {
+        filtroCategoriaId: _filtroCategoriaId,
+        categorias: _categorias,
+        onAplicar: (nome, status, data, categoriaId) => setState(() {
           _filtroNome = nome;
           _filtroStatus = status;
           _filtroData = data;
+          _filtroCategoriaId = categoriaId;
         }),
         onLimpar: () => setState(() {
           _filtroNome = '';
           _filtroStatus = null;
           _filtroData = null;
+          _filtroCategoriaId = null;
         }),
       ),
     );
@@ -210,9 +222,12 @@ class _GastosFixosPageState extends State<GastosFixosPage>
             onFiltros: _showFiltros,
             onBack: () => Navigator.of(context).pop(),
             onCopiar: _abrirCopiarGastos,
+            gastosFuture: _gastosFixos,
+            filtrar: _filtrar,
             temFiltroAtivo: _filtroNome.isNotEmpty ||
                 _filtroStatus != null ||
-                _filtroData != null,
+                _filtroData != null ||
+                _filtroCategoriaId != null,
           ),
           Expanded(
             child: FutureBuilder<List<GastoFixoResponseDto>>(
@@ -319,11 +334,12 @@ class _GastosFixosPageState extends State<GastosFixosPage>
                 MaterialPageRoute(
                   builder: (_) => CriacaoGastoFixoPage(
                     orcamentoId: widget.orcamentoId,
-                    apiToken: widget.apiToken,
                   ),
                 ),
               );
-              setState(() => _gastosFixos = _fetchGastos());
+              setState(() {
+                _gastosFixos = _fetchGastos();
+              });
             },
             backgroundColor: const Color(0xFF1A237E),
             foregroundColor: Colors.white,
@@ -608,12 +624,15 @@ class _FixosHeader extends StatelessWidget {
   final VoidCallback onCopiar;
   final bool temFiltroAtivo;
   final AuthState auth;
+  final Future<List<GastoFixoResponseDto>> gastosFuture;
+  final List<GastoFixoResponseDto> Function(List<GastoFixoResponseDto>) filtrar;
 
   const _FixosHeader({
     required this.isRefreshing, required this.refreshCtrl,
     required this.onRefresh, required this.onFiltros,
     required this.onBack, required this.onCopiar,
     required this.temFiltroAtivo, required this.auth,
+    required this.gastosFuture, required this.filtrar,
   });
 
   Widget _buildAvatar() {
@@ -711,6 +730,37 @@ class _FixosHeader extends StatelessWidget {
 
         const SizedBox(height: 16),
 
+        // ── Total gasto ───────────────────────────────────────────────────────
+        FutureBuilder<List<GastoFixoResponseDto>>(
+          future: gastosFuture,
+          builder: (context, snapshot) {
+            final filtrados = filtrar(snapshot.data ?? []);
+            final totalGasto = filtrados.fold<double>(
+                0, (s, g) => s + (double.tryParse(g.valor ?? '0') ?? 0));
+            final fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+            return Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.13),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(children: [
+                Container(width: 30, height: 30,
+                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(9)),
+                    child: const Icon(Icons.payments_rounded, color: Colors.white, size: 16)),
+                const SizedBox(width: 10),
+                Text('Total gasto', style: TextStyle(color: Colors.white.withOpacity(0.75), fontSize: 12, fontWeight: FontWeight.w500)),
+                const Spacer(),
+                Text(fmt.format(totalGasto),
+                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: -0.3)),
+              ]),
+            );
+          },
+        ),
+
+        const SizedBox(height: 16),
+
         // ── Linha 2 ────────────────────────────────────────────────────────────
         Row(children: [
           Container(
@@ -767,12 +817,15 @@ class _FiltrosSheet extends StatefulWidget {
   final String filtroNome;
   final String? filtroStatus;
   final DateTime? filtroData;
-  final void Function(String nome, String? status, DateTime? data) onAplicar;
+  final int? filtroCategoriaId;
+  final List<CategoriaGastoResponseDto> categorias;
+  final void Function(String nome, String? status, DateTime? data, int? categoriaId) onAplicar;
   final VoidCallback onLimpar;
 
   const _FiltrosSheet({
     required this.filtroNome, required this.filtroStatus,
-    required this.filtroData, required this.onAplicar, required this.onLimpar,
+    required this.filtroData, required this.filtroCategoriaId,
+    required this.categorias, required this.onAplicar, required this.onLimpar,
   });
 
   @override
@@ -783,6 +836,7 @@ class _FiltrosSheetState extends State<_FiltrosSheet> {
   late TextEditingController _nomeCtrl;
   String? _status;
   DateTime? _data;
+  int? _categoriaId;
 
   @override
   void initState() {
@@ -790,6 +844,7 @@ class _FiltrosSheetState extends State<_FiltrosSheet> {
     _nomeCtrl = TextEditingController(text: widget.filtroNome);
     _status = widget.filtroStatus;
     _data = widget.filtroData;
+    _categoriaId = widget.filtroCategoriaId;
   }
 
   @override
@@ -835,6 +890,29 @@ class _FiltrosSheetState extends State<_FiltrosSheet> {
               side: BorderSide(color: color.withOpacity(0.3)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             );
           }).toList()),
+          const SizedBox(height: 16),
+          Text('Categoria', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey[500], letterSpacing: 0.5)),
+          const SizedBox(height: 10),
+          DropdownButtonFormField<int?>(
+            value: _categoriaId,
+            isExpanded: true,
+            icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF3949AB)),
+            decoration: InputDecoration(
+              filled: true, fillColor: Colors.grey[50],
+              contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[200]!)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[200]!)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF3949AB), width: 1.5)),
+            ),
+            items: [
+              const DropdownMenuItem<int?>(value: null, child: Text('Todas as categorias')),
+              ...widget.categorias.map((c) => DropdownMenuItem<int?>(
+                    value: c.id,
+                    child: Text(c.nome, overflow: TextOverflow.ellipsis),
+                  )),
+            ],
+            onChanged: (v) => setState(() => _categoriaId = v),
+          ),
           const SizedBox(height: 16),
           Text('Data', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey[500], letterSpacing: 0.5)),
           const SizedBox(height: 10),
@@ -888,7 +966,7 @@ class _FiltrosSheetState extends State<_FiltrosSheet> {
               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1A237E), foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 13), elevation: 0,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-              onPressed: () { widget.onAplicar(_nomeCtrl.text, _status, _data); Navigator.of(context).pop(); },
+              onPressed: () { widget.onAplicar(_nomeCtrl.text, _status, _data, _categoriaId); Navigator.of(context).pop(); },
               child: const Text('Aplicar', style: TextStyle(fontWeight: FontWeight.w700)),
             )),
           ]),

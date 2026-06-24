@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'dart:convert';
-import 'package:orcamentos_app/utils/http.dart';
+import 'package:provider/provider.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_snackbar.dart';
 import 'package:orcamentos_app/features/shared/components/shared_appbar.dart';
 import 'package:orcamentos_app/features/shared/components/status_badge.dart';
+import 'package:orcamentos_app/shared/api_models.dart';
+import 'package:orcamentos_app/shared/api_service.dart';
 
 class CriacaoGastoVariadoPage extends StatefulWidget {
   final int orcamentoId;
-  final String apiToken;
 
   const CriacaoGastoVariadoPage({
     super.key,
     required this.orcamentoId,
-    required this.apiToken,
   });
 
   @override
@@ -31,7 +30,7 @@ class _CriacaoGastoVariadoPageState extends State<CriacaoGastoVariadoPage> {
   final _observacoesFocus      = FocusNode();
 
   int? _categoriaIdSelecionada;
-  List<Map<String, dynamic>> _categorias = [];
+  List<CategoriaGastoResponseDto> _categorias = [];
   bool _isLoading           = false;
   bool _isLoadingCategories = false;
 
@@ -84,22 +83,13 @@ class _CriacaoGastoVariadoPageState extends State<CriacaoGastoVariadoPage> {
         .replaceAll(',', '.');
   }
 
+  ApiService get _api => Provider.of<ApiService>(context, listen: false);
+
   Future<void> _obterCategoriasGastos() async {
     setState(() => _isLoadingCategories = true);
     try {
-      final client = await MyHttpClient.create();
-      final response = await client.get(
-        'categorias-gastos',
-        headers: {'Authorization': 'Bearer ${widget.apiToken}'},
-      );
-      if (response.statusCode >= 200 && response.statusCode <= 299) {
-        final List<dynamic> data = jsonDecode(response.body);
-        setState(() {
-          _categorias = data.map((c) => {'id': c['id'], 'nome': c['nome']}).toList();
-        });
-      } else {
-        throw Exception('Falha ao carregar categorias');
-      }
+      final categorias = await _api.getCategorias();
+      setState(() => _categorias = categorias);
     } catch (e) {
       OrcamentosSnackBar.error(context: context, message: 'Erro ao carregar categorias: $e');
     } finally {
@@ -113,27 +103,18 @@ class _CriacaoGastoVariadoPageState extends State<CriacaoGastoVariadoPage> {
     try {
       final valor      = _converterParaFormatoNumerico(_valorController.text);
       final parsedDate = _dateFormat.parse(_dataController.text);
-      final client     = await MyHttpClient.create();
-      final response   = await client.post(
-        'orcamentos/${widget.orcamentoId}/gastos-variados',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${widget.apiToken}',
-        },
-        body: jsonEncode({
-          'descricao':    _descricaoController.text,
-          'valor':        valor,
-          'data_pgto':    parsedDate.toIso8601String(),
-          'categoria_id': _categoriaIdSelecionada,
-          'observacoes':  _observacoesController.text,
-        }),
+      await _api.createGastoVariado(
+        widget.orcamentoId,
+        GastoVariadoCreateDto(
+          descricao: _descricaoController.text,
+          valor: valor,
+          dataPgto: parsedDate,
+          categoriaId: _categoriaIdSelecionada!,
+          observacoes: _observacoesController.text,
+        ),
       );
-      if (response.statusCode >= 200 && response.statusCode <= 299) {
-        OrcamentosSnackBar.success(context: context, message: 'Gasto variado criado com sucesso!');
-        Navigator.pop(context, true);
-      } else {
-        throw Exception('Falha ao criar gasto variado: ${response.statusCode}');
-      }
+      OrcamentosSnackBar.success(context: context, message: 'Gasto variado criado com sucesso!');
+      Navigator.pop(context, true);
     } catch (e) {
       OrcamentosSnackBar.error(context: context, message: 'Erro: $e');
     } finally {
@@ -351,8 +332,8 @@ class _CriacaoGastoVariadoPageState extends State<CriacaoGastoVariadoPage> {
       ),
       items: _categorias.map((c) {
         return DropdownMenuItem<int>(
-          value: c['id'],
-          child: Text(c['nome'], overflow: TextOverflow.ellipsis),
+          value: c.id,
+          child: Text(c.nome, overflow: TextOverflow.ellipsis),
         );
       }).toList(),
       onChanged: (v) => setState(() => _categoriaIdSelecionada = v),

@@ -1,22 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_loading.dart';
+import 'package:orcamentos_app/shared/api_models.dart';
+import 'package:orcamentos_app/shared/api_service.dart';
 import 'package:orcamentos_app/utils/formatters.dart';
-import 'dart:convert';
-import 'package:orcamentos_app/utils/http.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_snackbar.dart';
 import 'package:orcamentos_app/features/shared/components/confirmation_dialog.dart';
 
 class DetalhesGastoFixoPage extends StatefulWidget {
   final int gastoId;
   final int orcamentoId;
-  final String apiToken;
 
   const DetalhesGastoFixoPage({
     super.key,
     required this.orcamentoId,
     required this.gastoId,
-    required this.apiToken,
   });
 
   @override
@@ -25,9 +24,9 @@ class DetalhesGastoFixoPage extends StatefulWidget {
 
 class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
     with SingleTickerProviderStateMixin {
-  Map<String, dynamic> gasto = {};
-  Map<String, dynamic> orcamento = {};
-  List<Map<String, dynamic>> _categorias = [];
+  GastoFixoResponseDto? gasto;
+  OrcamentoResponseDto? orcamento;
+  List<CategoriaGastoResponseDto> _categorias = [];
   int? _categoriaIdSelecionada;
 
   final _valorCtrl = TextEditingController();
@@ -70,54 +69,36 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
     if (mounted) setState(() => _isRefreshing = false);
   }
 
+  ApiService get _api => Provider.of<ApiService>(context, listen: false);
+
   Future<void> _getGasto() async {
-    final client = await MyHttpClient.create();
-    final r = await client.get(
-      'orcamentos/${widget.orcamentoId}/gastos-fixos/${widget.gastoId}',
-      headers: {'Authorization': 'Bearer ${widget.apiToken}'},
-    );
-    if (r.statusCode >= 200 && r.statusCode <= 299) {
-      if (mounted) setState(() => gasto = jsonDecode(r.body));
-    }
+    try {
+      final result = await _api.getGastoFixoById(widget.orcamentoId, widget.gastoId);
+      if (mounted) setState(() => gasto = result);
+    } catch (_) {}
   }
 
   Future<void> _getOrcamento() async {
-    final client = await MyHttpClient.create();
-    final r = await client.get(
-      'orcamentos/${widget.orcamentoId}',
-      headers: {'Authorization': 'Bearer ${widget.apiToken}'},
-    );
-    if (r.statusCode >= 200 && r.statusCode <= 299) {
-      if (mounted) setState(() => orcamento = jsonDecode(r.body));
-    }
+    try {
+      final result = await _api.getOrcamentoById(widget.orcamentoId);
+      if (mounted) setState(() => orcamento = result);
+    } catch (_) {}
   }
 
   Future<void> _getCategorias() async {
-    final client = await MyHttpClient.create();
-    final r = await client.get(
-      'categorias-gastos',
-      headers: {'Authorization': 'Bearer ${widget.apiToken}'},
-    );
-    if (r.statusCode >= 200 && r.statusCode <= 299) {
-      final List<dynamic> json = jsonDecode(r.body);
-      if (mounted) {
-        setState(() => _categorias =
-            json.map((c) => {'id': c['id'], 'nome': c['nome']}).toList());
-      }
-    }
+    try {
+      final result = await _api.getCategorias();
+      if (mounted) setState(() => _categorias = result);
+    } catch (_) {}
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────────
-  bool get _isPago => gasto['valor'] != null;
-  bool get _isOrcamentoAtivo => orcamento['data_encerramento'] == null;
+  bool get _isPago => gasto?.valor != null;
+  bool get _isOrcamentoAtivo => orcamento?.dataEncerramento == null;
 
-  String _fmtDate(String? iso) {
-    if (iso == null) return 'Não informado';
-    try {
-      return DateFormat('dd/MM/yyyy').format(DateTime.parse(iso));
-    } catch (_) {
-      return 'Data inválida';
-    }
+  String _fmtDate(DateTime? data) {
+    if (data == null) return 'Não informado';
+    return DateFormat('dd/MM/yyyy').format(data);
   }
 
   String _formatarInput(String v) {
@@ -129,39 +110,24 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
   String _toNumeric(String f) =>
       f.replaceAll('R\$', '').trim().replaceAll('.', '').replaceAll(',', '.');
 
-  // ─── Patch ───────────────────────────────────────────────────────────────────
-  Future<void> _patch(Map<String, dynamic> body, String msg) async {
-    final client = await MyHttpClient.create();
-    final r = await client.patch(
-      'orcamentos/${widget.orcamentoId}/gastos-fixos/${widget.gastoId}',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ${widget.apiToken}',
-      },
-      body: jsonEncode(body),
-    );
-    if (r.statusCode >= 200 && r.statusCode <= 299) {
+  // ─── Update ──────────────────────────────────────────────────────────────────
+  Future<void> _update(GastoFixoUpdateDto dto, String msg) async {
+    try {
+      await _api.updateGastoFixo(widget.orcamentoId, widget.gastoId, dto);
       OrcamentosSnackBar.success(context: context, message: msg);
       await _getGasto();
-    } else {
+    } catch (_) {
       OrcamentosSnackBar.error(context: context, message: 'Falha ao atualizar.');
     }
   }
 
   Future<void> _delete() async {
-    final client = await MyHttpClient.create();
-    final r = await client.delete(
-      'orcamentos/${widget.orcamentoId}/gastos-fixos/${widget.gastoId}',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ${widget.apiToken}',
-      },
-    );
-    if (r.statusCode == 200) {
+    try {
+      await _api.deleteGastoFixo(widget.orcamentoId, widget.gastoId);
       OrcamentosSnackBar.success(
           context: context, message: 'Gasto fixo apagado com sucesso!');
       Navigator.pop(context, true);
-    } else {
+    } catch (_) {
       OrcamentosSnackBar.error(context: context, message: 'Falha ao apagar.');
     }
   }
@@ -286,7 +252,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
   );
 
   void _editNome() {
-    final ctrl = TextEditingController(text: gasto['descricao']?.toString() ?? '');
+    final ctrl = TextEditingController(text: gasto?.descricao ?? '');
     final fk = GlobalKey<FormState>();
     _showEditDialog(
       title: 'Editar Nome',
@@ -299,7 +265,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
         decoration: _inputDec('Nome do gasto', Icons.label_outline_rounded),
         validator: (v) => (v == null || v.trim().isEmpty) ? 'Insira um nome' : null,
       ),
-      onConfirm: () => _patch({'descricao': ctrl.text.trim()}, 'Nome atualizado!'),
+      onConfirm: () => _update(GastoFixoUpdateDto(descricao: ctrl.text.trim()), 'Nome atualizado!'),
     );
   }
 
@@ -324,7 +290,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
         validator: (v) => (v == null || v.isEmpty) ? 'Insira um valor' : null,
       ),
       onConfirm: () =>
-          _patch({'previsto': _toNumeric(_valorCtrl.text)}, 'Valor previsto atualizado!'),
+          _update(GastoFixoUpdateDto(previsto: _toNumeric(_valorCtrl.text)), 'Valor previsto atualizado!'),
     );
   }
 
@@ -349,7 +315,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
         validator: (v) => (v == null || v.isEmpty) ? 'Insira um valor' : null,
       ),
       onConfirm: () =>
-          _patch({'valor': _toNumeric(_valorCtrl.text)}, 'Valor pago atualizado!'),
+          _update(GastoFixoUpdateDto(valor: _toNumeric(_valorCtrl.text)), 'Valor pago atualizado!'),
     );
   }
 
@@ -387,7 +353,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
       ),
       onConfirm: () async {
         final parsed = DateFormat('dd/MM/yyyy').parse(_dataCtrl.text);
-        await _patch({'data_pgto': parsed.toIso8601String()}, 'Data de pagamento atualizada!');
+        await _update(GastoFixoUpdateDto(dataPgto: parsed), 'Data de pagamento atualizada!');
       },
     );
   }
@@ -426,7 +392,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
       ),
       onConfirm: () async {
         final parsed = DateFormat('dd/MM/yyyy').parse(_dataCtrl.text);
-        await _patch({'data_venc': parsed.toIso8601String()}, 'Vencimento atualizado!');
+        await _update(GastoFixoUpdateDto(dataVenc: parsed), 'Vencimento atualizado!');
       },
     );
   }
@@ -464,8 +430,8 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
           ),
           items: _categorias
               .map((c) => DropdownMenuItem<int>(
-              value: c['id'],
-              child: Text(c['nome'],
+              value: c.id,
+              child: Text(c.nome,
                   overflow: TextOverflow.ellipsis)))
               .toList(),
           onChanged: (v) =>
@@ -475,12 +441,12 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
         );
       }),
       onConfirm: () =>
-          _patch({'categoria_id': _categoriaIdSelecionada}, 'Categoria atualizada!'),
+          _update(GastoFixoUpdateDto(categoriaId: _categoriaIdSelecionada), 'Categoria atualizada!'),
     );
   }
 
   void _editObservacoes() {
-    _obsCtrl.text = gasto['observacoes'] ?? '';
+    _obsCtrl.text = gasto?.observacoes ?? '';
     final fk = GlobalKey<FormState>();
     _showEditDialog(
       title: 'Observações',
@@ -496,7 +462,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
         (v == null || v.isEmpty) ? 'Insira uma observação' : null,
       ),
       onConfirm: () =>
-          _patch({'observacoes': _obsCtrl.text}, 'Observação salva!'),
+          _update(GastoFixoUpdateDto(observacoes: _obsCtrl.text), 'Observação salva!'),
     );
   }
 
@@ -557,27 +523,29 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
       ),
       onConfirm: () async {
         final parsed = DateFormat('dd/MM/yyyy').parse(_dataCtrl.text);
-        await _patch({
-          'valor': _toNumeric(_valorCtrl.text),
-          'data_pgto': parsed.toIso8601String(),
-        }, 'Pagamento registrado!');
+        await _update(
+          GastoFixoUpdateDto(
+            valor: _toNumeric(_valorCtrl.text),
+            dataPgto: parsed,
+          ),
+          'Pagamento registrado!',
+        );
       },
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final descricao = gasto['descricao']?.toString() ?? 'Gasto Fixo';
-    final categoriaNome =
-        gasto['categoriaGasto']?['nome']?.toString() ?? 'Sem categoria';
+    final g = gasto;
+    final o = orcamento;
+    final descricao = g?.descricao ?? 'Gasto Fixo';
+    final categoriaNome = g?.categoriaGasto.nome ?? 'Sem categoria';
 
     // Vencimento com alerta de atraso
-    final dataVencStr = gasto['data_venc'];
+    final dataVenc = g?.dataVenc;
     bool isVencido = false;
-    if (dataVencStr != null && !_isPago) {
-      try {
-        isVencido = DateTime.parse(dataVencStr).isBefore(DateTime.now());
-      } catch (_) {}
+    if (dataVenc != null && !_isPago) {
+      isVencido = dataVenc.isBefore(DateTime.now());
     }
 
     return Scaffold(
@@ -607,7 +575,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
 
           // ── Conteúdo ───────────────────────────────────────────────────────
           Expanded(
-            child: gasto.isEmpty || orcamento.isEmpty
+            child: g == null || o == null
                 ? Center(
                 child: OrcamentosLoading(message: 'Carregando...'))
                 : SingleChildScrollView(
@@ -618,11 +586,11 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
                 children: [
                   // ── Card de destaque ──────────────────────────────────
                   _ValorDestaque(
-                    previsto: gasto['previsto'],
-                    valorPago: gasto['valor'],
-                    diferenca: gasto['diferenca'],
-                    dataPgto: gasto['data_pgto'],
-                    dataVenc: gasto['data_venc'],
+                    previsto: g.previsto,
+                    valorPago: g.valor,
+                    diferenca: g.diferenca,
+                    dataPgto: g.dataPgto,
+                    dataVenc: g.dataVenc,
                     categoriaNome: categoriaNome,
                     isVencido: isVencido,
                   ),
@@ -669,9 +637,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
                       icon: Icons.attach_money_rounded,
                       color: const Color(0xFF1E88E5),
                       label: 'Valor previsto',
-                      value: gasto['previsto'] != null
-                          ? formatarValorDynamic(gasto['previsto'])
-                          : 'Não informado',
+                      value: formatarValorDynamic(g.previsto),
                       onTap: _isOrcamentoAtivo ? _editValorPrevisto : null,
                     ),
                     _Divider(),
@@ -684,7 +650,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
                           : Colors.grey,
                       label: 'Valor pago',
                       value: _isPago
-                          ? formatarValorDynamic(gasto['valor'])
+                          ? formatarValorDynamic(g.valor!)
                           : 'Não pago',
                       onTap: _isPago && _isOrcamentoAtivo
                           ? _editValorPago
@@ -696,17 +662,17 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
                         icon: Icons.calendar_today_rounded,
                         color: const Color(0xFF00897B),
                         label: 'Data de pagamento',
-                        value: _fmtDate(gasto['data_pgto']),
+                        value: _fmtDate(g.dataPgto),
                         onTap: _isOrcamentoAtivo ? _editDataPagamento : null,
                       ),
                     ],
-                    if (gasto['diferenca'] != null) ...[
+                    if (g.diferenca != null) ...[
                       _Divider(),
                       _InfoRow(
                         icon: Icons.compare_arrows_rounded,
                         color: const Color(0xFFF4511E),
                         label: 'Diferença',
-                        value: formatarValorDynamic(gasto['diferenca']),
+                        value: formatarValorDynamic(g.diferenca!),
                       ),
                     ],
                     _Divider(),
@@ -716,7 +682,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
                           ? const Color(0xFFE53935)
                           : const Color(0xFF546E7A),
                       label: 'Vencimento',
-                      value: _fmtDate(gasto['data_venc']),
+                      value: _fmtDate(g.dataVenc),
                       badge: isVencido ? 'Vencido' : null,
                       onTap: _isOrcamentoAtivo ? _editDataVencimento : null,
                     ),
@@ -733,7 +699,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
                       icon: Icons.notes_rounded,
                       color: const Color(0xFF039BE5),
                       label: 'Observações',
-                      value: gasto['observacoes'] ?? 'Nenhuma observação',
+                      value: g.observacoes ?? 'Nenhuma observação',
                       isLast: true,
                       onTap: _isOrcamentoAtivo ? _editObservacoes : null,
                     ),
@@ -955,11 +921,11 @@ class _FixoHeader extends StatelessWidget {
 // Card de destaque do valor
 // ═══════════════════════════════════════════════════════════════════════════════
 class _ValorDestaque extends StatelessWidget {
-  final dynamic previsto;
-  final dynamic valorPago;
-  final dynamic diferenca;
-  final String? dataPgto;
-  final String? dataVenc;
+  final String? previsto;
+  final String? valorPago;
+  final String? diferenca;
+  final DateTime? dataPgto;
+  final DateTime? dataVenc;
   final String categoriaNome;
   final bool isVencido;
 
@@ -978,7 +944,7 @@ class _ValorDestaque extends StatelessWidget {
     final fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
     final isPago = valorPago != null;
     final valorDouble =
-        double.tryParse((isPago ? valorPago : previsto)?.toString() ?? '0') ?? 0.0;
+        double.tryParse((isPago ? valorPago : previsto) ?? '0') ?? 0.0;
 
     final gradientColors = isPago
         ? [const Color(0xFF2E7D32), const Color(0xFF43A047)]
@@ -1049,9 +1015,9 @@ class _ValorDestaque extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20)),
                   child: Text(
                     isPago
-                        ? 'Pago em ${DateFormat('dd/MM/yyyy').format(DateTime.parse(dataPgto!))}'
+                        ? 'Pago em ${DateFormat('dd/MM/yyyy').format(dataPgto!)}'
                         : dataVenc != null
-                        ? 'Vence em ${DateFormat('dd/MM/yyyy').format(DateTime.parse(dataVenc!))}'
+                        ? 'Vence em ${DateFormat('dd/MM/yyyy').format(dataVenc!)}'
                         : '',
                     style: TextStyle(
                         color: Colors.white.withOpacity(0.8),

@@ -1,22 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_loading.dart';
+import 'package:orcamentos_app/shared/api_models.dart';
+import 'package:orcamentos_app/shared/api_service.dart';
 import 'package:orcamentos_app/utils/formatters.dart';
-import 'dart:convert';
-import 'package:orcamentos_app/utils/http.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_snackbar.dart';
 import 'package:orcamentos_app/features/shared/components/confirmation_dialog.dart';
 
 class DetalhesGastoVariadoPage extends StatefulWidget {
   final int gastoId;
   final int orcamentoId;
-  final String apiToken;
 
   const DetalhesGastoVariadoPage({
     super.key,
     required this.orcamentoId,
     required this.gastoId,
-    required this.apiToken,
   });
 
   @override
@@ -26,9 +25,9 @@ class DetalhesGastoVariadoPage extends StatefulWidget {
 
 class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
     with SingleTickerProviderStateMixin {
-  Map<String, dynamic> gasto = {};
-  Map<String, dynamic> orcamento = {};
-  List<Map<String, dynamic>> _categorias = [];
+  GastoVariadoResponseDto? gasto;
+  OrcamentoResponseDto? orcamento;
+  List<CategoriaGastoResponseDto> _categorias = [];
 
   final TextEditingController _valorController = TextEditingController();
   final TextEditingController _dataController = TextEditingController();
@@ -80,76 +79,47 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
     if (mounted) setState(() => _isRefreshing = false);
   }
 
+  ApiService get _api => Provider.of<ApiService>(context, listen: false);
+
   Future<void> _getGasto() async {
-    final client = await MyHttpClient.create();
-    final response = await client.get(
-      'orcamentos/${widget.orcamentoId}/gastos-variados/${widget.gastoId}',
-      headers: {'Authorization': 'Bearer ${widget.apiToken}'},
-    );
-    if (response.statusCode >= 200 && response.statusCode <= 299) {
-      if (mounted) setState(() => gasto = jsonDecode(response.body));
-    }
+    try {
+      final result = await _api.getGastoVariadoById(widget.orcamentoId, widget.gastoId);
+      if (mounted) setState(() => gasto = result);
+    } catch (_) {}
   }
 
   Future<void> _getOrcamento() async {
-    final client = await MyHttpClient.create();
-    final response = await client.get(
-      'orcamentos/${widget.orcamentoId}',
-      headers: {'Authorization': 'Bearer ${widget.apiToken}'},
-    );
-    if (response.statusCode >= 200 && response.statusCode <= 299) {
-      if (mounted) setState(() => orcamento = jsonDecode(response.body));
-    }
+    try {
+      final result = await _api.getOrcamentoById(widget.orcamentoId);
+      if (mounted) setState(() => orcamento = result);
+    } catch (_) {}
   }
 
   Future<void> _obterCategorias() async {
-    final client = await MyHttpClient.create();
-    final response = await client.get(
-      'categorias-gastos',
-      headers: {'Authorization': 'Bearer ${widget.apiToken}'},
-    );
-    if (response.statusCode >= 200 && response.statusCode <= 299) {
-      final List<dynamic> json = jsonDecode(response.body);
-      if (mounted) {
-        setState(() => _categorias =
-            json.map((c) => {'id': c['id'], 'nome': c['nome']}).toList());
-      }
-    }
+    try {
+      final result = await _api.getCategorias();
+      if (mounted) setState(() => _categorias = result);
+    } catch (_) {}
   }
 
   // ─── Updates ────────────────────────────────────────────────────────────────
-  Future<void> _patch(Map<String, dynamic> body, String msg) async {
-    final client = await MyHttpClient.create();
-    final response = await client.patch(
-      'orcamentos/${widget.orcamentoId}/gastos-variados/${widget.gastoId}',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ${widget.apiToken}',
-      },
-      body: jsonEncode(body),
-    );
-    if (response.statusCode >= 200 && response.statusCode <= 299) {
+  Future<void> _update(GastoVariadoUpdateDto dto, String msg) async {
+    try {
+      await _api.updateGastoVariado(widget.orcamentoId, widget.gastoId, dto);
       OrcamentosSnackBar.success(context: context, message: msg);
       await _getGasto();
-    } else {
+    } catch (_) {
       OrcamentosSnackBar.error(context: context, message: 'Falha ao atualizar.');
     }
   }
 
   Future<void> _delete() async {
-    final client = await MyHttpClient.create();
-    final response = await client.delete(
-      'orcamentos/${widget.orcamentoId}/gastos-variados/${widget.gastoId}',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ${widget.apiToken}',
-      },
-    );
-    if (response.statusCode == 200) {
+    try {
+      await _api.deleteGastoVariado(widget.orcamentoId, widget.gastoId);
       OrcamentosSnackBar.success(
           context: context, message: 'Gasto apagado com sucesso!');
       Navigator.pop(context, true);
-    } else {
+    } catch (_) {
       OrcamentosSnackBar.error(context: context, message: 'Falha ao apagar.');
     }
   }
@@ -167,13 +137,9 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
       .replaceAll('.', '')
       .replaceAll(',', '.');
 
-  String _formatDate(String? iso) {
-    if (iso == null) return 'Não informado';
-    try {
-      return DateFormat('dd/MM/yyyy').format(DateTime.parse(iso));
-    } catch (_) {
-      return 'Data inválida';
-    }
+  String _formatDate(DateTime? data) {
+    if (data == null) return 'Não informado';
+    return DateFormat('dd/MM/yyyy').format(data);
   }
 
   // ─── Dialogs estilizados ─────────────────────────────────────────────────────
@@ -296,7 +262,7 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
 
   void _editNome() {
     final nomeController = TextEditingController(
-        text: gasto['descricao']?.toString() ?? '');
+        text: gasto?.descricao ?? '');
     final formKey = GlobalKey<FormState>();
     _showEditDialog(
       title: 'Editar Nome',
@@ -312,7 +278,7 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
         (v == null || v.trim().isEmpty) ? 'Insira um nome' : null,
       ),
       onConfirm: () =>
-          _patch({'descricao': nomeController.text.trim()}, 'Nome atualizado!'),
+          _update(GastoVariadoUpdateDto(descricao: nomeController.text.trim()), 'Nome atualizado!'),
     );
   }
 
@@ -341,7 +307,7 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
         },
       ),
       onConfirm: () =>
-          _patch({'valor': _toNumeric(_valorController.text)}, 'Valor atualizado!'),
+          _update(GastoVariadoUpdateDto(valor: _toNumeric(_valorController.text)), 'Valor atualizado!'),
     );
   }
 
@@ -378,8 +344,7 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
       ),
       onConfirm: () async {
         final parsed = DateFormat('dd/MM/yyyy').parse(_dataController.text);
-        await _patch(
-            {'data_pgto': parsed.toIso8601String()}, 'Data atualizada!');
+        await _update(GastoVariadoUpdateDto(dataPgto: parsed), 'Data atualizada!');
       },
     );
   }
@@ -415,8 +380,8 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
           ),
           items: _categorias
               .map((c) => DropdownMenuItem<int>(
-              value: c['id'],
-              child: Text(c['nome'],
+              value: c.id,
+              child: Text(c.nome,
                   overflow: TextOverflow.ellipsis)))
               .toList(),
           onChanged: (v) => setLocal(
@@ -426,12 +391,12 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
         );
       }),
       onConfirm: () =>
-          _patch({'categoria_id': _categoriaIdSelecionada}, 'Categoria atualizada!'),
+          _update(GastoVariadoUpdateDto(categoriaId: _categoriaIdSelecionada), 'Categoria atualizada!'),
     );
   }
 
   void _editObservacoes() {
-    _obsController.text = gasto['observacoes'] ?? '';
+    _obsController.text = gasto?.observacoes ?? '';
     _showEditDialog(
       title: 'Observações',
       icon: Icons.notes_rounded,
@@ -447,17 +412,18 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
         (v == null || v.isEmpty) ? 'Insira uma observação' : null,
       ),
       onConfirm: () =>
-          _patch({'observacoes': _obsController.text}, 'Observação salva!'),
+          _update(GastoVariadoUpdateDto(observacoes: _obsController.text), 'Observação salva!'),
     );
   }
 
   // ─── Build ────────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    final isAtivo = orcamento['data_encerramento'] == null;
-    final descricao = gasto['descricao']?.toString() ?? 'Gasto Variado';
-    final categoriaNome =
-        gasto['categoriaGasto']?['nome']?.toString() ?? 'Sem categoria';
+    final g = gasto;
+    final o = orcamento;
+    final isAtivo = o?.dataEncerramento == null;
+    final descricao = g?.descricao ?? 'Gasto Variado';
+    final categoriaNome = g?.categoriaGasto.nome ?? 'Sem categoria';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F5F9),
@@ -485,7 +451,7 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
 
           // ── Conteúdo ──────────────────────────────────────────────────────────
           Expanded(
-            child: gasto.isEmpty || orcamento.isEmpty
+            child: g == null || o == null
                 ? Center(
                 child: OrcamentosLoading(message: 'Carregando...'))
                 : SingleChildScrollView(
@@ -496,8 +462,8 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
                 children: [
                   // ── Card de valor em destaque ───────────────────────
                   _ValorDestaque(
-                    valor: gasto['valor'],
-                    dataPgto: gasto['data_pgto'],
+                    valor: g.valor,
+                    dataPgto: g.dataPgto,
                     categoriaNome: categoriaNome,
                   ),
                   const SizedBox(height: 20),
@@ -509,7 +475,7 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
                       icon: Icons.label_outline_rounded,
                       color: const Color(0xFF8E24AA),
                       label: 'Nome',
-                      value: gasto['descricao']?.toString() ?? 'Sem nome',
+                      value: descricao,
                       isFirst: true,
                       onTap: isAtivo ? _editNome : null,
                     ),
@@ -518,9 +484,7 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
                       icon: Icons.attach_money_rounded,
                       color: const Color(0xFF7B1FA2),
                       label: 'Valor',
-                      value: gasto['valor'] != null
-                          ? formatarValorDynamic(gasto['valor'])
-                          : 'Não informado',
+                      value: formatarValorDynamic(g.valor),
                       onTap: isAtivo ? _editValor : null,
                     ),
                     _Divider(),
@@ -528,7 +492,7 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
                       icon: Icons.calendar_today_rounded,
                       color: const Color(0xFF6A1B9A),
                       label: 'Data de pagamento',
-                      value: _formatDate(gasto['data_pgto']),
+                      value: _formatDate(g.dataPgto),
                       onTap: isAtivo ? _editData : null,
                     ),
                     _Divider(),
@@ -544,7 +508,7 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
                       icon: Icons.notes_rounded,
                       color: const Color(0xFF039BE5),
                       label: 'Observações',
-                      value: gasto['observacoes'] ?? 'Nenhuma observação',
+                      value: g.observacoes ?? 'Nenhuma observação',
                       isLast: true,
                       onTap: isAtivo ? _editObservacoes : null,
                     ),
@@ -748,8 +712,8 @@ class _GastoHeader extends StatelessWidget {
 // Destaque do valor
 // ═══════════════════════════════════════════════════════════════════════════════
 class _ValorDestaque extends StatelessWidget {
-  final dynamic valor;
-  final String? dataPgto;
+  final String valor;
+  final DateTime? dataPgto;
   final String categoriaNome;
 
   const _ValorDestaque({
@@ -761,10 +725,9 @@ class _ValorDestaque extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-    final valorDouble = double.tryParse(valor?.toString() ?? '0') ?? 0.0;
+    final valorDouble = double.tryParse(valor) ?? 0.0;
     final dataStr = dataPgto != null
-        ? DateFormat("d 'de' MMMM 'de' yyyy", 'pt_BR')
-        .format(DateTime.parse(dataPgto!))
+        ? DateFormat("d 'de' MMMM 'de' yyyy", 'pt_BR').format(dataPgto!)
         : 'Sem data';
 
     return Container(

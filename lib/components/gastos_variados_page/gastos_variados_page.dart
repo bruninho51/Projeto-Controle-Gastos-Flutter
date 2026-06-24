@@ -12,12 +12,10 @@ import '../../features/shared/components/orcamentos_loading.dart';
 
 class GastosVariadosPage extends StatefulWidget {
   final int orcamentoId;
-  final String apiToken;
 
   const GastosVariadosPage({
     super.key,
     required this.orcamentoId,
-    required this.apiToken,
   });
 
   @override
@@ -30,6 +28,8 @@ class _GastosVariadosPageState extends State<GastosVariadosPage>
   String _filtroNome = '';
   String? _filtroStatus;
   DateTime? _filtroData;
+  int? _filtroCategoriaId;
+  List<CategoriaGastoResponseDto> _categorias = [];
   String _ordenacaoCampo = 'data_pgto';
   bool _ordenacaoAscendente = false; // mais recente primeiro
 
@@ -42,6 +42,7 @@ class _GastosVariadosPageState extends State<GastosVariadosPage>
     _refreshCtrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 700));
     _gastosVariaveis = _fetchGastos();
+    _fetchCategorias();
   }
 
   @override
@@ -76,12 +77,21 @@ class _GastosVariadosPageState extends State<GastosVariadosPage>
           (g.dataPgto.day == _filtroData!.day &&
               g.dataPgto.month == _filtroData!.month &&
               g.dataPgto.year == _filtroData!.year);
-      return correspondeName && correspondeStatus && correspondeData;
+      final correspondeCategoria =
+          _filtroCategoriaId == null || g.categoriaId == _filtroCategoriaId;
+      return correspondeName && correspondeStatus && correspondeData && correspondeCategoria;
     }).toList();
   }
 
   Future<OrcamentoResponseDto> _getOrcamento() {
     return _api.getOrcamentoById(widget.orcamentoId);
+  }
+
+  Future<void> _fetchCategorias() async {
+    try {
+      final categorias = await _api.getCategorias();
+      if (mounted) setState(() => _categorias = categorias);
+    } catch (_) {}
   }
 
   void _aplicarFiltros(String nome, String? status, DateTime? data,
@@ -101,6 +111,7 @@ class _GastosVariadosPageState extends State<GastosVariadosPage>
       _filtroNome = '';
       _filtroStatus = null;
       _filtroData = null;
+      _filtroCategoriaId = null;
       _ordenacaoCampo = 'data_pgto';
       _ordenacaoAscendente = false;
       _gastosVariaveis = _fetchGastos();
@@ -130,12 +141,15 @@ class _GastosVariadosPageState extends State<GastosVariadosPage>
       builder: (_) => _FiltrosSheet(
         filtroNome: _filtroNome,
         filtroData: _filtroData,
+        filtroCategoriaId: _filtroCategoriaId,
+        categorias: _categorias,
         ordenacaoCampo: _ordenacaoCampo,
         ordenacaoAscendente: _ordenacaoAscendente,
-        onAplicar: (nome, data, campo, asc) {
+        onAplicar: (nome, data, campo, asc, categoriaId) {
           setState(() {
             _filtroNome = nome;
             _filtroData = data;
+            _filtroCategoriaId = categoriaId;
             _ordenacaoCampo = campo;
             _ordenacaoAscendente = asc;
             _gastosVariaveis = _fetchGastos();
@@ -171,9 +185,12 @@ class _GastosVariadosPageState extends State<GastosVariadosPage>
             onRefresh: _handleRefresh,
             onFiltros: _showFiltros,
             onBack: () => Navigator.of(context).pop(),
+            gastosFuture: _gastosVariaveis,
+            filtrar: _filtrarGastos,
             temFiltroAtivo: _filtroNome.isNotEmpty ||
                 _filtroStatus != null ||
-                _filtroData != null,
+                _filtroData != null ||
+                _filtroCategoriaId != null,
           ),
 
           // ── Lista estilo extrato ────────────────────────────────────────────
@@ -207,7 +224,9 @@ class _GastosVariadosPageState extends State<GastosVariadosPage>
                 return RefreshIndicator(
                   color: Colors.purple[700],
                   onRefresh: () async {
-                    setState(() => _gastosVariaveis = _fetchGastos());
+                    setState(() {
+                      _gastosVariaveis = _fetchGastos();
+                    });
                     await _gastosVariaveis;
                   },
                   child: CustomScrollView(
@@ -236,12 +255,12 @@ class _GastosVariadosPageState extends State<GastosVariadosPage>
                                       builder: (_) => DetalhesGastoVariadoPage(
                                         gastoId: gasto.id,
                                         orcamentoId: gasto.orcamentoId,
-                                        apiToken: widget.apiToken,
                                       ),
                                     ),
                                   );
-                                  setState(() =>
-                                  _gastosVariaveis = _fetchGastos());
+                                  setState(() {
+                                    _gastosVariaveis = _fetchGastos();
+                                  });
                                 },
                               );
                             },
@@ -272,11 +291,12 @@ class _GastosVariadosPageState extends State<GastosVariadosPage>
                 MaterialPageRoute(
                   builder: (_) => CriacaoGastoVariadoPage(
                     orcamentoId: widget.orcamentoId,
-                    apiToken: widget.apiToken,
                   ),
                 ),
               );
-              setState(() => _gastosVariaveis = _fetchGastos());
+              setState(() {
+                _gastosVariaveis = _fetchGastos();
+              });
             },
             backgroundColor: Colors.purple[700],
             foregroundColor: Colors.white,
@@ -297,14 +317,18 @@ class _GastosVariadosPageState extends State<GastosVariadosPage>
 class _FiltrosSheet extends StatefulWidget {
   final String filtroNome;
   final DateTime? filtroData;
+  final int? filtroCategoriaId;
+  final List<CategoriaGastoResponseDto> categorias;
   final String ordenacaoCampo;
   final bool ordenacaoAscendente;
-  final void Function(String nome, DateTime? data, String campo, bool asc) onAplicar;
+  final void Function(String nome, DateTime? data, String campo, bool asc, int? categoriaId) onAplicar;
   final VoidCallback onLimpar;
 
   const _FiltrosSheet({
     required this.filtroNome,
     required this.filtroData,
+    required this.filtroCategoriaId,
+    required this.categorias,
     required this.ordenacaoCampo,
     required this.ordenacaoAscendente,
     required this.onAplicar,
@@ -318,6 +342,7 @@ class _FiltrosSheet extends StatefulWidget {
 class _FiltrosSheetState extends State<_FiltrosSheet> {
   late TextEditingController _nomeCtrl;
   DateTime? _data;
+  int? _categoriaId;
   late String _campo;
   late bool _asc;
 
@@ -326,6 +351,7 @@ class _FiltrosSheetState extends State<_FiltrosSheet> {
     super.initState();
     _nomeCtrl = TextEditingController(text: widget.filtroNome);
     _data = widget.filtroData;
+    _categoriaId = widget.filtroCategoriaId;
     _campo = widget.ordenacaoCampo;
     _asc = widget.ordenacaoAscendente;
   }
@@ -490,6 +516,44 @@ class _FiltrosSheetState extends State<_FiltrosSheet> {
             ),
             const SizedBox(height: 16),
 
+            // Categoria
+            Text('Categoria',
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[500],
+                    letterSpacing: 0.5)),
+            const SizedBox(height: 10),
+            DropdownButtonFormField<int?>(
+              value: _categoriaId,
+              isExpanded: true,
+              icon: const Icon(Icons.keyboard_arrow_down_rounded, color: purple),
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: Colors.grey[50],
+                contentPadding:
+                const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey[200]!)),
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey[200]!)),
+                focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: purple, width: 1.5)),
+              ),
+              items: [
+                const DropdownMenuItem<int?>(value: null, child: Text('Todas as categorias')),
+                ...widget.categorias.map((c) => DropdownMenuItem<int?>(
+                      value: c.id,
+                      child: Text(c.nome, overflow: TextOverflow.ellipsis),
+                    )),
+              ],
+              onChanged: (v) => setState(() => _categoriaId = v),
+            ),
+            const SizedBox(height: 16),
+
             // Ordenação
             Text('Ordenação',
                 style: TextStyle(
@@ -565,7 +629,7 @@ class _FiltrosSheetState extends State<_FiltrosSheet> {
                   ),
                   onPressed: () {
                     widget.onAplicar(
-                        _nomeCtrl.text, _data, _campo, _asc);
+                        _nomeCtrl.text, _data, _campo, _asc, _categoriaId);
                     Navigator.of(context).pop();
                   },
                   child: const Text('Aplicar',
@@ -917,6 +981,8 @@ class _GastosHeader extends StatelessWidget {
   final VoidCallback onBack;
   final bool temFiltroAtivo;
   final AuthState auth;
+  final Future<List<GastoVariadoResponseDto>> gastosFuture;
+  final List<GastoVariadoResponseDto> Function(List<GastoVariadoResponseDto>) filtrar;
 
   const _GastosHeader({
     required this.isRefreshing,
@@ -926,6 +992,8 @@ class _GastosHeader extends StatelessWidget {
     required this.onBack,
     required this.temFiltroAtivo,
     required this.auth,
+    required this.gastosFuture,
+    required this.filtrar,
   });
 
   Widget _buildAvatar() {
@@ -1016,6 +1084,37 @@ class _GastosHeader extends StatelessWidget {
               const SizedBox(width: 10),
               _buildAvatar(),
             ],
+          ),
+
+          const SizedBox(height: 16),
+
+          // ── Total gasto ───────────────────────────────────────────────────
+          FutureBuilder<List<GastoVariadoResponseDto>>(
+            future: gastosFuture,
+            builder: (context, snapshot) {
+              final filtrados = filtrar(snapshot.data ?? []);
+              final totalGasto = filtrados.fold<double>(
+                  0, (s, g) => s + (double.tryParse(g.valor) ?? 0));
+              final fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.13),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Row(children: [
+                  Container(width: 30, height: 30,
+                      decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(9)),
+                      child: const Icon(Icons.payments_rounded, color: Colors.white, size: 16)),
+                  const SizedBox(width: 10),
+                  Text('Total gasto', style: TextStyle(color: Colors.white.withOpacity(0.75), fontSize: 12, fontWeight: FontWeight.w500)),
+                  const Spacer(),
+                  Text(fmt.format(totalGasto),
+                      style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: -0.3)),
+                ]),
+              );
+            },
           ),
 
           const SizedBox(height: 16),

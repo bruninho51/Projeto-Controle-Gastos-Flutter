@@ -497,12 +497,12 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
   }
 
   Future<void> _navigateToGastosFixos() async {
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => GastosFixosPage(apiToken: _auth.apiToken!, orcamentoId: widget.orcamentoId)));
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => GastosFixosPage(orcamentoId: widget.orcamentoId)));
     _loadOrcamentoData();
   }
 
   Future<void> _navigateToGastosVariados() async {
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => GastosVariadosPage(apiToken: _auth.apiToken!, orcamentoId: widget.orcamentoId)));
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => GastosVariadosPage(orcamentoId: widget.orcamentoId)));
     _loadOrcamentoData();
   }
 

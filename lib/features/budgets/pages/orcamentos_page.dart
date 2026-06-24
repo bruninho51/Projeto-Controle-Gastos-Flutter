@@ -13,7 +13,6 @@ import 'package:orcamentos_app/components/orcamentos_encerrados_page/orcamentos_
 import 'package:orcamentos_app/features/budgets/components/orcamento_card.dart';
 import 'package:orcamentos_app/features/budgets/components/orcamentos_fab.dart';
 import 'package:orcamentos_app/features/budgets/components/orcamentos_page_empty_state.dart';
-import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
 import 'package:orcamentos_app/shared/api_models.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
 
@@ -41,14 +40,11 @@ class OrcamentosPageState extends State<OrcamentosPage> {
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
-  AuthState get _auth => Provider.of<AuthState>(context, listen: false);
   ApiService get _api => Provider.of<ApiService>(context, listen: false);
 
   void _safeSetState(VoidCallback fn) {
     if (mounted) setState(fn);
   }
-
-  String get _token => _auth.apiToken!;
 
   // ── Ciclo de vida ─────────────────────────────────────────────────────────
 
@@ -215,7 +211,6 @@ class OrcamentosPageState extends State<OrcamentosPage> {
               delegate: SliverChildBuilderDelegate(
                     (context, index) => OrcamentoCard(
                   orcamento: _orcamentos[index],
-                  apiToken: _token, // 👈 aqui também ajustado
                   onRefresh: _fetchOrcamentos,
                 ),
                 childCount: _orcamentos.length,

@@ -11,12 +11,10 @@ import 'package:provider/provider.dart';
 // ═══════════════════════════════════════════════════════════════════════════════
 class CopiarGastosFixosPage extends StatefulWidget {
   final int orcamentoDestinoId;
-  final String apiToken;
 
   const CopiarGastosFixosPage({
     super.key,
     required this.orcamentoDestinoId,
-    required this.apiToken,
   });
 
   @override
@@ -111,7 +109,6 @@ class _CopiarGastosFixosPageState extends State<CopiarGastosFixosPage> {
                               orcamentoFonteId: o.id,
                               orcamentoFonteNome: o.nome,
                               orcamentoDestinoId: widget.orcamentoDestinoId,
-                              apiToken: widget.apiToken,
                             ),
                           ),
                         );
@@ -138,13 +135,11 @@ class _SelecionarGastosPage extends StatefulWidget {
   final int orcamentoFonteId;
   final String orcamentoFonteNome;
   final int orcamentoDestinoId;
-  final String apiToken;
 
   const _SelecionarGastosPage({
     required this.orcamentoFonteId,
     required this.orcamentoFonteNome,
     required this.orcamentoDestinoId,
-    required this.apiToken,
   });
 
   @override

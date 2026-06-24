@@ -1,20 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:orcamentos_app/features/shared/components/pulse_dot.dart';
+import 'package:provider/provider.dart';
 import 'package:orcamentos_app/features/shared/components/shared_appbar.dart';
 import 'package:orcamentos_app/features/shared/components/status_badge.dart';
-import 'dart:convert';
-import 'package:orcamentos_app/utils/http.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_snackbar.dart';
+import 'package:orcamentos_app/shared/api_models.dart';
+import 'package:orcamentos_app/shared/api_service.dart';
 
 class CriacaoGastoFixoPage extends StatefulWidget {
   final int orcamentoId;
-  final String apiToken;
 
   const CriacaoGastoFixoPage({
     super.key,
     required this.orcamentoId,
-    required this.apiToken,
   });
 
   @override
@@ -32,7 +30,7 @@ class _CriacaoGastoFixoPageState extends State<CriacaoGastoFixoPage> {
   final _observacoesFocus         = FocusNode();
 
   int? _categoriaIdSelecionada;
-  List<Map<String, dynamic>> _categorias = [];
+  List<CategoriaGastoResponseDto> _categorias = [];
   bool _isLoading           = false;
   bool _isLoadingCategories = false;
 
@@ -78,22 +76,13 @@ class _CriacaoGastoFixoPageState extends State<CriacaoGastoFixoPage> {
         .replaceAll(',', '.');
   }
 
+  ApiService get _api => Provider.of<ApiService>(context, listen: false);
+
   Future<void> _obterCategoriasGastos() async {
     setState(() => _isLoadingCategories = true);
     try {
-      final client = await MyHttpClient.create();
-      final response = await client.get(
-        'categorias-gastos',
-        headers: {'Authorization': 'Bearer ${widget.apiToken}'},
-      );
-      if (response.statusCode >= 200 && response.statusCode <= 299) {
-        final List<dynamic> data = jsonDecode(response.body);
-        setState(() {
-          _categorias = data.map((c) => {'id': c['id'], 'nome': c['nome']}).toList();
-        });
-      } else {
-        throw Exception('Falha ao carregar categorias');
-      }
+      final categorias = await _api.getCategorias();
+      setState(() => _categorias = categorias);
     } catch (e) {
       OrcamentosSnackBar.error(context: context, message: 'Erro ao carregar categorias: $e');
     } finally {
@@ -106,29 +95,20 @@ class _CriacaoGastoFixoPageState extends State<CriacaoGastoFixoPage> {
     setState(() => _isLoading = true);
     try {
       final valorPrevisto = _converterParaFormatoNumerico(_valorPrevistoController.text);
-      final client = await MyHttpClient.create();
-      final response = await client.post(
-        'orcamentos/${widget.orcamentoId}/gastos-fixos',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${widget.apiToken}',
-        },
-        body: jsonEncode({
-          'descricao': _descricaoController.text,
-          'previsto': valorPrevisto,
-          'categoria_id': _categoriaIdSelecionada,
-          'observacoes': _observacoesController.text,
-          'data_venc': _dataVencimentoController.text.isNotEmpty
-              ? DateFormat('dd/MM/yyyy').parse(_dataVencimentoController.text).toIso8601String()
+      await _api.createGastoFixo(
+        widget.orcamentoId,
+        GastoFixoCreateDto(
+          descricao: _descricaoController.text,
+          previsto: valorPrevisto,
+          categoriaId: _categoriaIdSelecionada!,
+          observacoes: _observacoesController.text,
+          dataVenc: _dataVencimentoController.text.isNotEmpty
+              ? DateFormat('dd/MM/yyyy').parse(_dataVencimentoController.text)
               : null,
-        }),
+        ),
       );
-      if (response.statusCode >= 200 && response.statusCode <= 299) {
-        OrcamentosSnackBar.success(context: context, message: 'Gasto fixo criado com sucesso!');
-        Navigator.pop(context, true);
-      } else {
-        throw Exception('Falha ao criar gasto fixo: ${response.statusCode}');
-      }
+      OrcamentosSnackBar.success(context: context, message: 'Gasto fixo criado com sucesso!');
+      Navigator.pop(context, true);
     } catch (e) {
       OrcamentosSnackBar.error(context: context, message: 'Erro: $e');
     } finally {
@@ -355,8 +335,8 @@ class _CriacaoGastoFixoPageState extends State<CriacaoGastoFixoPage> {
       ),
       items: _categorias.map((c) {
         return DropdownMenuItem<int>(
-          value: c['id'],
-          child: Text(c['nome'], overflow: TextOverflow.ellipsis),
+          value: c.id,
+          child: Text(c.nome, overflow: TextOverflow.ellipsis),
         );
       }).toList(),
       onChanged: (v) => setState(() => _categoriaIdSelecionada = v),

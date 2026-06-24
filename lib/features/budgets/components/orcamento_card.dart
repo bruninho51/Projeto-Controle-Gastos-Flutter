@@ -13,14 +13,12 @@ import 'orcamento_card_action_tile.dart';
 
 class OrcamentoCard extends StatefulWidget {
   final OrcamentoResponseDto orcamento;
-  final String apiToken;
   final VoidCallback onRefresh;
   final int index;
 
   const OrcamentoCard({
     super.key,
     required this.orcamento,
-    required this.apiToken,
     required this.onRefresh,
     this.index = 0,
   });
@@ -269,7 +267,6 @@ class _OrcamentoCardState extends State<OrcamentoCard>
                     context,
                     MaterialPageRoute(
                       builder: (_) => GastosFixosPage(
-                        apiToken: widget.apiToken,
                         orcamentoId: widget.orcamento.id,
                       ),
                     ),
@@ -303,7 +300,6 @@ class _OrcamentoCardState extends State<OrcamentoCard>
                     context,
                     MaterialPageRoute(
                       builder: (_) => GastosVariadosPage(
-                        apiToken: widget.apiToken,
                         orcamentoId: widget.orcamento.id,
                       ),
                     ),
