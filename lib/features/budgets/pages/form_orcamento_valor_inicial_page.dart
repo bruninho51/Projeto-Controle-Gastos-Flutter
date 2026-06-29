@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:orcamentos_app/shared/api_models.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
+import 'package:orcamentos_app/shared/patch_field.dart';
 import 'package:orcamentos_app/utils/formatters.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_snackbar.dart';
 
@@ -46,7 +47,11 @@ class _FormOrcamentoValorInicialPageState
     try {
       await _api.updateOrcamento(
         orcamentoId,
-        OrcamentoUpdateDto(valorInicial: valor.toString()),
+        OrcamentoUpdateDto(
+          valorInicial: PatchField.value(valor.toString()),
+          nome: PatchField.absent(),
+          dataEncerramento: PatchField.nullValue(),
+        ),
       );
       OrcamentosSnackBar.success(
         context: context,

@@ -2,7 +2,56 @@
 
 import 'package:json_annotation/json_annotation.dart';
 
+import 'patch_field.dart';
+
 part 'api_models.g.dart';
+
+/// Converte JSON para `PatchField<String>` em DTOs de update.
+///
+/// Usado apenas pelo `fromJson` gerado (raramente chamado nos updates).
+/// Como o `fromJson` recebe o mesmo `null` tanto para "chave ausente" quanto
+/// para "chave presente com null", essa direção não distingue os três
+/// estados — apenas o `toJson` manual de cada DTO faz essa distinção.
+class PatchFieldStringConverter
+    implements JsonConverter<PatchField<String>, Object?> {
+  const PatchFieldStringConverter();
+
+  @override
+  PatchField<String> fromJson(Object? json) =>
+      json == null ? const PatchField.absent() : PatchField.value(json as String);
+
+  @override
+  Object? toJson(PatchField<String> object) => throw UnsupportedError(
+      'toJson de PatchField é implementado manualmente nos DTOs de update.');
+}
+
+/// Variante de [PatchFieldStringConverter] para campos `PatchField<DateTime>`,
+/// já que o JSON representa datas como String ISO 8601.
+class PatchFieldDateTimeConverter
+    implements JsonConverter<PatchField<DateTime>, Object?> {
+  const PatchFieldDateTimeConverter();
+
+  @override
+  PatchField<DateTime> fromJson(Object? json) =>
+      json == null ? const PatchField.absent() : PatchField.value(DateTime.parse(json as String));
+
+  @override
+  Object? toJson(PatchField<DateTime> object) => throw UnsupportedError(
+      'toJson de PatchField é implementado manualmente nos DTOs de update.');
+}
+
+/// Variante de [PatchFieldStringConverter] para campos `PatchField<int>`.
+class PatchFieldIntConverter implements JsonConverter<PatchField<int>, Object?> {
+  const PatchFieldIntConverter();
+
+  @override
+  PatchField<int> fromJson(Object? json) =>
+      json == null ? const PatchField.absent() : PatchField.value((json as num).toInt());
+
+  @override
+  Object? toJson(PatchField<int> object) => throw UnsupportedError(
+      'toJson de PatchField é implementado manualmente nos DTOs de update.');
+}
 
 /// DTO de upsert de token de dispositivo
 @JsonSerializable()
@@ -96,19 +145,29 @@ class CategoriaGastoCreateDto {
 }
 
 /// DTO de atualização de categoria de gasto
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class CategoriaGastoUpdateDto {
-  final String? nome;
+  @PatchFieldStringConverter()
+  final PatchField<String> nome;
 
   @JsonKey(name: 'data_inatividade')
-  final DateTime? dataInatividade;
+  @PatchFieldDateTimeConverter()
+  final PatchField<DateTime> dataInatividade;
 
-  CategoriaGastoUpdateDto({this.nome, this.dataInatividade});
+  CategoriaGastoUpdateDto({
+    this.nome = const PatchField.absent(),
+    this.dataInatividade = const PatchField.absent(),
+  });
 
   factory CategoriaGastoUpdateDto.fromJson(Map<String, dynamic> json) =>
       _$CategoriaGastoUpdateDtoFromJson(json);
 
-  Map<String, dynamic> toJson() => _$CategoriaGastoUpdateDtoToJson(this);
+  Map<String, dynamic> toJson() {
+    final map = <String, dynamic>{};
+    nome.addToMap(map, 'nome');
+    dataInatividade.addToMap(map, 'data_inatividade');
+    return map;
+  }
 }
 
 /// DTO de criação de orçamento
@@ -173,30 +232,41 @@ class OrcamentoResponseDto {
 }
 
 /// DTO de atualização de orçamento
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class OrcamentoUpdateDto {
-  final String? nome;
+  @PatchFieldStringConverter()
+  final PatchField<String> nome;
 
   @JsonKey(name: 'valor_inicial')
-  final String? valorInicial;
+  @PatchFieldStringConverter()
+  final PatchField<String> valorInicial;
 
   @JsonKey(name: 'data_encerramento')
-  final DateTime? dataEncerramento;
+  @PatchFieldDateTimeConverter()
+  final PatchField<DateTime> dataEncerramento;
 
   @JsonKey(name: 'data_inatividade')
-  final DateTime? dataInatividade;
+  @PatchFieldDateTimeConverter()
+  final PatchField<DateTime> dataInatividade;
 
   OrcamentoUpdateDto({
-    this.nome,
-    this.valorInicial,
-    this.dataEncerramento,
-    this.dataInatividade,
+    this.nome = const PatchField.absent(),
+    this.valorInicial = const PatchField.absent(),
+    this.dataEncerramento = const PatchField.absent(),
+    this.dataInatividade = const PatchField.absent(),
   });
 
   factory OrcamentoUpdateDto.fromJson(Map<String, dynamic> json) =>
       _$OrcamentoUpdateDtoFromJson(json);
 
-  Map<String, dynamic> toJson() => _$OrcamentoUpdateDtoToJson(this);
+  Map<String, dynamic> toJson() {
+    final map = <String, dynamic>{};
+    nome.addToMap(map, 'nome');
+    valorInicial.addToMap(map, 'valor_inicial');
+    dataEncerramento.addToMap(map, 'data_encerramento');
+    dataInatividade.addToMap(map, 'data_inatividade');
+    return map;
+  }
 }
 
 /// DTO de criação de gasto fixo
@@ -287,41 +357,62 @@ class GastoFixoResponseDto {
 }
 
 /// DTO de atualização de gasto fixo
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class GastoFixoUpdateDto {
-  final String? descricao;
-  final String? previsto;
-  final String? valor;
+  @PatchFieldStringConverter()
+  final PatchField<String> descricao;
+
+  @PatchFieldStringConverter()
+  final PatchField<String> previsto;
+
+  @PatchFieldStringConverter()
+  final PatchField<String> valor;
 
   @JsonKey(name: 'data_pgto')
-  final DateTime? dataPgto;
+  @PatchFieldDateTimeConverter()
+  final PatchField<DateTime> dataPgto;
 
   @JsonKey(name: 'data_venc')
-  final DateTime? dataVenc;
+  @PatchFieldDateTimeConverter()
+  final PatchField<DateTime> dataVenc;
 
   @JsonKey(name: 'categoria_id')
-  final int? categoriaId;
+  @PatchFieldIntConverter()
+  final PatchField<int> categoriaId;
 
-  final String? observacoes;
+  @PatchFieldStringConverter()
+  final PatchField<String> observacoes;
 
   @JsonKey(name: 'data_inatividade')
-  final DateTime? dataInatividade;
+  @PatchFieldDateTimeConverter()
+  final PatchField<DateTime> dataInatividade;
 
   GastoFixoUpdateDto({
-    this.descricao,
-    this.previsto,
-    this.valor,
-    this.dataPgto,
-    this.dataVenc,
-    this.categoriaId,
-    this.observacoes,
-    this.dataInatividade,
+    this.descricao = const PatchField.absent(),
+    this.previsto = const PatchField.absent(),
+    this.valor = const PatchField.absent(),
+    this.dataPgto = const PatchField.absent(),
+    this.dataVenc = const PatchField.absent(),
+    this.categoriaId = const PatchField.absent(),
+    this.observacoes = const PatchField.absent(),
+    this.dataInatividade = const PatchField.absent(),
   });
 
   factory GastoFixoUpdateDto.fromJson(Map<String, dynamic> json) =>
       _$GastoFixoUpdateDtoFromJson(json);
 
-  Map<String, dynamic> toJson() => _$GastoFixoUpdateDtoToJson(this);
+  Map<String, dynamic> toJson() {
+    final map = <String, dynamic>{};
+    descricao.addToMap(map, 'descricao');
+    previsto.addToMap(map, 'previsto');
+    valor.addToMap(map, 'valor');
+    dataPgto.addToMap(map, 'data_pgto');
+    dataVenc.addToMap(map, 'data_venc');
+    categoriaId.addToMap(map, 'categoria_id');
+    observacoes.addToMap(map, 'observacoes');
+    dataInatividade.addToMap(map, 'data_inatividade');
+    return map;
+  }
 }
 
 /// DTO de criação de gasto variado
@@ -403,35 +494,51 @@ class GastoVariadoResponseDto {
 }
 
 /// DTO de atualização de gasto variado
-@JsonSerializable()
+@JsonSerializable(createToJson: false)
 class GastoVariadoUpdateDto {
-  final String? descricao;
-  final String? valor;
+  @PatchFieldStringConverter()
+  final PatchField<String> descricao;
+
+  @PatchFieldStringConverter()
+  final PatchField<String> valor;
 
   @JsonKey(name: 'data_pgto')
-  final DateTime? dataPgto;
+  @PatchFieldDateTimeConverter()
+  final PatchField<DateTime> dataPgto;
 
   @JsonKey(name: 'categoria_id')
-  final int? categoriaId;
+  @PatchFieldIntConverter()
+  final PatchField<int> categoriaId;
 
-  final String? observacoes;
+  @PatchFieldStringConverter()
+  final PatchField<String> observacoes;
 
   @JsonKey(name: 'data_inatividade')
-  final DateTime? dataInatividade;
+  @PatchFieldDateTimeConverter()
+  final PatchField<DateTime> dataInatividade;
 
   GastoVariadoUpdateDto({
-    this.descricao,
-    this.valor,
-    this.dataPgto,
-    this.categoriaId,
-    this.observacoes,
-    this.dataInatividade,
+    this.descricao = const PatchField.absent(),
+    this.valor = const PatchField.absent(),
+    this.dataPgto = const PatchField.absent(),
+    this.categoriaId = const PatchField.absent(),
+    this.observacoes = const PatchField.absent(),
+    this.dataInatividade = const PatchField.absent(),
   });
 
   factory GastoVariadoUpdateDto.fromJson(Map<String, dynamic> json) =>
       _$GastoVariadoUpdateDtoFromJson(json);
 
-  Map<String, dynamic> toJson() => _$GastoVariadoUpdateDtoToJson(this);
+  Map<String, dynamic> toJson() {
+    final map = <String, dynamic>{};
+    descricao.addToMap(map, 'descricao');
+    valor.addToMap(map, 'valor');
+    dataPgto.addToMap(map, 'data_pgto');
+    categoriaId.addToMap(map, 'categoria_id');
+    observacoes.addToMap(map, 'observacoes');
+    dataInatividade.addToMap(map, 'data_inatividade');
+    return map;
+  }
 }
 
 /// DTO de autenticação (envio do token do Google)

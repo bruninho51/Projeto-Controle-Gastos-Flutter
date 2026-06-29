@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_loading.dart';
 import 'package:orcamentos_app/shared/api_models.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
+import 'package:orcamentos_app/shared/patch_field.dart';
 import 'package:orcamentos_app/utils/formatters.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_snackbar.dart';
 import 'package:orcamentos_app/features/shared/components/confirmation_dialog.dart';
@@ -278,7 +279,7 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
         (v == null || v.trim().isEmpty) ? 'Insira um nome' : null,
       ),
       onConfirm: () =>
-          _update(GastoVariadoUpdateDto(descricao: nomeController.text.trim()), 'Nome atualizado!'),
+          _update(GastoVariadoUpdateDto(descricao: PatchField.value(nomeController.text.trim())), 'Nome atualizado!'),
     );
   }
 
@@ -307,7 +308,7 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
         },
       ),
       onConfirm: () =>
-          _update(GastoVariadoUpdateDto(valor: _toNumeric(_valorController.text)), 'Valor atualizado!'),
+          _update(GastoVariadoUpdateDto(valor: PatchField.value(_toNumeric(_valorController.text))), 'Valor atualizado!'),
     );
   }
 
@@ -344,7 +345,7 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
       ),
       onConfirm: () async {
         final parsed = DateFormat('dd/MM/yyyy').parse(_dataController.text);
-        await _update(GastoVariadoUpdateDto(dataPgto: parsed), 'Data atualizada!');
+        await _update(GastoVariadoUpdateDto(dataPgto: PatchField.value(parsed)), 'Data atualizada!');
       },
     );
   }
@@ -391,7 +392,7 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
         );
       }),
       onConfirm: () =>
-          _update(GastoVariadoUpdateDto(categoriaId: _categoriaIdSelecionada), 'Categoria atualizada!'),
+          _update(GastoVariadoUpdateDto(categoriaId: PatchField.value(_categoriaIdSelecionada!)), 'Categoria atualizada!'),
     );
   }
 
@@ -412,7 +413,7 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
         (v == null || v.isEmpty) ? 'Insira uma observação' : null,
       ),
       onConfirm: () =>
-          _update(GastoVariadoUpdateDto(observacoes: _obsController.text), 'Observação salva!'),
+          _update(GastoVariadoUpdateDto(observacoes: PatchField.value(_obsController.text)), 'Observação salva!'),
     );
   }
 

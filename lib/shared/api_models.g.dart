@@ -83,18 +83,14 @@ Map<String, dynamic> _$CategoriaGastoCreateDtoToJson(
 CategoriaGastoUpdateDto _$CategoriaGastoUpdateDtoFromJson(
         Map<String, dynamic> json) =>
     CategoriaGastoUpdateDto(
-      nome: json['nome'] as String?,
+      nome: json['nome'] == null
+          ? const PatchField.absent()
+          : const PatchFieldStringConverter().fromJson(json['nome']),
       dataInatividade: json['data_inatividade'] == null
-          ? null
-          : DateTime.parse(json['data_inatividade'] as String),
+          ? const PatchField.absent()
+          : const PatchFieldDateTimeConverter()
+              .fromJson(json['data_inatividade']),
     );
-
-Map<String, dynamic> _$CategoriaGastoUpdateDtoToJson(
-        CategoriaGastoUpdateDto instance) =>
-    <String, dynamic>{
-      'nome': instance.nome,
-      'data_inatividade': instance.dataInatividade?.toIso8601String(),
-    };
 
 OrcamentoCreateDto _$OrcamentoCreateDtoFromJson(Map<String, dynamic> json) =>
     OrcamentoCreateDto(
@@ -144,23 +140,21 @@ Map<String, dynamic> _$OrcamentoResponseDtoToJson(
 
 OrcamentoUpdateDto _$OrcamentoUpdateDtoFromJson(Map<String, dynamic> json) =>
     OrcamentoUpdateDto(
-      nome: json['nome'] as String?,
-      valorInicial: json['valor_inicial'] as String?,
+      nome: json['nome'] == null
+          ? const PatchField.absent()
+          : const PatchFieldStringConverter().fromJson(json['nome']),
+      valorInicial: json['valor_inicial'] == null
+          ? const PatchField.absent()
+          : const PatchFieldStringConverter().fromJson(json['valor_inicial']),
       dataEncerramento: json['data_encerramento'] == null
-          ? null
-          : DateTime.parse(json['data_encerramento'] as String),
+          ? const PatchField.absent()
+          : const PatchFieldDateTimeConverter()
+              .fromJson(json['data_encerramento']),
       dataInatividade: json['data_inatividade'] == null
-          ? null
-          : DateTime.parse(json['data_inatividade'] as String),
+          ? const PatchField.absent()
+          : const PatchFieldDateTimeConverter()
+              .fromJson(json['data_inatividade']),
     );
-
-Map<String, dynamic> _$OrcamentoUpdateDtoToJson(OrcamentoUpdateDto instance) =>
-    <String, dynamic>{
-      'nome': instance.nome,
-      'valor_inicial': instance.valorInicial,
-      'data_encerramento': instance.dataEncerramento?.toIso8601String(),
-      'data_inatividade': instance.dataInatividade?.toIso8601String(),
-    };
 
 GastoFixoCreateDto _$GastoFixoCreateDtoFromJson(Map<String, dynamic> json) =>
     GastoFixoCreateDto(
@@ -231,33 +225,32 @@ Map<String, dynamic> _$GastoFixoResponseDtoToJson(
 
 GastoFixoUpdateDto _$GastoFixoUpdateDtoFromJson(Map<String, dynamic> json) =>
     GastoFixoUpdateDto(
-      descricao: json['descricao'] as String?,
-      previsto: json['previsto'] as String?,
-      valor: json['valor'] as String?,
+      descricao: json['descricao'] == null
+          ? const PatchField.absent()
+          : const PatchFieldStringConverter().fromJson(json['descricao']),
+      previsto: json['previsto'] == null
+          ? const PatchField.absent()
+          : const PatchFieldStringConverter().fromJson(json['previsto']),
+      valor: json['valor'] == null
+          ? const PatchField.absent()
+          : const PatchFieldStringConverter().fromJson(json['valor']),
       dataPgto: json['data_pgto'] == null
-          ? null
-          : DateTime.parse(json['data_pgto'] as String),
+          ? const PatchField.absent()
+          : const PatchFieldDateTimeConverter().fromJson(json['data_pgto']),
       dataVenc: json['data_venc'] == null
-          ? null
-          : DateTime.parse(json['data_venc'] as String),
-      categoriaId: (json['categoria_id'] as num?)?.toInt(),
-      observacoes: json['observacoes'] as String?,
+          ? const PatchField.absent()
+          : const PatchFieldDateTimeConverter().fromJson(json['data_venc']),
+      categoriaId: json['categoria_id'] == null
+          ? const PatchField.absent()
+          : const PatchFieldIntConverter().fromJson(json['categoria_id']),
+      observacoes: json['observacoes'] == null
+          ? const PatchField.absent()
+          : const PatchFieldStringConverter().fromJson(json['observacoes']),
       dataInatividade: json['data_inatividade'] == null
-          ? null
-          : DateTime.parse(json['data_inatividade'] as String),
+          ? const PatchField.absent()
+          : const PatchFieldDateTimeConverter()
+              .fromJson(json['data_inatividade']),
     );
-
-Map<String, dynamic> _$GastoFixoUpdateDtoToJson(GastoFixoUpdateDto instance) =>
-    <String, dynamic>{
-      'descricao': instance.descricao,
-      'previsto': instance.previsto,
-      'valor': instance.valor,
-      'data_pgto': instance.dataPgto?.toIso8601String(),
-      'data_venc': instance.dataVenc?.toIso8601String(),
-      'categoria_id': instance.categoriaId,
-      'observacoes': instance.observacoes,
-      'data_inatividade': instance.dataInatividade?.toIso8601String(),
-    };
 
 GastoVariadoCreateDto _$GastoVariadoCreateDtoFromJson(
         Map<String, dynamic> json) =>
@@ -319,28 +312,26 @@ Map<String, dynamic> _$GastoVariadoResponseDtoToJson(
 GastoVariadoUpdateDto _$GastoVariadoUpdateDtoFromJson(
         Map<String, dynamic> json) =>
     GastoVariadoUpdateDto(
-      descricao: json['descricao'] as String?,
-      valor: json['valor'] as String?,
+      descricao: json['descricao'] == null
+          ? const PatchField.absent()
+          : const PatchFieldStringConverter().fromJson(json['descricao']),
+      valor: json['valor'] == null
+          ? const PatchField.absent()
+          : const PatchFieldStringConverter().fromJson(json['valor']),
       dataPgto: json['data_pgto'] == null
-          ? null
-          : DateTime.parse(json['data_pgto'] as String),
-      categoriaId: (json['categoria_id'] as num?)?.toInt(),
-      observacoes: json['observacoes'] as String?,
+          ? const PatchField.absent()
+          : const PatchFieldDateTimeConverter().fromJson(json['data_pgto']),
+      categoriaId: json['categoria_id'] == null
+          ? const PatchField.absent()
+          : const PatchFieldIntConverter().fromJson(json['categoria_id']),
+      observacoes: json['observacoes'] == null
+          ? const PatchField.absent()
+          : const PatchFieldStringConverter().fromJson(json['observacoes']),
       dataInatividade: json['data_inatividade'] == null
-          ? null
-          : DateTime.parse(json['data_inatividade'] as String),
+          ? const PatchField.absent()
+          : const PatchFieldDateTimeConverter()
+              .fromJson(json['data_inatividade']),
     );
-
-Map<String, dynamic> _$GastoVariadoUpdateDtoToJson(
-        GastoVariadoUpdateDto instance) =>
-    <String, dynamic>{
-      'descricao': instance.descricao,
-      'valor': instance.valor,
-      'data_pgto': instance.dataPgto?.toIso8601String(),
-      'categoria_id': instance.categoriaId,
-      'observacoes': instance.observacoes,
-      'data_inatividade': instance.dataInatividade?.toIso8601String(),
-    };
 
 AuthCreateDto _$AuthCreateDtoFromJson(Map<String, dynamic> json) =>
     AuthCreateDto(

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_loading.dart';
 import 'package:orcamentos_app/shared/api_models.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
+import 'package:orcamentos_app/shared/patch_field.dart';
 import 'package:orcamentos_app/utils/formatters.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_snackbar.dart';
 import 'package:orcamentos_app/features/shared/components/confirmation_dialog.dart';
@@ -265,7 +266,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
         decoration: _inputDec('Nome do gasto', Icons.label_outline_rounded),
         validator: (v) => (v == null || v.trim().isEmpty) ? 'Insira um nome' : null,
       ),
-      onConfirm: () => _update(GastoFixoUpdateDto(descricao: ctrl.text.trim()), 'Nome atualizado!'),
+      onConfirm: () => _update(GastoFixoUpdateDto(descricao: PatchField.value(ctrl.text.trim())), 'Nome atualizado!'),
     );
   }
 
@@ -290,7 +291,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
         validator: (v) => (v == null || v.isEmpty) ? 'Insira um valor' : null,
       ),
       onConfirm: () =>
-          _update(GastoFixoUpdateDto(previsto: _toNumeric(_valorCtrl.text)), 'Valor previsto atualizado!'),
+          _update(GastoFixoUpdateDto(previsto: PatchField.value(_toNumeric(_valorCtrl.text))), 'Valor previsto atualizado!'),
     );
   }
 
@@ -315,7 +316,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
         validator: (v) => (v == null || v.isEmpty) ? 'Insira um valor' : null,
       ),
       onConfirm: () =>
-          _update(GastoFixoUpdateDto(valor: _toNumeric(_valorCtrl.text)), 'Valor pago atualizado!'),
+          _update(GastoFixoUpdateDto(valor: PatchField.value(_toNumeric(_valorCtrl.text))), 'Valor pago atualizado!'),
     );
   }
 
@@ -353,7 +354,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
       ),
       onConfirm: () async {
         final parsed = DateFormat('dd/MM/yyyy').parse(_dataCtrl.text);
-        await _update(GastoFixoUpdateDto(dataPgto: parsed), 'Data de pagamento atualizada!');
+        await _update(GastoFixoUpdateDto(dataPgto: PatchField.value(parsed)), 'Data de pagamento atualizada!');
       },
     );
   }
@@ -392,7 +393,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
       ),
       onConfirm: () async {
         final parsed = DateFormat('dd/MM/yyyy').parse(_dataCtrl.text);
-        await _update(GastoFixoUpdateDto(dataVenc: parsed), 'Vencimento atualizado!');
+        await _update(GastoFixoUpdateDto(dataVenc: PatchField.value(parsed)), 'Vencimento atualizado!');
       },
     );
   }
@@ -441,7 +442,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
         );
       }),
       onConfirm: () =>
-          _update(GastoFixoUpdateDto(categoriaId: _categoriaIdSelecionada), 'Categoria atualizada!'),
+          _update(GastoFixoUpdateDto(categoriaId: PatchField.value(_categoriaIdSelecionada!)), 'Categoria atualizada!'),
     );
   }
 
@@ -462,7 +463,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
         (v == null || v.isEmpty) ? 'Insira uma observação' : null,
       ),
       onConfirm: () =>
-          _update(GastoFixoUpdateDto(observacoes: _obsCtrl.text), 'Observação salva!'),
+          _update(GastoFixoUpdateDto(observacoes: PatchField.value(_obsCtrl.text)), 'Observação salva!'),
     );
   }
 
@@ -525,8 +526,8 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
         final parsed = DateFormat('dd/MM/yyyy').parse(_dataCtrl.text);
         await _update(
           GastoFixoUpdateDto(
-            valor: _toNumeric(_valorCtrl.text),
-            dataPgto: parsed,
+            valor: PatchField.value(_toNumeric(_valorCtrl.text)),
+            dataPgto: PatchField.value(parsed),
           ),
           'Pagamento registrado!',
         );
