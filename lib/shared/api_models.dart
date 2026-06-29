@@ -6,53 +6,6 @@ import 'patch_field.dart';
 
 part 'api_models.g.dart';
 
-/// Converte JSON para `PatchField<String>` em DTOs de update.
-///
-/// Usado apenas pelo `fromJson` gerado (raramente chamado nos updates).
-/// Como o `fromJson` recebe o mesmo `null` tanto para "chave ausente" quanto
-/// para "chave presente com null", essa direção não distingue os três
-/// estados — apenas o `toJson` manual de cada DTO faz essa distinção.
-class PatchFieldStringConverter
-    implements JsonConverter<PatchField<String>, Object?> {
-  const PatchFieldStringConverter();
-
-  @override
-  PatchField<String> fromJson(Object? json) =>
-      json == null ? const PatchField.absent() : PatchField.value(json as String);
-
-  @override
-  Object? toJson(PatchField<String> object) => throw UnsupportedError(
-      'toJson de PatchField é implementado manualmente nos DTOs de update.');
-}
-
-/// Variante de [PatchFieldStringConverter] para campos `PatchField<DateTime>`,
-/// já que o JSON representa datas como String ISO 8601.
-class PatchFieldDateTimeConverter
-    implements JsonConverter<PatchField<DateTime>, Object?> {
-  const PatchFieldDateTimeConverter();
-
-  @override
-  PatchField<DateTime> fromJson(Object? json) =>
-      json == null ? const PatchField.absent() : PatchField.value(DateTime.parse(json as String));
-
-  @override
-  Object? toJson(PatchField<DateTime> object) => throw UnsupportedError(
-      'toJson de PatchField é implementado manualmente nos DTOs de update.');
-}
-
-/// Variante de [PatchFieldStringConverter] para campos `PatchField<int>`.
-class PatchFieldIntConverter implements JsonConverter<PatchField<int>, Object?> {
-  const PatchFieldIntConverter();
-
-  @override
-  PatchField<int> fromJson(Object? json) =>
-      json == null ? const PatchField.absent() : PatchField.value((json as num).toInt());
-
-  @override
-  Object? toJson(PatchField<int> object) => throw UnsupportedError(
-      'toJson de PatchField é implementado manualmente nos DTOs de update.');
-}
-
 /// DTO de upsert de token de dispositivo
 @JsonSerializable()
 class TokenDispositivoUpsertDto {
@@ -145,22 +98,14 @@ class CategoriaGastoCreateDto {
 }
 
 /// DTO de atualização de categoria de gasto
-@JsonSerializable(createToJson: false)
 class CategoriaGastoUpdateDto {
-  @PatchFieldStringConverter()
   final PatchField<String> nome;
-
-  @JsonKey(name: 'data_inatividade')
-  @PatchFieldDateTimeConverter()
   final PatchField<DateTime> dataInatividade;
 
   CategoriaGastoUpdateDto({
     this.nome = const PatchField.absent(),
     this.dataInatividade = const PatchField.absent(),
   });
-
-  factory CategoriaGastoUpdateDto.fromJson(Map<String, dynamic> json) =>
-      _$CategoriaGastoUpdateDtoFromJson(json);
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};
@@ -232,21 +177,10 @@ class OrcamentoResponseDto {
 }
 
 /// DTO de atualização de orçamento
-@JsonSerializable(createToJson: false)
 class OrcamentoUpdateDto {
-  @PatchFieldStringConverter()
   final PatchField<String> nome;
-
-  @JsonKey(name: 'valor_inicial')
-  @PatchFieldStringConverter()
   final PatchField<String> valorInicial;
-
-  @JsonKey(name: 'data_encerramento')
-  @PatchFieldDateTimeConverter()
   final PatchField<DateTime> dataEncerramento;
-
-  @JsonKey(name: 'data_inatividade')
-  @PatchFieldDateTimeConverter()
   final PatchField<DateTime> dataInatividade;
 
   OrcamentoUpdateDto({
@@ -255,9 +189,6 @@ class OrcamentoUpdateDto {
     this.dataEncerramento = const PatchField.absent(),
     this.dataInatividade = const PatchField.absent(),
   });
-
-  factory OrcamentoUpdateDto.fromJson(Map<String, dynamic> json) =>
-      _$OrcamentoUpdateDtoFromJson(json);
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};
@@ -357,34 +288,14 @@ class GastoFixoResponseDto {
 }
 
 /// DTO de atualização de gasto fixo
-@JsonSerializable(createToJson: false)
 class GastoFixoUpdateDto {
-  @PatchFieldStringConverter()
   final PatchField<String> descricao;
-
-  @PatchFieldStringConverter()
   final PatchField<String> previsto;
-
-  @PatchFieldStringConverter()
   final PatchField<String> valor;
-
-  @JsonKey(name: 'data_pgto')
-  @PatchFieldDateTimeConverter()
   final PatchField<DateTime> dataPgto;
-
-  @JsonKey(name: 'data_venc')
-  @PatchFieldDateTimeConverter()
   final PatchField<DateTime> dataVenc;
-
-  @JsonKey(name: 'categoria_id')
-  @PatchFieldIntConverter()
   final PatchField<int> categoriaId;
-
-  @PatchFieldStringConverter()
   final PatchField<String> observacoes;
-
-  @JsonKey(name: 'data_inatividade')
-  @PatchFieldDateTimeConverter()
   final PatchField<DateTime> dataInatividade;
 
   GastoFixoUpdateDto({
@@ -397,9 +308,6 @@ class GastoFixoUpdateDto {
     this.observacoes = const PatchField.absent(),
     this.dataInatividade = const PatchField.absent(),
   });
-
-  factory GastoFixoUpdateDto.fromJson(Map<String, dynamic> json) =>
-      _$GastoFixoUpdateDtoFromJson(json);
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};
@@ -494,27 +402,12 @@ class GastoVariadoResponseDto {
 }
 
 /// DTO de atualização de gasto variado
-@JsonSerializable(createToJson: false)
 class GastoVariadoUpdateDto {
-  @PatchFieldStringConverter()
   final PatchField<String> descricao;
-
-  @PatchFieldStringConverter()
   final PatchField<String> valor;
-
-  @JsonKey(name: 'data_pgto')
-  @PatchFieldDateTimeConverter()
   final PatchField<DateTime> dataPgto;
-
-  @JsonKey(name: 'categoria_id')
-  @PatchFieldIntConverter()
   final PatchField<int> categoriaId;
-
-  @PatchFieldStringConverter()
   final PatchField<String> observacoes;
-
-  @JsonKey(name: 'data_inatividade')
-  @PatchFieldDateTimeConverter()
   final PatchField<DateTime> dataInatividade;
 
   GastoVariadoUpdateDto({
@@ -525,9 +418,6 @@ class GastoVariadoUpdateDto {
     this.observacoes = const PatchField.absent(),
     this.dataInatividade = const PatchField.absent(),
   });
-
-  factory GastoVariadoUpdateDto.fromJson(Map<String, dynamic> json) =>
-      _$GastoVariadoUpdateDtoFromJson(json);
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};

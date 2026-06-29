@@ -167,6 +167,36 @@ class _SelecionarGastosPageState extends State<_SelecionarGastosPage> {
     return apiService.getGastosFixos(orcamentoId: widget.orcamentoFonteId);
   }
 
+  DateTime? _ajustarDataVencimento(DateTime? dataVencimento) {
+    if (dataVencimento == null) return null;
+
+    final agora = DateTime.now();
+
+    int ano = dataVencimento.year;
+    int mes = dataVencimento.month;
+
+    if (ano < agora.year || (ano == agora.year && mes < agora.month)) {
+      mes = agora.month;
+      ano = agora.year;
+    } else if (ano == agora.year && mes == agora.month) {
+      mes++;
+
+      if (mes > 12) {
+        mes = 1;
+        ano++;
+      }
+    }
+
+    // último dia do mês alvo
+    final ultimoDiaDoMes = DateTime(ano, mes + 1, 0).day;
+
+    final dia = dataVencimento.day > ultimoDiaDoMes
+        ? ultimoDiaDoMes
+        : dataVencimento.day;
+
+    return DateTime(ano, mes, dia);
+  }
+
   Future<void> _copiar() async {
     if (_selecionados.isEmpty) {
       OrcamentosSnackBar.error(
@@ -181,20 +211,10 @@ class _SelecionarGastosPageState extends State<_SelecionarGastosPage> {
       gastos.where((g) => _selecionados.contains(g.id)).toList();
 
       int erros = 0;
-      final agora = DateTime.now();
 
       for (final g in selecionados) {
         // Transfere data_venc para o mesmo dia no mês atual
-        DateTime? dataVencAtualizada;
-        if (g.dataVenc != null) {
-          try {
-            final original = g.dataVenc!;
-            final atualizada = DateTime(agora.year, agora.month, original.day);
-            dataVencAtualizada = atualizada;
-          } catch (e) {
-            dataVencAtualizada = g.dataVenc!;
-          }
-        }
+        DateTime? dataVencAtualizada = _ajustarDataVencimento(g.dataVenc);
 
         try {
           await apiService.createGastoFixo(
