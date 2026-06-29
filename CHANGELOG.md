@@ -1,3 +1,10 @@
+## [1.18.2](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.18.1...v1.18.2) (2026-06-29)
+
+
+### Bug Fixes
+
+* corrige alteração da data de vencimento nas cópias de gastos fixos com vencimento ([31fd32f](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/31fd32f5fce657e3d906dfa6950347e7dd4fc5bd))
+
 ## [1.18.1](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.18.0...v1.18.1) (2026-06-29)
 
 
