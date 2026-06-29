@@ -1,3 +1,10 @@
+## [1.18.1](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.18.0...v1.18.1) (2026-06-29)
+
+
+### Bug Fixes
+
+* corrige bug ao atualizar dados via api ([f68bc95](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/f68bc95e4b5b1cb828ef3d6e8b1ba58285b6a79c))
+
 # [1.18.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.17.1...v1.18.0) (2026-06-24)
 
 
