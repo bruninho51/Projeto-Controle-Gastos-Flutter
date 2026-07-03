@@ -38,6 +38,7 @@ class NotificacoesFlutterCallReceiver(
                         mapOf(
                             "id" to n.id,
                             "banco" to n.banco,
+                            "nome_app" to n.nomeApp,
                             "descricao_original" to n.descricaoOriginal,
                             "descricao_normalizada" to n.descricaoNormalizada,
                             "valor" to n.valor,

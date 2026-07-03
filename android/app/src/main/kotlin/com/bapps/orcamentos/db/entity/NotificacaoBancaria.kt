@@ -20,6 +20,9 @@ data class NotificacaoBancaria(
 
     val banco: String,
 
+    @ColumnInfo(name = "nome_app")
+    val nomeApp: String? = null,
+
     @ColumnInfo(name = "descricao_original")
     val descricaoOriginal: String,
 

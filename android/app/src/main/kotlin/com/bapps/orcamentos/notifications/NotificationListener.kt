@@ -73,6 +73,7 @@ class NotificationListener : NotificationListenerService() {
 
                 val notificacao = NotificacaoBancaria(
                     banco                = packageName,
+                    nomeApp              = nomeDoApp(packageName),
                     descricaoOriginal    = content,
                     descricaoNormalizada = mapeamento?.descricaoNormalizada,
                     valor                = 0.0,
@@ -103,6 +104,19 @@ class NotificationListener : NotificationListenerService() {
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) = Unit
+
+    // ── Nome do app bancário instalado ───────────────────────────────────────
+
+    private fun nomeDoApp(packageName: String): String? {
+        return try {
+            val pm = applicationContext.packageManager
+            val info = pm.getApplicationInfo(packageName, 0)
+            pm.getApplicationLabel(info).toString()
+        } catch (e: Exception) {
+            Log.w(TAG, "Não foi possível resolver o nome do app para $packageName", e)
+            null
+        }
+    }
 
     // ── Hash para deduplicação ────────────────────────────────────────────────
 

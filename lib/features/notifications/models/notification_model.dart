@@ -1,6 +1,7 @@
 class NotificacaoBancariaModel {
   final int id;
   final String banco;
+  final String? nomeApp;
   final String descricaoOriginal;
   final String? descricaoNormalizada;
   final double valor;
@@ -12,6 +13,7 @@ class NotificacaoBancariaModel {
   NotificacaoBancariaModel({
     required this.id,
     required this.banco,
+    this.nomeApp,
     required this.descricaoOriginal,
     this.descricaoNormalizada,
     required this.valor,
@@ -27,6 +29,7 @@ class NotificacaoBancariaModel {
     return NotificacaoBancariaModel(
       id: (map['id'] as num).toInt(),
       banco: map['banco'] as String? ?? '',
+      nomeApp: map['nome_app'] as String?,
       descricaoOriginal: map['descricao_original'] as String? ?? '',
       descricaoNormalizada: map['descricao_normalizada'] as String?,
       valor: (map['valor'] as num?)?.toDouble() ?? 0.0,
@@ -43,6 +46,9 @@ class NotificacaoBancariaModel {
   bool get vinculado => gastoId != null;
 
   String get nomeBanco {
+    final app = nomeApp;
+    if (app != null && app.isNotEmpty) return app;
+
     switch (banco) {
       case 'com.nu.production':
         return 'Nubank';
