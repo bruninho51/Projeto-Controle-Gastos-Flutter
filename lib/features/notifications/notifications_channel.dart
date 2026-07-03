@@ -4,6 +4,20 @@ import 'package:orcamentos_app/features/notifications/models/notification_model.
 
 class NotificationsChannel {
   static const _channel = MethodChannel('com.bapps.orcamentos/notificacoes');
+  static const _bridgeChannel = MethodChannel('notification_bridge');
+
+  /// Escuta as notificações bancárias capturadas nativamente em tempo real
+  /// e delega o processamento de cada evento para [onEvent].
+  static void listenToBridge(
+    Future<void> Function(Map<dynamic, dynamic> evento) onEvent,
+  ) {
+    _bridgeChannel.setMethodCallHandler((call) async {
+      if (call.method == 'onNotification') {
+        final evento = call.arguments as Map<dynamic, dynamic>;
+        await onEvent(evento);
+      }
+    });
+  }
 
   static Future<List<NotificacaoBancariaModel>> getAll() async {
     final raw = await _channel.invokeMethod<List<Object?>>('getAll');

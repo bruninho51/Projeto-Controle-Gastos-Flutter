@@ -6,6 +6,7 @@ import io.flutter.plugin.common.MethodChannel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 import com.bapps.orcamentos.db.AppDatabase
 import com.bapps.orcamentos.db.mapeamentos.MapeamentoNotificacao
 
@@ -29,12 +30,18 @@ class NotificacoesFlutterCallReceiver(
                 try {
                     val lista = db.notificacaoDao().findAll()
                     val mapList = lista.map { n ->
+                        val titulo = try {
+                            n.payloadBruto?.let { JSONObject(it).optString("title") }
+                        } catch (e: Exception) {
+                            null
+                        }
                         mapOf(
                             "id" to n.id,
                             "banco" to n.banco,
                             "descricao_original" to n.descricaoOriginal,
                             "descricao_normalizada" to n.descricaoNormalizada,
                             "valor" to n.valor,
+                            "titulo_notificacao" to titulo,
                             "data_notificacao" to n.dataNotificacao,
                             "gasto_id" to n.gastoId,
                             "data_criacao" to n.dataCriacao

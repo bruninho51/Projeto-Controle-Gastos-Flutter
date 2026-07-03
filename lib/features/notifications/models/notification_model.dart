@@ -4,6 +4,7 @@ class NotificacaoBancariaModel {
   final String descricaoOriginal;
   final String? descricaoNormalizada;
   final double valor;
+  final String? tituloNotificacao;
   final int dataNotificacao;
   final int? gastoId;
   final int dataCriacao;
@@ -14,10 +15,13 @@ class NotificacaoBancariaModel {
     required this.descricaoOriginal,
     this.descricaoNormalizada,
     required this.valor,
+    this.tituloNotificacao,
     required this.dataNotificacao,
     this.gastoId,
     required this.dataCriacao,
   });
+
+  bool get naoProcessada => valor == 0.0;
 
   factory NotificacaoBancariaModel.fromMap(Map<Object?, Object?> map) {
     return NotificacaoBancariaModel(
@@ -26,6 +30,7 @@ class NotificacaoBancariaModel {
       descricaoOriginal: map['descricao_original'] as String? ?? '',
       descricaoNormalizada: map['descricao_normalizada'] as String?,
       valor: (map['valor'] as num?)?.toDouble() ?? 0.0,
+      tituloNotificacao: map['titulo_notificacao'] as String?,
       dataNotificacao: (map['data_notificacao'] as num?)?.toInt() ?? 0,
       gastoId: (map['gasto_id'] as num?)?.toInt(),
       dataCriacao: (map['data_criacao'] as num?)?.toInt() ?? 0,

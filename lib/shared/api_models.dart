@@ -458,3 +458,65 @@ class AuthResponseDto {
 
   Map<String, dynamic> toJson() => _$AuthResponseDtoToJson(this);
 }
+
+/// DTO de requisição para obter/gerar um padrão de regex de notificação bancária
+@JsonSerializable()
+class PadraoRegexNotificacaoRequestDto {
+  @JsonKey(name: 'instituicao_financeira')
+  final String instituicaoFinanceira;
+
+  @JsonKey(name: 'titulo_notificacao')
+  final String tituloNotificacao;
+
+  @JsonKey(name: 'corpo_notificacao')
+  final String corpoNotificacao;
+
+  PadraoRegexNotificacaoRequestDto({
+    required this.instituicaoFinanceira,
+    required this.tituloNotificacao,
+    required this.corpoNotificacao,
+  });
+
+  factory PadraoRegexNotificacaoRequestDto.fromJson(Map<String, dynamic> json) =>
+      _$PadraoRegexNotificacaoRequestDtoFromJson(json);
+
+  Map<String, dynamic> toJson() => _$PadraoRegexNotificacaoRequestDtoToJson(this);
+}
+
+/// Resposta de um padrão de regex de notificação bancária
+@JsonSerializable()
+class PadraoRegexNotificacaoResponseDto {
+  final int id;
+
+  @JsonKey(name: 'instituicao_financeira')
+  final String instituicaoFinanceira;
+
+  @JsonKey(name: 'titulo_notificacao')
+  final String tituloNotificacao;
+
+  final String regex;
+
+  @JsonKey(name: 'data_criacao')
+  final DateTime dataCriacao;
+
+  @JsonKey(name: 'data_atualizacao')
+  final DateTime dataAtualizacao;
+
+  @JsonKey(name: 'data_expiracao')
+  final DateTime dataExpiracao;
+
+  PadraoRegexNotificacaoResponseDto({
+    required this.id,
+    required this.instituicaoFinanceira,
+    required this.tituloNotificacao,
+    required this.regex,
+    required this.dataCriacao,
+    required this.dataAtualizacao,
+    required this.dataExpiracao,
+  });
+
+  factory PadraoRegexNotificacaoResponseDto.fromJson(Map<String, dynamic> json) =>
+      _$PadraoRegexNotificacaoResponseDtoFromJson(json);
+
+  Map<String, dynamic> toJson() => _$PadraoRegexNotificacaoResponseDtoToJson(this);
+}

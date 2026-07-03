@@ -250,74 +250,78 @@ class _NotificationEditPageState extends State<NotificationEditPage> {
           ),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  _ValorDestaque(
+                    valor: _parsedValor(),
+                    data: dataLocal,
+                    vinculado: n.vinculado,
+                  ),
+                  const SizedBox(height: 20),
+                  _SectionLabel(label: 'Detalhes'),
+                  const SizedBox(height: 10),
                   _SectionCard(
                     children: [
                       _InfoRow(
-                        label: 'Banco',
-                        value: n.nomeBanco,
                         icon: Icons.account_balance_rounded,
                         color: _blue,
+                        label: 'Banco',
+                        value: n.nomeBanco,
+                        isFirst: true,
                       ),
                       const _Divider(),
                       _InfoRow(
-                        label: 'Data',
-                        value: _dateFmt.format(dataLocal),
                         icon: Icons.schedule_rounded,
                         color: Colors.grey[600]!,
+                        label: 'Data',
+                        value: _dateFmt.format(dataLocal),
                       ),
                       const _Divider(),
-                      _ReadOnlyField(
+                      _InfoRow(
+                        icon: Icons.notes_rounded,
+                        color: Colors.grey[500]!,
                         label: 'Descrição original',
                         value: n.descricaoOriginal,
+                        isLast: true,
                       ),
                     ],
                   ),
                   const SizedBox(height: 20),
                   _SectionLabel(label: 'Editar informações'),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   _SectionCard(
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Valor'),
-                            const SizedBox(height: 8),
-                            TextField(
-                              controller: _valorCtrl,
-                              onChanged: (v) {
-                                final formatted = _formatarValor(v);
-                                if (formatted != v) {
-                                  _valorCtrl.value = TextEditingValue(
-                                    text: formatted,
-                                    selection: TextSelection.collapsed(
-                                      offset: formatted.length,
-                                    ),
-                                  );
-                                }
-                              },
-                            ),
-                          ],
-                        ),
+                      _EditableRow(
+                        icon: Icons.attach_money_rounded,
+                        color: _blue,
+                        label: 'Valor',
+                        controller: _valorCtrl,
+                        keyboardType:
+                            const TextInputType.numberWithOptions(decimal: true),
+                        isFirst: true,
+                        onChanged: (v) {
+                          final formatted = _formatarValor(v);
+                          if (formatted != v) {
+                            _valorCtrl.value = TextEditingValue(
+                              text: formatted,
+                              selection: TextSelection.collapsed(
+                                offset: formatted.length,
+                              ),
+                            );
+                          }
+                          setState(() {});
+                        },
                       ),
-                      const SizedBox(height: 16),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Descrição normalizada'),
-                            const SizedBox(height: 8),
-                            TextField(
-                              controller: _descNormalizadaCtrl,
-                            ),
-                          ],
-                        ),
+                      const _Divider(),
+                      _EditableRow(
+                        icon: Icons.label_outline_rounded,
+                        color: _blue,
+                        label: 'Descrição normalizada',
+                        controller: _descNormalizadaCtrl,
+                        isLast: true,
                       ),
                     ],
                   ),
@@ -327,13 +331,27 @@ class _NotificationEditPageState extends State<NotificationEditPage> {
                     child: ElevatedButton.icon(
                       onPressed: _isSaving ? null : _salvar,
                       icon: _isSaving
-                          ? const CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             )
-                          : const Icon(Icons.save_rounded),
+                          : const Icon(Icons.save_rounded, size: 18),
                       label: Text(
                         _isSaving ? 'Salvando…' : 'Salvar alterações',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 14),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _blue,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14)),
                       ),
                     ),
                   ),
@@ -343,13 +361,113 @@ class _NotificationEditPageState extends State<NotificationEditPage> {
                       width: double.infinity,
                       child: OutlinedButton.icon(
                         onPressed: _abrirCadastroComoGasto,
-                        icon: const Icon(Icons.add_shopping_cart_rounded),
-                        label: const Text('Cadastrar como gasto variado'),
+                        icon: const Icon(Icons.add_shopping_cart_rounded,
+                            size: 18),
+                        label: const Text('Cadastrar como gasto variado',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w700, fontSize: 14)),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: _blue,
+                          side: BorderSide(color: _blue.withValues(alpha: 0.4)),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
+                        ),
                       ),
                     ),
                   ],
                 ],
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Destaque do valor
+// ═══════════════════════════════════════════════════════════════════════════════
+class _ValorDestaque extends StatelessWidget {
+  final double valor;
+  final DateTime data;
+  final bool vinculado;
+
+  const _ValorDestaque({
+    required this.valor,
+    required this.data,
+    required this.vinculado,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+    final dataStr =
+        DateFormat("d 'de' MMMM 'de' yyyy 'às' HH:mm", 'pt_BR').format(data);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF283593), Color(0xFF3949AB)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF3949AB).withValues(alpha: 0.35),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Valor da notificação',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.7),
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            fmt.format(valor),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 32,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              vinculado ? 'Vinculada' : 'Não vinculada',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            dataStr,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.65),
+              fontSize: 11,
             ),
           ),
         ],
@@ -637,10 +755,10 @@ class _SectionCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -655,46 +773,54 @@ class _SectionCard extends StatelessWidget {
 }
 
 class _InfoRow extends StatelessWidget {
-  final String label;
-  final String value;
   final IconData icon;
   final Color color;
+  final String label;
+  final String value;
+  final bool isFirst;
+  final bool isLast;
 
   const _InfoRow({
-    required this.label,
-    required this.value,
     required this.icon,
     required this.color,
+    required this.label,
+    required this.value,
+    this.isFirst = false,
+    this.isLast = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+      padding: EdgeInsets.fromLTRB(16, isFirst ? 16 : 12, 16, isLast ? 16 : 12),
       child: Row(
         children: [
           Container(
-            width: 34,
-            height: 34,
+            width: 38,
+            height: 38,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(10),
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(11),
             ),
-            child: Icon(icon, color: color, size: 16),
+            child: Icon(icon, color: color, size: 18),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(label,
                     style: TextStyle(
-                        fontSize: 10,
+                        fontSize: 11,
                         color: Colors.grey[400],
-                        fontWeight: FontWeight.w500)),
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.3)),
+                const SizedBox(height: 2),
                 Text(value,
                     style: const TextStyle(
-                        fontSize: 14, fontWeight: FontWeight.w600)),
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1A1F36))),
               ],
             ),
           ),
@@ -704,41 +830,70 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
-class _ReadOnlyField extends StatelessWidget {
+class _EditableRow extends StatelessWidget {
+  final IconData icon;
+  final Color color;
   final String label;
-  final String value;
+  final TextEditingController controller;
+  final ValueChanged<String>? onChanged;
+  final TextInputType? keyboardType;
+  final bool isFirst;
+  final bool isLast;
 
-  const _ReadOnlyField({required this.label, required this.value});
+  const _EditableRow({
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.controller,
+    this.onChanged,
+    this.keyboardType,
+    this.isFirst = false,
+    this.isLast = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: EdgeInsets.fromLTRB(16, isFirst ? 16 : 12, 16, isLast ? 16 : 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-                fontSize: 10,
-                color: Colors.grey[400],
-                fontWeight: FontWeight.w500),
-          ),
-          const SizedBox(height: 6),
           Container(
-            width: double.infinity,
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            width: 38,
+            height: 38,
             decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(10),
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(11),
             ),
-            child: Text(
-              value,
-              style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[700],
-                  fontWeight: FontWeight.w500),
+            child: Icon(icon, color: color, size: 18),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label,
+                    style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey[400],
+                        fontWeight: FontWeight.w500,
+                        letterSpacing: 0.3)),
+                const SizedBox(height: 2),
+                TextField(
+                  controller: controller,
+                  onChanged: onChanged,
+                  keyboardType: keyboardType,
+                  style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1A1F36)),
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    isCollapsed: true,
+                    border: InputBorder.none,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

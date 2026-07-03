@@ -2,6 +2,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
+import 'package:orcamentos_app/features/notifications/notifications_channel.dart';
+import 'package:orcamentos_app/features/notifications/regex_patterns/repositories/padrao_regex_notificacao_repository.dart';
+import 'package:orcamentos_app/features/notifications/services/notification_processing_service.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
 import 'package:orcamentos_app/shared/auth_service.dart';
 import 'package:orcamentos_app/shared/config/app_config.dart';
@@ -24,6 +27,20 @@ List<SingleChildWidget> globalProviders() {
     ),
     Provider<DeviceRegistrationService>(
       create: (ctx) => DeviceRegistrationService(ctx.read<ApiService>()),
+    ),
+    Provider<PadraoRegexNotificacaoRepository>(
+      create: (ctx) => PadraoRegexNotificacaoRepository(ctx.read<ApiService>()),
+    ),
+    Provider<NotificationProcessingService>(
+      create: (ctx) {
+        final service = NotificationProcessingService(
+          ctx.read<PadraoRegexNotificacaoRepository>(),
+        );
+        NotificationsChannel.listenToBridge(service.processarEvento);
+        service.processarNotificacoesPendentes();
+        return service;
+      },
+      lazy: false,
     ),
     ChangeNotifierProvider<AuthState>(
       create: (ctx) => AuthState(

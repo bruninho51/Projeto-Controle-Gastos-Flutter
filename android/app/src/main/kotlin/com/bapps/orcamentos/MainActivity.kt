@@ -21,6 +21,7 @@ class MainActivity : FlutterActivity() {
             .setMethodCallHandler(monitorHandler)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, NotificacoesFlutterCallReceiver.CHANNEL)
             .setMethodCallHandler(NotificacoesFlutterCallReceiver(this))
+        NotificationBridge.initialize(flutterEngine)
     }
 
     override fun onResume() {

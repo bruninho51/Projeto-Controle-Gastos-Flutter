@@ -269,3 +269,43 @@ Map<String, dynamic> _$AuthResponseDtoToJson(AuthResponseDto instance) =>
     <String, dynamic>{
       'access_token': instance.accessToken,
     };
+
+PadraoRegexNotificacaoRequestDto _$PadraoRegexNotificacaoRequestDtoFromJson(
+        Map<String, dynamic> json) =>
+    PadraoRegexNotificacaoRequestDto(
+      instituicaoFinanceira: json['instituicao_financeira'] as String,
+      tituloNotificacao: json['titulo_notificacao'] as String,
+      corpoNotificacao: json['corpo_notificacao'] as String,
+    );
+
+Map<String, dynamic> _$PadraoRegexNotificacaoRequestDtoToJson(
+        PadraoRegexNotificacaoRequestDto instance) =>
+    <String, dynamic>{
+      'instituicao_financeira': instance.instituicaoFinanceira,
+      'titulo_notificacao': instance.tituloNotificacao,
+      'corpo_notificacao': instance.corpoNotificacao,
+    };
+
+PadraoRegexNotificacaoResponseDto _$PadraoRegexNotificacaoResponseDtoFromJson(
+        Map<String, dynamic> json) =>
+    PadraoRegexNotificacaoResponseDto(
+      id: (json['id'] as num).toInt(),
+      instituicaoFinanceira: json['instituicao_financeira'] as String,
+      tituloNotificacao: json['titulo_notificacao'] as String,
+      regex: json['regex'] as String,
+      dataCriacao: DateTime.parse(json['data_criacao'] as String),
+      dataAtualizacao: DateTime.parse(json['data_atualizacao'] as String),
+      dataExpiracao: DateTime.parse(json['data_expiracao'] as String),
+    );
+
+Map<String, dynamic> _$PadraoRegexNotificacaoResponseDtoToJson(
+        PadraoRegexNotificacaoResponseDto instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'instituicao_financeira': instance.instituicaoFinanceira,
+      'titulo_notificacao': instance.tituloNotificacao,
+      'regex': instance.regex,
+      'data_criacao': instance.dataCriacao.toIso8601String(),
+      'data_atualizacao': instance.dataAtualizacao.toIso8601String(),
+      'data_expiracao': instance.dataExpiracao.toIso8601String(),
+    };

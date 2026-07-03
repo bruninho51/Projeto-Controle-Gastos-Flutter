@@ -63,7 +63,11 @@ class _NotificationsPageState extends State<NotificationsPage>
         ),
       ),
     );
-    if (mounted) setState(() => _future = _fetch());
+    if (mounted) {
+      setState(() {
+        _future = _fetch();
+      });
+    }
   }
 
   void _handleRefresh() async {
@@ -189,7 +193,9 @@ class _NotificationsPageState extends State<NotificationsPage>
                       return RefreshIndicator(
                         color: _blue,
                         onRefresh: () async {
-                          setState(() => _future = _fetch());
+                          setState(() {
+                            _future = _fetch();
+                          });
                           await _future;
                         },
                         child: NotificationsList(

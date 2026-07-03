@@ -370,4 +370,32 @@ class ApiService {
   Future<List<dynamic>> getInvestimentos() async {
     return [];
   }
+
+  // -------------------- Padrões de Notificações Bancárias --------------------
+  Future<PadraoRegexNotificacaoResponseDto> obterOuGerarPadraoRegex(
+      PadraoRegexNotificacaoRequestDto dto) async {
+    return await _request(
+      method: 'POST',
+      path: '/padroes-notificacoes-bancarias',
+      body: dto.toJson(),
+      fromJson: (json) => PadraoRegexNotificacaoResponseDto.fromJson(json),
+    );
+  }
+
+  Future<List<PadraoRegexNotificacaoResponseDto>> getPadroesRegex({
+    String? instituicaoFinanceira,
+    String? tituloNotificacao,
+  }) async {
+    final query = <String, dynamic>{};
+    if (instituicaoFinanceira != null) query['instituicao_financeira'] = instituicaoFinanceira;
+    if (tituloNotificacao != null) query['titulo_notificacao'] = tituloNotificacao;
+
+    return await _request(
+      method: 'GET',
+      path: '/padroes-notificacoes-bancarias',
+      queryParams: query.isNotEmpty ? query : null,
+      fromJson: (json) =>
+          (json as List).map((e) => PadraoRegexNotificacaoResponseDto.fromJson(e)).toList(),
+    );
+  }
 }

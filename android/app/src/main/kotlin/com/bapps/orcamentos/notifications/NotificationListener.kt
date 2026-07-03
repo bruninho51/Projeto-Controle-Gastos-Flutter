@@ -7,7 +7,6 @@ import android.service.notification.StatusBarNotification
 import android.util.Log
 import com.bapps.orcamentos.db.AppDatabase
 import com.bapps.orcamentos.db.notificacoes.NotificacaoBancaria
-import com.bapps.orcamentos.notifications.parser.NotificationParserFactory
 import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 import java.security.MessageDigest
@@ -59,11 +58,9 @@ class NotificationListener : NotificationListenerService() {
 
             Log.d(TAG, "[$packageName] $title - $content")
 
-            val parser    = NotificationParserFactory.getParser(packageName)
-            val parsed    = parser.parse(title, content)
-            val valor     = parsed.valor
-            val descricao = parsed.descricao ?: content
-
+            // A extração de valor/descrição via regex acontece no lado Dart
+            // (NotificationProcessingService), que resolve a regex através do
+            // cache local/API e atualiza este registro pelo canal "update".
             val payload = JSONObject().apply {
                 put("package",   packageName)
                 put("title",     title)
@@ -71,41 +68,37 @@ class NotificationListener : NotificationListenerService() {
                 put("timestamp", postTime)
             }.toString()
 
-            if (valor != null) {
-                runBlocking {
-                    val mapeamento = db.mapeamentoDao().findByDescricao(descricao)
+            runBlocking {
+                val mapeamento = db.mapeamentoDao().findByDescricao(content)
 
-                    val notificacao = NotificacaoBancaria(
-                        banco                = packageName,
-                        descricaoOriginal    = descricao,
-                        descricaoNormalizada = mapeamento?.descricaoNormalizada,
-                        valor                = valor,
-                        payloadBruto         = payload,
-                        dataNotificacao      = postTime,
-                        hashUnico            = buildHash(packageName, descricao, valor, postTime),
-                        dataCriacao          = System.currentTimeMillis(),
-                    )
-
-                    val inserted = db.notificacaoDao().insert(notificacao)
-                    Log.d(TAG, "Salvo no banco: id=$inserted — descricao=$descricao — valor=$valor — normalizada=${mapeamento?.descricaoNormalizada}")
-
-                    if (mapeamento != null) {
-                        db.mapeamentoDao().atualizarUltimoUso(mapeamento.id, System.currentTimeMillis())
-                    }
-                }
-            } else {
-                Log.d(TAG, "Valor não encontrado na notificação, ignorando salvamento")
-            }
-
-            NotificationBridge.sendNotification(
-                mapOf(
-                    "package"   to packageName,
-                    "title"     to title,
-                    "content"   to content,
-                    "timestamp" to postTime,
-                    "valor"     to (valor ?: 0.0),
+                val notificacao = NotificacaoBancaria(
+                    banco                = packageName,
+                    descricaoOriginal    = content,
+                    descricaoNormalizada = mapeamento?.descricaoNormalizada,
+                    valor                = 0.0,
+                    payloadBruto         = payload,
+                    dataNotificacao      = postTime,
+                    hashUnico            = buildHash(packageName, content, postTime),
+                    dataCriacao          = System.currentTimeMillis(),
                 )
-            )
+
+                val inserted = db.notificacaoDao().insert(notificacao)
+                Log.d(TAG, "Salvo no banco (aguardando extração): id=$inserted — descricao=$content")
+
+                if (mapeamento != null) {
+                    db.mapeamentoDao().atualizarUltimoUso(mapeamento.id, System.currentTimeMillis())
+                }
+
+                NotificationBridge.sendNotification(
+                    mapOf(
+                        "id"        to inserted,
+                        "package"   to packageName,
+                        "title"     to title,
+                        "content"   to content,
+                        "timestamp" to postTime,
+                    )
+                )
+            }
         }
     }
 
@@ -116,10 +109,9 @@ class NotificationListener : NotificationListenerService() {
     private fun buildHash(
         banco: String,
         descricao: String,
-        valor: Double,
         timestamp: Long,
     ): String {
-        val raw = "$banco|$descricao|$valor|$timestamp"
+        val raw = "$banco|$descricao|$timestamp"
         return MessageDigest.getInstance("SHA-256")
             .digest(raw.toByteArray())
             .joinToString("") { "%02x".format(it) }
