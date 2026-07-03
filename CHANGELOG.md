@@ -1,3 +1,10 @@
+# [1.19.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.18.2...v1.19.0) (2026-07-03)
+
+
+### Features
+
+* usa gemini para obter dados do gasto através de notificações ([97e9f10](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/97e9f10304db41d9001e29f687fb0f54c2513645))
+
 ## [1.18.2](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.18.1...v1.18.2) (2026-06-29)
 
 
