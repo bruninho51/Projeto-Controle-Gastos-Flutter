@@ -1,3 +1,10 @@
+# [1.20.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.19.0...v1.20.0) (2026-07-05)
+
+
+### Features
+
+* adiciona suporte a Alelo e tela para visualização e sincronização de regex ([4c4a9b3](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/4c4a9b3ad4af57ee15fb0714d9cf7cf8ff238059))
+
 # [1.19.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.18.2...v1.19.0) (2026-07-03)
 
 
