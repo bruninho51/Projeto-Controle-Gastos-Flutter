@@ -33,6 +33,36 @@ class PadraoRegexNotificacaoRepository {
     return _renovarPadrao(local, corpoNotificacao);
   }
 
+  /// Retorna todos os padrões salvos localmente.
+  Future<List<PadraoRegexNotificacao>> getAllLocal() => dao.findAll();
+
+  /// Remove um único padrão do cache local.
+  Future<void> deletePadrao(int id) => dao.deleteById(id);
+
+  /// Remove todos os padrões do cache local.
+  Future<void> limparTudo() => dao.deleteAll();
+
+  /// Baixa todos os padrões da API e substitui o cache local por eles.
+  Future<List<PadraoRegexNotificacao>> sincronizar() async {
+    final remotos = await api.getPadroesRegex();
+
+    final locais = remotos
+        .map((r) => PadraoRegexNotificacao(
+              instituicaoFinanceira: r.instituicaoFinanceira,
+              tituloNotificacao: r.tituloNotificacao,
+              regex: r.regex,
+              dataCriacao: r.dataCriacao,
+              dataAtualizacao: r.dataAtualizacao,
+              dataExpiracao: r.dataExpiracao,
+            ))
+        .toList();
+
+    await dao.deleteAll();
+    await dao.insertAll(locais);
+
+    return dao.findAll();
+  }
+
   Future<String?> _buscarNovoPadrao(
     String instituicaoFinanceira,
     String tituloNotificacao,

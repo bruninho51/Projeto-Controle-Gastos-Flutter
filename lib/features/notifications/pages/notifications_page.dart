@@ -9,6 +9,7 @@ import 'package:orcamentos_app/features/notifications/components/notifications_s
 import 'package:orcamentos_app/features/notifications/models/notification_model.dart';
 import 'package:orcamentos_app/features/notifications/notifications_channel.dart';
 import 'package:orcamentos_app/features/notifications/pages/notification_edit_page.dart';
+import 'package:orcamentos_app/features/notifications/regex_patterns/pages/regex_patterns_page.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
@@ -68,6 +69,13 @@ class _NotificationsPageState extends State<NotificationsPage>
         _future = _fetch();
       });
     }
+  }
+
+  void _abrirPadroesRegex() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const RegexPatternsPage()),
+    );
   }
 
   void _handleRefresh() async {
@@ -145,6 +153,16 @@ class _NotificationsPageState extends State<NotificationsPage>
             showAvatar: true,
             bottomContent: _buildFilterPill(),
             actionButtons: [
+              SharedAppBar.headerButton(
+                onTap: _abrirPadroesRegex,
+                tooltip: 'Padrões regex',
+                isSquare: true,
+                child: const Icon(
+                  Icons.pattern_rounded,
+                  color: Colors.white,
+                  size: 18,
+                ),
+              ),
               SharedAppBar.headerButton(
                 onTap: _handleRefresh,
                 tooltip: 'Recarregar',

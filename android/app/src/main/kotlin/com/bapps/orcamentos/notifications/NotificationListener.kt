@@ -28,7 +28,8 @@ class NotificationListener : NotificationListenerService() {
             "com.itau",
             "one.inter",
             "com.mand.notitest",
-            "br.com.ifood.benefits"
+            "br.com.ifood.benefits",
+            "air.br.com.alelo.mobile.android"
         )
     }
 

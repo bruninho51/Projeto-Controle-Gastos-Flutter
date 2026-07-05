@@ -1,8 +1,18 @@
+import 'package:sqflite/sqflite.dart';
 import 'package:orcamentos_app/features/notifications/regex_patterns/models/padrao_regex_notificacao.dart';
 import 'package:orcamentos_app/shared/database/app_database.dart';
 
 class PadraoRegexNotificacaoDao {
   static const _table = 'padroes_regex_notificacoes';
+
+  Future<List<PadraoRegexNotificacao>> findAll() async {
+    final db = await AppDatabase.getInstance();
+    final rows = await db.query(
+      _table,
+      orderBy: 'instituicao_financeira ASC, titulo_notificacao ASC',
+    );
+    return rows.map(PadraoRegexNotificacao.fromMap).toList();
+  }
 
   Future<PadraoRegexNotificacao?> findByInstituicaoETitulo(
     String instituicaoFinanceira,
@@ -22,6 +32,29 @@ class PadraoRegexNotificacaoDao {
   Future<int> insert(PadraoRegexNotificacao padrao) async {
     final db = await AppDatabase.getInstance();
     return db.insert(_table, padrao.toMap());
+  }
+
+  Future<void> insertAll(List<PadraoRegexNotificacao> padroes) async {
+    final db = await AppDatabase.getInstance();
+    final batch = db.batch();
+    for (final padrao in padroes) {
+      batch.insert(
+        _table,
+        padrao.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+    await batch.commit(noResult: true);
+  }
+
+  Future<void> deleteById(int id) async {
+    final db = await AppDatabase.getInstance();
+    await db.delete(_table, where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> deleteAll() async {
+    final db = await AppDatabase.getInstance();
+    await db.delete(_table);
   }
 
   Future<void> updateRegex({
