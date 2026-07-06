@@ -29,9 +29,17 @@ class PadraoRegexNotificacaoDao {
     return PadraoRegexNotificacao.fromMap(rows.first);
   }
 
+  /// Usa `replace` porque duas notificações da mesma instituição/título podem
+  /// disparar buscas concorrentes de um padrão ainda não cacheado — a segunda
+  /// chamada a terminar não deve falhar por violar o UNIQUE(instituicao,
+  /// titulo), apenas sobrescrever com o resultado mais recente.
   Future<int> insert(PadraoRegexNotificacao padrao) async {
     final db = await AppDatabase.getInstance();
-    return db.insert(_table, padrao.toMap());
+    return db.insert(
+      _table,
+      padrao.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   Future<void> insertAll(List<PadraoRegexNotificacao> padroes) async {

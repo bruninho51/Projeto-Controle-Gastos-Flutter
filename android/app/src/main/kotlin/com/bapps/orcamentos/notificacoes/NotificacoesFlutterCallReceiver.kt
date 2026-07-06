@@ -59,6 +59,8 @@ class NotificacoesFlutterCallReceiver(
                     ?: return result.error("INVALID_ARG", "id obrigatório", null)
                 val valor = (call.argument<Any>("valor") as? Number)?.toDouble()
                     ?: return result.error("INVALID_ARG", "valor obrigatório", null)
+                val descricaoOriginal = call.argument<String>("descricao_original")
+                    ?: return result.error("INVALID_ARG", "descricao_original obrigatória", null)
                 val descricaoNormalizada = call.argument<String>("descricao_normalizada")
                     ?: return result.error("INVALID_ARG", "descricao_normalizada obrigatória", null)
 
@@ -67,6 +69,7 @@ class NotificacoesFlutterCallReceiver(
                         db.notificacaoDao().update(
                             id = id,
                             valor = valor,
+                            descricaoOriginal = descricaoOriginal,
                             descricaoNormalizada = descricaoNormalizada,
                             agora = System.currentTimeMillis()
                         )

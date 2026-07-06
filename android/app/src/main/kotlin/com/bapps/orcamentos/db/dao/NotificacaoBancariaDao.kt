@@ -20,8 +20,21 @@ interface NotificacaoBancariaDao {
     @Query("UPDATE notificacoes_bancarias SET gasto_id = :gastoId, data_atualizacao = :agora WHERE id = :id")
     suspend fun associarGasto(id: Long, gastoId: Long, agora: Long)
 
-    @Query("UPDATE notificacoes_bancarias SET valor = :valor, descricao_normalizada = :descricaoNormalizada, data_atualizacao = :agora WHERE id = :id")
-    suspend fun update(id: Long, valor: Double, descricaoNormalizada: String, agora: Long)
+    @Query("""
+        UPDATE notificacoes_bancarias
+        SET valor = :valor,
+            descricao_original = :descricaoOriginal,
+            descricao_normalizada = :descricaoNormalizada,
+            data_atualizacao = :agora
+        WHERE id = :id
+    """)
+    suspend fun update(
+        id: Long,
+        valor: Double,
+        descricaoOriginal: String,
+        descricaoNormalizada: String,
+        agora: Long
+    )
 
     @Query("UPDATE notificacoes_bancarias SET soft_delete = 1, data_inatividade = :agora WHERE id = :id")
     suspend fun delete(id: Long, agora: Long)

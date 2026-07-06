@@ -122,6 +122,7 @@ class _NotificationEditPageState extends State<NotificationEditPage> {
       await NotificationsChannel.update(
         id: widget.notificacao.id,
         valor: _parsedValor(),
+        descricaoOriginal: widget.notificacao.descricaoOriginal,
         descricaoNormalizada: desc,
       );
 

@@ -62,14 +62,23 @@ class NotificationProcessingService {
       final extraido = _extrair(regex, corpoNotificacao);
       if (extraido == null) {
         debugPrint(
-          'NotificationProcessingService: regex não deu match no corpo da notificação',
+          'NotificationProcessingService: regex "$regex" não deu match no '
+          'corpo "$corpoNotificacao"',
         );
         return;
+      }
+
+      if (extraido.usouFallback) {
+        debugPrint(
+          'NotificationProcessingService: regex "$regex" não retornou grupo '
+          '"estabelecimento" válido — usando corpo bruto como descrição',
+        );
       }
 
       await NotificationsChannel.update(
         id: id,
         valor: extraido.valor,
+        descricaoOriginal: extraido.descricao,
         descricaoNormalizada: extraido.descricao,
       );
     } catch (e) {
@@ -93,11 +102,12 @@ class NotificationProcessingService {
     final valor = _parseValor(valorBruto);
     if (valor == null) return null;
 
+    final semEstabelecimento = descricao == null || descricao.trim().isEmpty;
+
     return _DadosExtraidos(
       valor: valor,
-      descricao: (descricao == null || descricao.trim().isEmpty)
-          ? corpoNotificacao
-          : descricao.trim(),
+      descricao: semEstabelecimento ? corpoNotificacao : descricao.trim(),
+      usouFallback: semEstabelecimento,
     );
   }
 
@@ -111,6 +121,11 @@ class NotificationProcessingService {
 class _DadosExtraidos {
   final double valor;
   final String descricao;
+  final bool usouFallback;
 
-  _DadosExtraidos({required this.valor, required this.descricao});
+  _DadosExtraidos({
+    required this.valor,
+    required this.descricao,
+    required this.usouFallback,
+  });
 }

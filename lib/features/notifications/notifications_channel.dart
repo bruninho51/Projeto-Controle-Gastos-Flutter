@@ -31,11 +31,13 @@ class NotificationsChannel {
   static Future<void> update({
     required int id,
     required double valor,
+    required String descricaoOriginal,
     required String descricaoNormalizada,
   }) async {
     await _channel.invokeMethod('update', {
       'id': id,
       'valor': valor,
+      'descricao_original': descricaoOriginal,
       'descricao_normalizada': descricaoNormalizada,
     });
   }
