@@ -106,6 +106,14 @@ class _GastosAutomaticosPageState extends State<GastosAutomaticosPage>
     }
   }
 
+  Future<void> _openAutostartSettings() async {
+    try {
+      await MonitorChannel.openAutostartSettings();
+    } on PlatformException catch (e) {
+      _showErrorSnack(e.message ?? 'Erro ao abrir configurações de autoinício.');
+    }
+  }
+
   Future<void> _toggleService(bool value) async {
     if (!_allPermissionsGranted) {
       _showPermissionsRequiredDialog();
@@ -154,6 +162,9 @@ class _GastosAutomaticosPageState extends State<GastosAutomaticosPage>
               const SizedBox(height: 12),
               _buildBlockedBanner(),
             ],
+            const SizedBox(height: 20),
+            _buildSectionLabel('Autoinício'),
+            _buildAutostartCard(),
             const SizedBox(height: 20),
             _buildSectionLabel('Segundo plano'),
             _buildServiceCard(),
@@ -297,6 +308,40 @@ class _GastosAutomaticosPageState extends State<GastosAutomaticosPage>
           icon: Icons.open_in_new_rounded,
           color: _mid,
           onTap: () => _requestPermission(MonitorChannel.requestPostNotifications),
+        ),
+      ),
+    ]);
+  }
+
+  // ── Card de autoinício ────────────────────────────────
+
+  Widget _buildAutostartCard() {
+    return _Card(children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+        child: Text(
+          'Alguns celulares possuem uma configuração que impede aplicativos de '
+          'funcionar corretamente em segundo plano. Se essa opção estiver ativada, '
+          'o app pode parar de receber notificações automaticamente, mesmo que todas '
+          'as permissões acima já tenham sido concedidas.',
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey[600],
+            height: 1.5,
+          ),
+        ),
+      ),
+      _PermissionTile(
+        icon: Icons.rocket_launch_outlined,
+        iconColor: _light,
+        title: 'Autoinício',
+        subtitle: 'Impede o sistema de encerrar o app em segundo plano',
+        action: _ActionButton(
+          label: 'Abrir',
+          icon: Icons.open_in_new_rounded,
+          color: _mid,
+          outlined: true,
+          onTap: _openAutostartSettings,
         ),
       ),
     ]);

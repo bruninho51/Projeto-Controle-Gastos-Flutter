@@ -17,6 +17,15 @@ class MonitorChannel {
   static Future<bool> isServiceRunning() async =>
       await _channel.invokeMethod<bool>('isServiceRunning') ?? false;
 
+  // ── Diagnóstico ───────────────────────────────────────
+
+  /// Abre a tela de "autoinício"/"inicialização automática" do fabricante do
+  /// aparelho (Xiaomi, Huawei, Oppo, Vivo, Asus, entre outros). Retorna
+  /// `false` se nenhuma tela conhecida existir nesse aparelho/versão (nesse
+  /// caso as configurações padrão do app já foram abertas como alternativa).
+  static Future<bool> openAutostartSettings() async =>
+      await _channel.invokeMethod<bool>('openAutostartSettings') ?? false;
+
   // ── Permissões ────────────────────────────────────────
 
   static Future<void> requestNotificationListener() async =>

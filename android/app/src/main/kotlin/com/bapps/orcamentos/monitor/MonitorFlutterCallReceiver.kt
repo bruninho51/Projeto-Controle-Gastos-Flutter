@@ -7,6 +7,7 @@ import android.provider.Settings
 import android.util.Log
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import com.bapps.orcamentos.permissions.AutostartSettingsHelper
 import com.bapps.orcamentos.permissions.PermissionChecker
 
 class MonitorFlutterCallReceiver(
@@ -33,6 +34,9 @@ class MonitorFlutterCallReceiver(
 
             "isServiceRunning" ->
                 result.success(MonitorForegroundService.isRunning)
+
+            "openAutostartSettings" ->
+                result.success(AutostartSettingsHelper.open(activity))
 
             // ── Solicitações de permissão ───────────────────────
 
