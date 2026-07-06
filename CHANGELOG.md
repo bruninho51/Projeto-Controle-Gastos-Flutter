@@ -1,3 +1,11 @@
+## [1.20.1](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.20.0...v1.20.1) (2026-07-06)
+
+
+### Bug Fixes
+
+* corrige bug em que o app deixa de receber notificações de outros apps, mesmo estando habilitado ([930a1c9](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/930a1c9ac8685be8ea03c9c02dd31e39250a19e8))
+* corrige bug na identificação de notificações de mesmo estabelecimento ([3bb5a41](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/3bb5a41338467d2cb48d7d88a51049204b569ed8))
+
 # [1.20.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.19.0...v1.20.0) (2026-07-05)
 
 
