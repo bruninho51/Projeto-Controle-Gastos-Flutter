@@ -25,6 +25,7 @@ interface NotificacaoBancariaDao {
         SET valor = :valor,
             descricao_original = :descricaoOriginal,
             descricao_normalizada = :descricaoNormalizada,
+            erro_processamento = 0,
             data_atualizacao = :agora
         WHERE id = :id
     """)
@@ -38,4 +39,7 @@ interface NotificacaoBancariaDao {
 
     @Query("UPDATE notificacoes_bancarias SET soft_delete = 1, data_inatividade = :agora WHERE id = :id")
     suspend fun delete(id: Long, agora: Long)
+
+    @Query("UPDATE notificacoes_bancarias SET erro_processamento = :erro, data_atualizacao = :agora WHERE id = :id")
+    suspend fun marcarErroProcessamento(id: Long, erro: Int, agora: Long)
 }

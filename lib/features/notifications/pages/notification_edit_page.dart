@@ -8,6 +8,7 @@ import 'package:orcamentos_app/features/shared/components/confirmation_dialog.da
 
 import 'package:orcamentos_app/features/notifications/models/notification_model.dart';
 import 'package:orcamentos_app/features/notifications/notifications_channel.dart';
+import 'package:orcamentos_app/features/notifications/services/notification_processing_service.dart';
 import 'package:orcamentos_app/shared/api_models.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
 
@@ -29,6 +30,8 @@ class _NotificationEditPageState extends State<NotificationEditPage> {
   late TextEditingController _valorCtrl;
   late TextEditingController _descNormalizadaCtrl;
   bool _isSaving = false;
+  bool _isRetrying = false;
+  late bool _erroProcessamento;
 
   static const _blue = Color(0xFF3949AB);
   static const _gradientColors = [
@@ -49,6 +52,7 @@ class _NotificationEditPageState extends State<NotificationEditPage> {
     _descNormalizadaCtrl = TextEditingController(
       text: widget.notificacao.descricaoNormalizada ?? '',
     );
+    _erroProcessamento = widget.notificacao.erroProcessamento;
     _carregarDescricaoSalva();
   }
 
@@ -182,6 +186,56 @@ class _NotificationEditPageState extends State<NotificationEditPage> {
     }
   }
 
+  Future<void> _tentarNovamente() async {
+    setState(() => _isRetrying = true);
+
+    try {
+      final service =
+          Provider.of<NotificationProcessingService>(context, listen: false);
+
+      await service.processarEvento({
+        'id': widget.notificacao.id,
+        'package': widget.notificacao.banco,
+        'title': widget.notificacao.tituloNotificacao ?? '',
+        'content': widget.notificacao.descricaoOriginal,
+      });
+
+      final atualizadas = await NotificationsChannel.getAll();
+      NotificacaoBancariaModel? atualizada;
+      for (final n in atualizadas) {
+        if (n.id == widget.notificacao.id) {
+          atualizada = n;
+          break;
+        }
+      }
+
+      if (!mounted) return;
+
+      if (atualizada != null && !atualizada.erroProcessamento) {
+        OrcamentosSnackBar.success(
+          context: context,
+          message: 'Notificação processada com sucesso!',
+        );
+        Navigator.of(context).pop();
+      } else {
+        setState(() => _erroProcessamento = true);
+        OrcamentosSnackBar.error(
+          context: context,
+          message: 'Ainda não foi possível obter o padrão. Tente novamente mais tarde.',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        OrcamentosSnackBar.error(
+          context: context,
+          message: 'Erro ao tentar novamente: $e',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isRetrying = false);
+    }
+  }
+
   void _abrirCadastroComoGasto() {
     showModalBottomSheet(
       context: context,
@@ -261,6 +315,13 @@ class _NotificationEditPageState extends State<NotificationEditPage> {
                     data: dataLocal,
                     vinculado: n.vinculado,
                   ),
+                  if (_erroProcessamento) ...[
+                    const SizedBox(height: 16),
+                    _ErroProcessamentoBanner(
+                      isRetrying: _isRetrying,
+                      onTentarNovamente: _tentarNovamente,
+                    ),
+                  ],
                   const SizedBox(height: 20),
                   _SectionLabel(label: 'Detalhes'),
                   const SizedBox(height: 10),
@@ -378,6 +439,84 @@ class _NotificationEditPageState extends State<NotificationEditPage> {
                     ),
                   ],
                 ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Banner de erro ao obter o padrão regex
+// ═══════════════════════════════════════════════════════════════════════════════
+class _ErroProcessamentoBanner extends StatelessWidget {
+  final bool isRetrying;
+  final VoidCallback onTentarNovamente;
+
+  const _ErroProcessamentoBanner({
+    required this.isRetrying,
+    required this.onTentarNovamente,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const orange = Color(0xFFE65100);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: orange.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: orange.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.error_outline_rounded, color: orange, size: 20),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'Não foi possível identificar o valor desta notificação '
+                  'automaticamente.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: orange,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: isRetrying ? null : onTentarNovamente,
+              icon: isRetrying
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: orange,
+                      ),
+                    )
+                  : const Icon(Icons.refresh_rounded, size: 18),
+              label: Text(
+                isRetrying ? 'Tentando…' : 'Tentar novamente',
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: orange,
+                side: BorderSide(color: orange.withValues(alpha: 0.5)),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ),

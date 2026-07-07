@@ -9,6 +9,7 @@ class NotificacaoBancariaModel {
   final int dataNotificacao;
   final int? gastoId;
   final int dataCriacao;
+  final bool erroProcessamento;
 
   NotificacaoBancariaModel({
     required this.id,
@@ -21,6 +22,7 @@ class NotificacaoBancariaModel {
     required this.dataNotificacao,
     this.gastoId,
     required this.dataCriacao,
+    this.erroProcessamento = false,
   });
 
   bool get naoProcessada => valor == 0.0;
@@ -37,6 +39,7 @@ class NotificacaoBancariaModel {
       dataNotificacao: (map['data_notificacao'] as num?)?.toInt() ?? 0,
       gastoId: (map['gasto_id'] as num?)?.toInt(),
       dataCriacao: (map['data_criacao'] as num?)?.toInt() ?? 0,
+      erroProcessamento: (map['erro_processamento'] as num?)?.toInt() == 1,
     );
   }
 

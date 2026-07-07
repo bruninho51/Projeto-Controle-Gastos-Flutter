@@ -45,7 +45,8 @@ class NotificacoesFlutterCallReceiver(
                             "titulo_notificacao" to titulo,
                             "data_notificacao" to n.dataNotificacao,
                             "gasto_id" to n.gastoId,
-                            "data_criacao" to n.dataCriacao
+                            "data_criacao" to n.dataCriacao,
+                            "erro_processamento" to n.erroProcessamento
                         )
                     }
                     result.success(mapList)
@@ -71,6 +72,26 @@ class NotificacoesFlutterCallReceiver(
                             valor = valor,
                             descricaoOriginal = descricaoOriginal,
                             descricaoNormalizada = descricaoNormalizada,
+                            agora = System.currentTimeMillis()
+                        )
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.error("DB_ERROR", e.message, null)
+                    }
+                }
+            }
+
+            "marcarErroProcessamento" -> {
+                val id = (call.argument<Any>("id") as? Number)?.toLong()
+                    ?: return result.error("INVALID_ARG", "id obrigatório", null)
+                val erro = call.argument<Boolean>("erro")
+                    ?: return result.error("INVALID_ARG", "erro obrigatório", null)
+
+                scope.launch {
+                    try {
+                        db.notificacaoDao().marcarErroProcessamento(
+                            id = id,
+                            erro = if (erro) 1 else 0,
                             agora = System.currentTimeMillis()
                         )
                         result.success(true)

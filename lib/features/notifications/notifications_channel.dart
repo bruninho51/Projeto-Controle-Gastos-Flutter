@@ -64,6 +64,16 @@ class NotificationsChannel {
     });
   }
 
+  static Future<void> marcarErroProcessamento({
+    required int id,
+    required bool erro,
+  }) async {
+    await _channel.invokeMethod('marcarErroProcessamento', {
+      'id': id,
+      'erro': erro,
+    });
+  }
+
   static Future<void> delete(int id) async {
     await _channel.invokeMethod('delete', {'id': id});
   }

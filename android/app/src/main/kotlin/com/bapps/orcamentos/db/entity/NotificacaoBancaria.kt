@@ -54,4 +54,7 @@ data class NotificacaoBancaria(
 
     @ColumnInfo(name = "soft_delete")
     val softDelete: Int = 0,
+
+    @ColumnInfo(name = "erro_processamento", defaultValue = "0")
+    val erroProcessamento: Int = 0,
 )

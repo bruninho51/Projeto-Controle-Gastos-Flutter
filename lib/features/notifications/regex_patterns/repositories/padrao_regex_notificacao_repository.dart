@@ -4,6 +4,26 @@ import 'package:orcamentos_app/features/notifications/regex_patterns/models/padr
 import 'package:orcamentos_app/shared/api_models.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
 
+/// Lançada quando não há regex em cache local para a instituição/título e a
+/// chamada à API para obter um novo padrão falha — ou seja, não há nenhum
+/// fallback possível.
+class RegexIndisponivelException implements Exception {
+  final String instituicaoFinanceira;
+  final String tituloNotificacao;
+  final Object causa;
+
+  RegexIndisponivelException(
+    this.instituicaoFinanceira,
+    this.tituloNotificacao,
+    this.causa,
+  );
+
+  @override
+  String toString() =>
+      'RegexIndisponivelException: falha ao obter padrão para '
+      '$instituicaoFinanceira/$tituloNotificacao — $causa';
+}
+
 /// Centraliza toda a lógica de cache local + renovação via API dos padrões
 /// de regex usados para extrair dados de notificações bancárias.
 class PadraoRegexNotificacaoRepository {
@@ -13,8 +33,10 @@ class PadraoRegexNotificacaoRepository {
   PadraoRegexNotificacaoRepository(this.api, {PadraoRegexNotificacaoDao? dao})
       : dao = dao ?? PadraoRegexNotificacaoDao();
 
-  /// Retorna uma regex válida para a instituição/título informados, ou `null`
-  /// se não houver cache local e a API estiver indisponível.
+  /// Retorna uma regex válida para a instituição/título informados.
+  ///
+  /// Lança [RegexIndisponivelException] se não houver cache local e a
+  /// chamada à API para obter um novo padrão falhar.
   Future<String?> getRegex(
     String instituicaoFinanceira,
     String tituloNotificacao,
@@ -89,7 +111,7 @@ class PadraoRegexNotificacaoRepository {
       return resp.regex;
     } catch (e) {
       debugPrint('PadraoRegexNotificacaoRepository: falha ao obter padrão novo — $e');
-      return null;
+      throw RegexIndisponivelException(instituicaoFinanceira, tituloNotificacao, e);
     }
   }
 

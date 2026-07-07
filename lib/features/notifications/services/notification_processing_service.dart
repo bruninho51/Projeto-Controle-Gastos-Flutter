@@ -45,11 +45,18 @@ class NotificationProcessingService {
 
       if (id == null || instituicaoFinanceira == null) return;
 
-      final regex = await regexRepository.getRegex(
-        instituicaoFinanceira,
-        tituloNotificacao,
-        corpoNotificacao,
-      );
+      String? regex;
+      try {
+        regex = await regexRepository.getRegex(
+          instituicaoFinanceira,
+          tituloNotificacao,
+          corpoNotificacao,
+        );
+      } on RegexIndisponivelException catch (e) {
+        debugPrint('NotificationProcessingService: $e');
+        await NotificationsChannel.marcarErroProcessamento(id: id, erro: true);
+        return;
+      }
 
       if (regex == null) {
         debugPrint(
