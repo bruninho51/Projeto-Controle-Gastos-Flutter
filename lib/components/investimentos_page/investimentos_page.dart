@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:orcamentos_app/components/categorias_investimentos_page/categorias_investimentos_page.dart';
+import 'package:orcamentos_app/features/categories/pages/investment_categories_page.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_snackbar.dart';
 import 'package:orcamentos_app/features/shared/components/shared_appbar.dart';
 import 'package:orcamentos_app/components/form_investimento_page/form_investimento_page.dart';
@@ -92,7 +92,7 @@ class InvestimentosPageState extends State<InvestimentosPage> {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CategoriasDeInvestimentoPage(apiToken: apiToken),
+        builder: (context) => InvestmentCategoriesPage(apiToken: apiToken),
       ),
     );
   }

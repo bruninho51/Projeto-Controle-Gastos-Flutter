@@ -5,16 +5,17 @@ import 'package:orcamentos_app/utils/http.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_snackbar.dart';
 import 'package:orcamentos_app/features/shared/components/confirmation_dialog.dart';
 
-class CategoriasDeInvestimentoPage extends StatefulWidget {
+class InvestmentCategoriesPage extends StatefulWidget {
   final String apiToken;
 
-  const CategoriasDeInvestimentoPage({super.key, required this.apiToken});
+  const InvestmentCategoriesPage({super.key, required this.apiToken});
 
   @override
-  _CategoriasDeInvestimentoPageState createState() => _CategoriasDeInvestimentoPageState();
+  State<InvestmentCategoriesPage> createState() =>
+      _InvestmentCategoriesPageState();
 }
 
-class _CategoriasDeInvestimentoPageState extends State<CategoriasDeInvestimentoPage> {
+class _InvestmentCategoriesPageState extends State<InvestmentCategoriesPage> {
   List<dynamic> _categorias = [];
   bool _isLoading = false;
   final _formKey = GlobalKey<FormState>();
