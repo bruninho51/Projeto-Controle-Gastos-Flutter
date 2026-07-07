@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'dart:convert';
-import 'package:intl/intl.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_loading.dart';
 import 'package:orcamentos_app/features/shared/components/value_input_dialog.dart';
 import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
+import 'package:orcamentos_app/shared/api_models.dart';
+import 'package:orcamentos_app/shared/api_service.dart';
+import 'package:orcamentos_app/shared/patch_field.dart';
 import 'package:orcamentos_app/utils/formatters.dart';
 import 'package:orcamentos_app/components/gastos_fixos_page/gastos_fixos_page.dart';
 import 'package:orcamentos_app/components/gastos_variados_page/gastos_variados_page.dart';
@@ -15,7 +16,6 @@ import 'package:orcamentos_app/features/shared/components/status_badge.dart';
 import 'package:orcamentos_app/features/shared/components/pulse_dot.dart';
 import 'package:orcamentos_app/features/budgets/components/metric_card.dart';
 import 'package:orcamentos_app/features/budgets/components/menu_metric_card.dart';
-import 'package:orcamentos_app/utils/http.dart';
 import 'package:orcamentos_app/utils/graphql.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_snackbar.dart';
 import 'package:provider/provider.dart';
@@ -46,10 +46,9 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
   // Estado extraído do orçamento para o header
   String _nomeOrcamento = '';
   bool _isEncerrado = false;
-  String? _dataCriacao;
-  String? _dataEncerramento;
 
   AuthState get _auth => Provider.of<AuthState>(context, listen: false);
+  ApiService get _api => Provider.of<ApiService>(context, listen: false);
 
   @override
   void initState() {
@@ -67,7 +66,7 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
   void _loadOrcamentoData() {
     setState(() {
       _orcamentoDetalhes = _fetchOrcamentoDetalhes(widget.orcamentoId);
-      _spendingData = _consolidarTotaisPorCategoria(_auth.apiToken!, widget.orcamentoId);
+      _spendingData = _consolidarTotaisPorCategoria(widget.orcamentoId);
     });
   }
 
@@ -97,10 +96,8 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
       variables: {'ids': [orcamentoId]},
     );
     final consolidado = consolidadoResult['consolidadoOrcamentos'] as Map<String, dynamic>;
-    final httpClient = await MyHttpClient.create();
-    final response = await httpClient.get('orcamentos/$orcamentoId', headers: _buildHeaders());
-    if (response.statusCode != 200) throw Exception('Falha ao carregar os detalhes do orçamento');
-    final detalhes = jsonDecode(response.body);
+    final orcamento = await _api.getOrcamentoById(orcamentoId);
+    final detalhes = orcamento.toJson();
     detalhes['gastos_fixos'] = consolidado['quantidadeGastosFixos'].toString();
     detalhes['gastos_variados'] = consolidado['quantidadeGastosVariados'].toString();
     detalhes['gastos_vencidos'] = consolidado['quantidadeGastosFixosVencidos'].toString();
@@ -110,73 +107,59 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
       setState(() {
         _nomeOrcamento = detalhes['nome'] ?? '';
         _isEncerrado = detalhes['data_encerramento'] != null;
-        _dataCriacao = detalhes['data_criacao'];
-        _dataEncerramento = detalhes['data_encerramento'];
       });
     }
     return detalhes;
   }
 
-  Map<String, String> _buildHeaders() => {
-    'Content-Type': 'application/json',
-    'Authorization': 'Bearer ${_auth.apiToken}',
-  };
+  Future<void> _encerrarOrcamento() => _updateOrcamento(
+        OrcamentoUpdateDto(dataEncerramento: PatchField.value(DateTime.now())),
+        'Orçamento encerrado com sucesso!',
+      );
 
-  Future<void> _encerrarOrcamento() =>
-      _updateOrcamento({'data_encerramento': DateTime.now().toIso8601String()}, 'Orçamento encerrado com sucesso!');
+  Future<void> _reativarOrcamento() => _updateOrcamento(
+        OrcamentoUpdateDto(dataEncerramento: PatchField.nullValue()),
+        'Orçamento reativado com sucesso!',
+      );
 
-  Future<void> _reativarOrcamento() =>
-      _updateOrcamento({'data_encerramento': null}, 'Orçamento reativado com sucesso!');
+  Future<void> _renomearOrcamento(String nome) => _updateOrcamento(
+        OrcamentoUpdateDto(nome: PatchField.value(nome)),
+        'Orçamento atualizado com sucesso!',
+      );
 
-  Future<void> _renomearOrcamento(String nome) =>
-      _updateOrcamento({'nome': nome}, 'Orçamento atualizado com sucesso!');
-
-  Future<void> _updateOrcamento(Map<String, dynamic> data, String msg) async {
-    final client = await MyHttpClient.create();
-    final response = await client.patch('orcamentos/${widget.orcamentoId}', headers: _buildHeaders(), body: jsonEncode(data));
+  Future<void> _updateOrcamento(OrcamentoUpdateDto dto, String msg) async {
+    await _api.updateOrcamento(widget.orcamentoId, dto);
     if (!mounted) return;
-    if (response.statusCode == 200) {
-      OrcamentosSnackBar.success(context: context, message: msg);
-      _loadOrcamentoData();
-    } else {
-      throw Exception('Falha ao atualizar o orçamento');
-    }
+    OrcamentosSnackBar.success(context: context, message: msg);
+    _loadOrcamentoData();
   }
 
   Future<void> _deleteOrcamento() async {
-    final client = await MyHttpClient.create();
-    final response = await client.delete('orcamentos/${widget.orcamentoId}', headers: _buildHeaders());
+    await _api.deleteOrcamento(widget.orcamentoId);
     if (!mounted) return;
-    if (response.statusCode == 200) {
-      OrcamentosSnackBar.success(context: context, message: 'Orçamento apagado com sucesso!');
-      Navigator.pop(context, true);
-    } else {
-      throw Exception('Falha ao apagar o orçamento');
-    }
+    OrcamentosSnackBar.success(context: context, message: 'Orçamento apagado com sucesso!');
+    Navigator.pop(context, true);
   }
 
-  Future<List<dynamic>> _fetchGastos(String path) async {
-    final client = await MyHttpClient.create();
-    final response = await client.get(path, headers: _buildHeaders());
-    if (response.statusCode >= 200 && response.statusCode <= 299) return jsonDecode(response.body);
-    return [];
-  }
-
-  Future<Map<String, double>> _consolidarTotaisPorCategoria(String apiToken, int orcamentoId) async {
+  Future<Map<String, double>> _consolidarTotaisPorCategoria(int orcamentoId) async {
     try {
       final results = await Future.wait([
-        _fetchGastos('orcamentos/$orcamentoId/gastos-fixos'),
-        _fetchGastos('orcamentos/$orcamentoId/gastos-variados'),
+        _api.getGastosFixos(orcamentoId: orcamentoId),
+        _api.getGastosVariados(orcamentoId: orcamentoId),
       ]);
+      final gastosFixos = results[0] as List<GastoFixoResponseDto>;
+      final gastosVariados = results[1] as List<GastoVariadoResponseDto>;
+
       final Map<String, double> totais = {};
-      for (final lista in results) {
-        for (final gasto in lista) {
-          if (gasto is Map<String, dynamic>) {
-            final cat = gasto['categoriaGasto']['nome']?.toString() ?? 'Sem Categoria';
-            final val = double.tryParse(gasto['valor']?.toString() ?? '0') ?? 0.0;
-            totais[cat] = (totais[cat] ?? 0.0) + val;
-          }
-        }
+      for (final gasto in gastosFixos) {
+        final cat = gasto.categoriaGasto.nome;
+        final val = double.tryParse(gasto.valor ?? '0') ?? 0.0;
+        totais[cat] = (totais[cat] ?? 0.0) + val;
+      }
+      for (final gasto in gastosVariados) {
+        final cat = gasto.categoriaGasto.nome;
+        final val = double.tryParse(gasto.valor) ?? 0.0;
+        totais[cat] = (totais[cat] ?? 0.0) + val;
       }
       return totais;
     } catch (_) {
@@ -184,9 +167,10 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
     }
   }
 
-  Future<void> _updateValorInicial(double novoValor) async {
-    await _updateOrcamento({'valor_inicial': novoValor.toString()}, 'Valor inicial atualizado!');
-  }
+  Future<void> _updateValorInicial(double novoValor) => _updateOrcamento(
+        OrcamentoUpdateDto(valorInicial: PatchField.value(novoValor.toString())),
+        'Valor inicial atualizado!',
+      );
 
   void _handleValorInicialAction(String actionId, double valorInicial) {
     final action = _valorInicialActions.firstWhere((a) => a.id == actionId);
@@ -379,22 +363,6 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
     child: Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey[500], letterSpacing: 0.4)),
   );
 
-  String _formatDate(String iso) {
-    try {
-      return DateFormat('dd/MM/yyyy').format(DateTime.parse(iso));
-    } catch (_) {
-      return '';
-    }
-  }
-
-  String get _dateLabel {
-    if (_isEncerrado && _dataEncerramento != null) {
-      return 'Encerrado em ${_formatDate(_dataEncerramento!)}';
-    }
-    if (_dataCriacao != null) return 'Criado em ${_formatDate(_dataCriacao!)}';
-    return '';
-  }
-
   void _showOptionsMenu(BuildContext context) {
     final renderBox = _menuButtonKey.currentContext!.findRenderObject() as RenderBox;
     final offset = renderBox.localToGlobal(Offset.zero);
@@ -477,24 +445,9 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
             gradientColors: const [Color(0xFF1A237E), Color(0xFF283593), Color(0xFF3949AB)],
             showBackButton: true,
             onBack: () => Navigator.of(context).pop(),
-            bottomContent: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                StatusBadge(
-                  leading: PulseDot.variant(_isEncerrado ? PulseVariant.negative : PulseVariant.positive),
-                  text: _isEncerrado ? 'Encerrado' : 'Ativo',
-                ),
-                if (_dateLabel.isNotEmpty) ...[
-                  const SizedBox(width: 10),
-                  Flexible(
-                    child: Text(
-                      _dateLabel,
-                      style: TextStyle(color: Colors.white.withValues(alpha: 0.55), fontSize: 9),
-                      overflow: TextOverflow.visible,
-                    ),
-                  ),
-                ],
-              ],
+            bottomContent: StatusBadge(
+              leading: PulseDot.variant(_isEncerrado ? PulseVariant.negative : PulseVariant.positive),
+              text: _isEncerrado ? 'Encerrado' : 'Ativo',
             ),
             actionButtons: [
               SharedAppBar.headerButton(
