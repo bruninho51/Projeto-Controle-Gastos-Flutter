@@ -34,7 +34,7 @@ class _OrcamentoCardActionTileState extends State<OrcamentoCardActionTile> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
         decoration: BoxDecoration(
-          color: _hovered ? widget.color.withOpacity(0.04) : Colors.transparent,
+          color: _hovered ? widget.color.withValues(alpha: 0.04) : Colors.transparent,
           borderRadius: BorderRadius.circular(14),
         ),
         child: Material(
@@ -43,7 +43,7 @@ class _OrcamentoCardActionTileState extends State<OrcamentoCardActionTile> {
           child: InkWell(
             onTap: widget.onTap,
             borderRadius: BorderRadius.circular(14),
-            splashColor: widget.color.withOpacity(0.08),
+            splashColor: widget.color.withValues(alpha: 0.08),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
               child: Column(
@@ -54,7 +54,7 @@ class _OrcamentoCardActionTileState extends State<OrcamentoCardActionTile> {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: widget.color.withOpacity(0.1),
+                      color: widget.color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(widget.icon, color: widget.color, size: 20),

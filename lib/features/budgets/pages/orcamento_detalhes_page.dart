@@ -8,7 +8,7 @@ import 'package:orcamentos_app/utils/formatters.dart';
 import 'package:orcamentos_app/components/gastos_fixos_page/gastos_fixos_page.dart';
 import 'package:orcamentos_app/components/gastos_variados_page/gastos_variados_page.dart';
 import 'package:orcamentos_app/features/categories/components/charts/grafico_gasto_categorias.dart';
-import 'package:orcamentos_app/components/orcamento_detalhes_page/info_state_widget.dart';
+import 'package:orcamentos_app/features/shared/components/info_state_widget.dart';
 import 'package:orcamentos_app/utils/http.dart';
 import 'package:orcamentos_app/utils/graphql.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_snackbar.dart';
@@ -20,7 +20,7 @@ class OrcamentoDetalhesPage extends StatefulWidget {
   const OrcamentoDetalhesPage({super.key, required this.orcamentoId});
 
   @override
-  _OrcamentoDetalhesPageState createState() => _OrcamentoDetalhesPageState();
+  State<OrcamentoDetalhesPage> createState() => _OrcamentoDetalhesPageState();
 }
 
 class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
@@ -215,7 +215,7 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.indigo.withOpacity(0.15),
+                        color: Colors.indigo.withValues(alpha: 0.15),
                         blurRadius: 30,
                         offset: const Offset(0, 10),
                       ),
@@ -231,7 +231,7 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: _getActionColor(actionId).withOpacity(0.1),
+                              color: _getActionColor(actionId).withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Icon(_getActionIcon(actionId), color: _getActionColor(actionId), size: 22),
@@ -516,7 +516,7 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
         backgroundColor: Colors.transparent,
         child: Container(
           padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.indigo.withOpacity(0.15), blurRadius: 30, offset: const Offset(0, 10))]),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: Colors.indigo.withValues(alpha: 0.15), blurRadius: 30, offset: const Offset(0, 10))]),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -580,7 +580,7 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
   Widget _buildEmptyGrafico() {
     return Container(
       padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))]),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))]),
       child: Column(children: [
         Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: Colors.indigo[50], shape: BoxShape.circle), child: Icon(Icons.pie_chart_outline_rounded, size: 40, color: Colors.indigo[300])),
         const SizedBox(height: 16),
@@ -702,7 +702,7 @@ class _ValorInicialCardState extends State<_ValorInicialCard> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: _hovered ? color.withOpacity(0.18) : Colors.black.withOpacity(0.05),
+              color: _hovered ? color.withValues(alpha: 0.18) : Colors.black.withValues(alpha: 0.05),
               blurRadius: _hovered ? 18 : 8,
               offset: const Offset(0, 3),
             ),
@@ -724,7 +724,7 @@ class _ValorInicialCardState extends State<_ValorInicialCard> {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.1),
+                        color: color.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(11),
                       ),
                       child: Icon(Icons.account_balance_rounded, color: color, size: 18),
@@ -794,7 +794,7 @@ class _ValorInicialCardState extends State<_ValorInicialCard> {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(9),
               ),
               child: Icon(icon, color: color, size: 16),
@@ -843,12 +843,12 @@ class _MetricCardState extends State<_MetricCard> {
       onExit: (_) => setState(() => _hovered = false),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: _hovered ? color.withOpacity(0.18) : Colors.black.withOpacity(0.05), blurRadius: _hovered ? 18 : 8, offset: const Offset(0, 3))]),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: _hovered ? color.withValues(alpha: 0.18) : Colors.black.withValues(alpha: 0.05), blurRadius: _hovered ? 18 : 8, offset: const Offset(0, 3))]),
         child: Material(
           color: Colors.transparent, borderRadius: BorderRadius.circular(16),
           child: InkWell(
             onTap: widget.def.onTap, borderRadius: BorderRadius.circular(16),
-            splashColor: color.withOpacity(0.08), highlightColor: color.withOpacity(0.04),
+            splashColor: color.withValues(alpha: 0.08), highlightColor: color.withValues(alpha: 0.04),
             child: Padding(
               padding: const EdgeInsets.all(14),
               child: Column(
@@ -856,7 +856,7 @@ class _MetricCardState extends State<_MetricCard> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    Container(width: 36, height: 36, decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(11)), child: Icon(widget.def.icon, color: color, size: 18)),
+                    Container(width: 36, height: 36, decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(11)), child: Icon(widget.def.icon, color: color, size: 18)),
                     if (hasAction) Icon(Icons.arrow_forward_ios_rounded, size: 11, color: Colors.grey[400]),
                   ]),
                   Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -960,7 +960,7 @@ class _DetalhesHeader extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(children: [
-          Container(width: 32, height: 32, decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(9)), child: Icon(icon, color: color, size: 16)),
+          Container(width: 32, height: 32, decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(9)), child: Icon(icon, color: color, size: 16)),
           const SizedBox(width: 12),
           Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: isDanger ? color : const Color(0xFF1A1F36))),
         ]),
@@ -983,7 +983,7 @@ class _DetalhesHeader extends StatelessWidget {
 
   Widget _fallbackAvatar() => Container(
     width: 36, height: 36,
-    decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
+    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
     child: const Icon(Icons.person_rounded, color: Colors.white, size: 18),
   );
 
@@ -1018,7 +1018,7 @@ class _DetalhesHeader extends StatelessWidget {
               ],
               Container(
                 width: 40, height: 40,
-                decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
                 child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 20),
               ),
               const SizedBox(width: 12),
@@ -1033,7 +1033,7 @@ class _DetalhesHeader extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     Text('Detalhes do orçamento',
-                        style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
+                        style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12)),
                   ],
                 ),
               ),
@@ -1051,7 +1051,7 @@ class _DetalhesHeader extends StatelessWidget {
               // Badge status
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(color: Colors.white.withOpacity(0.13), borderRadius: BorderRadius.circular(20)),
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.13), borderRadius: BorderRadius.circular(20)),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   Container(
                     width: 6, height: 6,
@@ -1072,7 +1072,7 @@ class _DetalhesHeader extends StatelessWidget {
                 Expanded(
                   child: Text(
                     _dateLabel,
-                    style: TextStyle(color: Colors.white.withOpacity(0.55), fontSize: 11),
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.55), fontSize: 11),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -1086,7 +1086,7 @@ class _DetalhesHeader extends StatelessWidget {
                 isSquare: true,
                 child: RotationTransition(
                   turns: refreshCtrl,
-                  child: Icon(Icons.refresh_rounded, color: Colors.white.withOpacity(isRefreshing ? 1.0 : 0.9), size: 18),
+                  child: Icon(Icons.refresh_rounded, color: Colors.white.withValues(alpha: isRefreshing ? 1.0 : 0.9), size: 18),
                 ),
               ),
               const SizedBox(width: 8),
@@ -1133,9 +1133,9 @@ class _HeaderButtonState extends State<_HeaderButton> {
           duration: const Duration(milliseconds: 100),
           padding: EdgeInsets.symmetric(horizontal: widget.isSquare ? 10 : 14, vertical: 8),
           decoration: BoxDecoration(
-            color: _pressed ? Colors.white.withOpacity(0.28) : Colors.white.withOpacity(0.15),
+            color: _pressed ? Colors.white.withValues(alpha: 0.28) : Colors.white.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
           ),
           child: widget.child,
         ),
@@ -1151,7 +1151,7 @@ class _GraficoContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))]),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))]),
       child: ClipRRect(borderRadius: BorderRadius.circular(18), child: child),
     );
   }

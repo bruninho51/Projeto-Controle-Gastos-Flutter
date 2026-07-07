@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_loading.dart';
 import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
 import 'package:orcamentos_app/utils/http.dart';
-import 'package:orcamentos_app/components/orcamento_detalhes_page/info_state_widget.dart';
+import 'package:orcamentos_app/features/shared/components/info_state_widget.dart';
 import 'package:orcamentos_app/components/orcamentos_encerrados_page/orcamento_encerrado_card.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_snackbar.dart';
 import 'package:provider/provider.dart';
 import 'dart:convert';
-import 'package:orcamentos_app/components/orcamento_detalhes_page/orcamento_detalhes_page.dart';
+import 'package:orcamentos_app/features/budgets/pages/orcamento_detalhes_page.dart';
 import 'package:orcamentos_app/utils/formatters.dart';
 
 class OrcamentosEncerradosPage extends StatefulWidget {

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:orcamentos_app/features/shared/components/orcamentos_loading.dart';
-import 'package:orcamentos_app/components/orcamento_detalhes_page/info_state_widget.dart';
+import 'package:orcamentos_app/features/shared/components/info_state_widget.dart';
 import 'package:orcamentos_app/features/dashboard/components/dashboard_card_grid.dart';
 import 'package:orcamentos_app/features/dashboard/components/dashboard_header.dart';
 import 'package:orcamentos_app/features/dashboard/models/dashboard_data.dart';

@@ -153,7 +153,7 @@ class OrcamentosPageState extends State<OrcamentosPage> {
               Text(
                 'Encerrados',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -167,7 +167,7 @@ class OrcamentosPageState extends State<OrcamentosPage> {
           isSquare: true,
           child: Icon(
             Icons.refresh_rounded,
-            color: Colors.white.withOpacity(_isLoading ? 1 : 0.9),
+            color: Colors.white.withValues(alpha: _isLoading ? 1 : 0.9),
             size: 18,
           ),
         ),

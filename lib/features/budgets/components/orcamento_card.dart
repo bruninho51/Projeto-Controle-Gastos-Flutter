@@ -6,7 +6,7 @@ import 'package:orcamentos_app/components/gastos_variados_page/gastos_variados_p
 import 'package:orcamentos_app/shared/api_models.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
 import 'package:orcamentos_app/utils/formatters.dart';
-import '../../../components/orcamento_detalhes_page/orcamento_detalhes_page.dart';
+import '../pages/orcamento_detalhes_page.dart';
 import '../utils/budget_progress.dart';
 import '../utils/card_entrance_animation.dart';
 import 'orcamento_card_action_tile.dart';
@@ -92,7 +92,7 @@ class _OrcamentoCardState extends State<OrcamentoCard>
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -103,8 +103,8 @@ class _OrcamentoCardState extends State<OrcamentoCard>
         borderRadius: BorderRadius.circular(18),
         child: InkWell(
           borderRadius: BorderRadius.circular(18),
-          splashColor: Colors.indigo.withOpacity(0.06),
-          highlightColor: Colors.indigo.withOpacity(0.03),
+          splashColor: Colors.indigo.withValues(alpha: 0.06),
+          highlightColor: Colors.indigo.withValues(alpha: 0.03),
           onTap: () async {
             await Navigator.push(
               context,
@@ -182,7 +182,7 @@ class _OrcamentoCardState extends State<OrcamentoCard>
                   borderRadius: BorderRadius.circular(4),
                   child: LinearProgressIndicator(
                     value: progresso,
-                    backgroundColor: progressColor.withOpacity(0.1),
+                    backgroundColor: progressColor.withValues(alpha: 0.1),
                     valueColor: AlwaysStoppedAnimation<Color>(progressColor),
                     minHeight: 5,
                   ),
@@ -198,7 +198,7 @@ class _OrcamentoCardState extends State<OrcamentoCard>
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF43A047).withOpacity(0.08),
+                        color: const Color(0xFF43A047).withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
@@ -229,7 +229,7 @@ class _OrcamentoCardState extends State<OrcamentoCard>
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),

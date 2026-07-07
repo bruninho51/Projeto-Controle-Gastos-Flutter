@@ -83,7 +83,7 @@ class _FormOrcamentoValorInicialPageState
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.indigo.withOpacity(0.15),
+                  color: Colors.indigo.withValues(alpha: 0.15),
                   blurRadius: 30,
                   offset: const Offset(0, 10),
                 ),
@@ -99,7 +99,7 @@ class _FormOrcamentoValorInicialPageState
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: action.color.withOpacity(0.1),
+                        color: action.color.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(action.icon, color: action.color, size: 22),
@@ -270,7 +270,7 @@ class _FormOrcamentoValorInicialPageState
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: action.color.withOpacity(0.1),
+                color: action.color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(action.icon, color: action.color, size: 24),
@@ -308,7 +308,7 @@ class _FormOrcamentoValorInicialPageState
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: action.color.withOpacity(0.1),
+                color: action.color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(13),
               ),
               child: Icon(action.icon, color: action.color, size: 20),
@@ -386,7 +386,7 @@ class _FormOrcamentoValorInicialPageState
         iconTheme: const IconThemeData(color: Colors.white),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: Colors.indigo[800]!.withOpacity(0.4)),
+          child: Container(height: 1, color: Colors.indigo[800]!.withValues(alpha: 0.4)),
         ),
       ),
       body: Center(
@@ -459,7 +459,7 @@ class _FormOrcamentoValorInicialPageState
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -565,8 +565,8 @@ class _HoverCardState extends State<_HoverCard> {
           boxShadow: [
             BoxShadow(
               color: _hovered
-                  ? Colors.indigo.withOpacity(0.12)
-                  : Colors.black.withOpacity(0.05),
+                  ? Colors.indigo.withValues(alpha: 0.12)
+                  : Colors.black.withValues(alpha: 0.05),
               blurRadius: _hovered ? 20 : 8,
               offset: const Offset(0, 3),
             ),
@@ -578,8 +578,8 @@ class _HoverCardState extends State<_HoverCard> {
           child: InkWell(
             onTap: widget.onTap,
             borderRadius: BorderRadius.circular(18),
-            splashColor: Colors.indigo.withOpacity(0.06),
-            highlightColor: Colors.indigo.withOpacity(0.03),
+            splashColor: Colors.indigo.withValues(alpha: 0.06),
+            highlightColor: Colors.indigo.withValues(alpha: 0.03),
             child: widget.child,
           ),
         ),
