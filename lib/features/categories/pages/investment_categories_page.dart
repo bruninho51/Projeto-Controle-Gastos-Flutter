@@ -53,6 +53,7 @@ class _InvestmentCategoriesPageState extends State<InvestmentCategoriesPage> {
       }
     } catch (e) {
       setState(() => _isLoading = false);
+      if (!mounted) return;
       OrcamentosSnackBar.error(
         context: context,
         message: 'Erro ao carregar categorias',
@@ -68,6 +69,7 @@ class _InvestmentCategoriesPageState extends State<InvestmentCategoriesPage> {
         headers: _buildHeaders(),
       );
 
+      if (!mounted) return;
       if (response.statusCode >= 200 && response.statusCode <= 299) {
         OrcamentosSnackBar.success(
           context: context,
@@ -80,6 +82,7 @@ class _InvestmentCategoriesPageState extends State<InvestmentCategoriesPage> {
         throw Exception('Erro ao apagar categoria');
       }
     } catch (e) {
+      if (!mounted) return;
       OrcamentosSnackBar.error(
         context: context,
         message: 'Erro ao apagar categoria',
@@ -96,6 +99,7 @@ class _InvestmentCategoriesPageState extends State<InvestmentCategoriesPage> {
         body: json.encode({'nome': nomeCategoria}),
       );
 
+      if (!mounted) return;
       if (response.statusCode >= 200 && response.statusCode <= 299) {
         OrcamentosSnackBar.success(
           context: context,
@@ -108,6 +112,7 @@ class _InvestmentCategoriesPageState extends State<InvestmentCategoriesPage> {
         throw Exception('Erro ao criar categoria');
       }
     } catch (e) {
+      if (!mounted) return;
       OrcamentosSnackBar.error(
         context: context,
         message: 'Erro ao criar categoria',

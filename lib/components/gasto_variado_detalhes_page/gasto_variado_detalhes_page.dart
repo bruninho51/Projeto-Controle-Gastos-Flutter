@@ -107,9 +107,11 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
   Future<void> _update(GastoVariadoUpdateDto dto, String msg) async {
     try {
       await _api.updateGastoVariado(widget.orcamentoId, widget.gastoId, dto);
+      if (!mounted) return;
       OrcamentosSnackBar.success(context: context, message: msg);
       await _getGasto();
     } catch (_) {
+      if (!mounted) return;
       OrcamentosSnackBar.error(context: context, message: 'Falha ao atualizar.');
     }
   }
@@ -117,10 +119,12 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
   Future<void> _delete() async {
     try {
       await _api.deleteGastoVariado(widget.orcamentoId, widget.gastoId);
+      if (!mounted) return;
       OrcamentosSnackBar.success(
           context: context, message: 'Gasto apagado com sucesso!');
       Navigator.pop(context, true);
     } catch (_) {
+      if (!mounted) return;
       OrcamentosSnackBar.error(context: context, message: 'Falha ao apagar.');
     }
   }

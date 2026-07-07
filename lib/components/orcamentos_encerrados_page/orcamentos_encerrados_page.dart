@@ -55,6 +55,7 @@ class _OrcamentosEncerradosPageState extends State<OrcamentosEncerradosPage> {
       }
     } catch (e) {
       setState(() => _isLoading = false);
+      if (!mounted) return;
       OrcamentosSnackBar.error(
         context: context,
         message: 'Error: ${e.toString()}',
@@ -75,6 +76,7 @@ class _OrcamentosEncerradosPageState extends State<OrcamentosEncerradosPage> {
       }),
     );
 
+    if (!mounted) return;
     if (response.statusCode == 200) {
       OrcamentosSnackBar.success(
         context: context,

@@ -105,6 +105,7 @@ class _FormularioInvestimentoPageState extends State<FormularioInvestimentoPage>
         }),
       );
 
+      if (!mounted) return;
       if (response.statusCode >= 200 && response.statusCode <= 299) {
         OrcamentosSnackBar.success(
           context: context,
@@ -115,12 +116,13 @@ class _FormularioInvestimentoPageState extends State<FormularioInvestimentoPage>
         throw Exception('Falha ao salvar: ${response.statusCode}');
       }
     } catch (e) {
+      if (!mounted) return;
       OrcamentosSnackBar.error(
         context: context,
         message: 'Erro: ${e.toString()}',
       );
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 

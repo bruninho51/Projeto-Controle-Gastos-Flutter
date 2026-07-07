@@ -53,15 +53,17 @@ class _FormOrcamentoValorInicialPageState
           dataEncerramento: PatchField.nullValue(),
         ),
       );
+      if (!mounted) return;
       OrcamentosSnackBar.success(
         context: context,
         message: 'Valor inicial atualizado com sucesso!',
       );
       Navigator.pop(context, true);
     } catch (e) {
+      if (!mounted) return;
       OrcamentosSnackBar.error(context: context, message: 'Erro: ${e.toString()}');
     } finally {
-      setState(() => _isSubmitting = false);
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 

@@ -114,6 +114,7 @@ class _InvestimentoDetalhesPageState extends State<InvestimentoDetalhesPage> {
       body: jsonEncode(data),
     );
 
+    if (!mounted) return;
     if (response.statusCode == 200) {
       OrcamentosSnackBar.success(
         context: context,
@@ -137,6 +138,7 @@ class _InvestimentoDetalhesPageState extends State<InvestimentoDetalhesPage> {
       headers: _buildHeaders(),
     );
 
+    if (!mounted) return;
     if (response.statusCode == 200) {
       OrcamentosSnackBar.success(
         context: context,
@@ -155,6 +157,7 @@ class _InvestimentoDetalhesPageState extends State<InvestimentoDetalhesPage> {
       headers: _buildHeaders(),
     );
 
+    if (!mounted) return;
     if (response.statusCode == 200) {
       OrcamentosSnackBar.success(
         context: context,
@@ -190,6 +193,7 @@ class _InvestimentoDetalhesPageState extends State<InvestimentoDetalhesPage> {
       }),
     );
 
+    if (!mounted) return;
     if (response.statusCode == 201) {
       OrcamentosSnackBar.success(
         context: context,
@@ -297,11 +301,12 @@ void _showCreateItemLinhaDoTempoDialog() {
               if (formKey.currentState!.validate() && selectedDate != null) {
                 
                 await _createNewItemLinhaDoTempo(
-                  selectedDate!, 
+                  selectedDate!,
                   _converterParaFormatoNumerico(valorController.text)
                 );
                 _carregarDados();
-                
+
+                if (!context.mounted) return;
                 Navigator.of(context).pop();
               }
             },
@@ -331,6 +336,7 @@ void _showCreateItemLinhaDoTempoDialog() {
       });
     } catch (e) {
       setState(() => _isLoading = false);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao carregar dados: ${e.toString()}')),
       );

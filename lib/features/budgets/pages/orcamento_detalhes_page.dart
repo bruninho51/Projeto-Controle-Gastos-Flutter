@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_loading.dart';
+import 'package:orcamentos_app/features/shared/components/value_input_dialog.dart';
 import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
 import 'package:orcamentos_app/utils/formatters.dart';
 import 'package:orcamentos_app/components/gastos_fixos_page/gastos_fixos_page.dart';
@@ -133,6 +134,7 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
   Future<void> _updateOrcamento(Map<String, dynamic> data, String msg) async {
     final client = await MyHttpClient.create();
     final response = await client.patch('orcamentos/${widget.orcamentoId}', headers: _buildHeaders(), body: jsonEncode(data));
+    if (!mounted) return;
     if (response.statusCode == 200) {
       OrcamentosSnackBar.success(context: context, message: msg);
       _loadOrcamentoData();
@@ -144,6 +146,7 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
   Future<void> _deleteOrcamento() async {
     final client = await MyHttpClient.create();
     final response = await client.delete('orcamentos/${widget.orcamentoId}', headers: _buildHeaders());
+    if (!mounted) return;
     if (response.statusCode == 200) {
       OrcamentosSnackBar.success(context: context, message: 'Orçamento apagado com sucesso!');
       Navigator.pop(context, true);
@@ -181,265 +184,29 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
     }
   }
 
-  // ===== NOVOS MÉTODOS PARA O VALOR INICIAL =====
   Future<void> _updateValorInicial(double novoValor) async {
     await _updateOrcamento({'valor_inicial': novoValor.toString()}, 'Valor inicial atualizado!');
   }
 
-  void _showValorInicialDialog(BuildContext context, String actionId, double currentValue, Function(double) onConfirm) {
-    final _valorController = TextEditingController();
-    final _formKey = GlobalKey<FormState>();
-    bool _isSubmitting = false;
-    final formatador = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-
-    String _formatarValor(String value) {
-      final cleaned = value.replaceAll(RegExp(r'[^0-9]'), '');
-      if (cleaned.isNotEmpty) {
-        final parsed = (double.tryParse(cleaned) ?? 0.0) / 100;
-        return formatador.format(parsed);
-      }
-      return '';
-    }
-
-    String _converterParaNumerico(String valorFormatado) {
-      return valorFormatado
-          .replaceAll('R\$', '')
-          .trim()
-          .replaceAll('.', '')
-          .replaceAll(',', '.');
-    }
-
-    showDialog(
-      context: context,
-      builder: (_) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return Dialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              elevation: 0,
-              backgroundColor: Colors.transparent,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.indigo.withValues(alpha: 0.15),
-                        blurRadius: 30,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Header dinâmico baseado na ação
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: _getActionColor(actionId).withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(_getActionIcon(actionId), color: _getActionColor(actionId), size: 22),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              _getActionLabel(actionId),
-                              style: const TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF1A1F36),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _getActionDescription(actionId),
-                        style: TextStyle(fontSize: 13, color: Colors.grey[500]),
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Input
-                      Form(
-                        key: _formKey,
-                        child: TextFormField(
-                          controller: _valorController,
-                          autofocus: true,
-                          keyboardType: TextInputType.numberWithOptions(decimal: true),
-                          style: const TextStyle(fontSize: 15),
-                          onChanged: (value) {
-                            final formatted = _formatarValor(value);
-                            _valorController.value = TextEditingValue(
-                              text: formatted,
-                              selection: TextSelection.collapsed(offset: formatted.length),
-                            );
-                          },
-                          validator: (value) {
-                            if (value == null || value.isEmpty) return 'Insira um valor';
-                            final cleaned = value.replaceAll(RegExp(r'[^0-9]'), '');
-                            if (double.tryParse(cleaned) == null) return 'Valor inválido';
-                            return null;
-                          },
-                          decoration: InputDecoration(
-                            hintText: 'R\$ 0,00',
-                            hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
-                            prefixIcon: Icon(Icons.attach_money_rounded,
-                                color: _getActionColor(actionId), size: 20),
-                            filled: true,
-                            fillColor: Colors.grey[50],
-                            contentPadding:
-                            const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[200]!),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey[200]!),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: _getActionColor(actionId), width: 1.5),
-                            ),
-                            errorBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide:
-                              const BorderSide(color: Colors.redAccent, width: 1),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Botões
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextButton(
-                              style: TextButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 13),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  side: BorderSide(color: Colors.grey[200]!),
-                                ),
-                              ),
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                                _valorController.clear();
-                              },
-                              child: Text('Cancelar',
-                                  style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontWeight: FontWeight.w600)),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: _getActionColor(actionId),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 13),
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12)),
-                              ),
-                              onPressed: _isSubmitting
-                                  ? null
-                                  : () {
-                                if (_formKey.currentState!.validate()) {
-                                  final valorDigitado = double.tryParse(
-                                      _converterParaNumerico(
-                                          _valorController.text)) ??
-                                      0.0;
-                                  double novoValor = currentValue;
-                                  switch (actionId) {
-                                    case 'set':
-                                      novoValor = valorDigitado;
-                                      break;
-                                    case 'add':
-                                      novoValor = currentValue + valorDigitado;
-                                      break;
-                                    case 'sub':
-                                      novoValor = currentValue - valorDigitado;
-                                      break;
-                                  }
-                                  setDialogState(() => _isSubmitting = true);
-                                  // Fecha o diálogo e chama o callback
-                                  Navigator.of(context).pop();
-                                  onConfirm(novoValor);
-                                }
-                              },
-                              child: _isSubmitting
-                                  ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                    color: Colors.white, strokeWidth: 2),
-                              )
-                                  : const Text('Confirmar',
-                                  style: TextStyle(fontWeight: FontWeight.w700)),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        );
+  void _handleValorInicialAction(String actionId, double valorInicial) {
+    final action = _valorInicialActions.firstWhere((a) => a.id == actionId);
+    showValueInputDialog(
+      context,
+      title: action.label,
+      description: action.description,
+      icon: action.icon,
+      color: action.color,
+      onConfirm: (valorDigitado) {
+        final novoValor = switch (actionId) {
+          'set' => valorDigitado,
+          'add' => valorInicial + valorDigitado,
+          'sub' => valorInicial - valorDigitado,
+          _ => valorInicial,
+        };
+        _updateValorInicial(novoValor);
       },
     );
   }
-
-  Color _getActionColor(String actionId) {
-    switch (actionId) {
-      case 'set': return const Color(0xFF3949AB);
-      case 'add': return const Color(0xFF43A047);
-      case 'sub': return const Color(0xFFE53935);
-      default: return Colors.grey;
-    }
-  }
-
-  IconData _getActionIcon(String actionId) {
-    switch (actionId) {
-      case 'set': return Icons.edit_rounded;
-      case 'add': return Icons.add_rounded;
-      case 'sub': return Icons.remove_rounded;
-      default: return Icons.help_outline;
-    }
-  }
-
-  String _getActionLabel(String actionId) {
-    switch (actionId) {
-      case 'set': return 'Novo valor';
-      case 'add': return 'Adicionar';
-      case 'sub': return 'Subtrair';
-      default: return 'Ação';
-    }
-  }
-
-  String _getActionDescription(String actionId) {
-    switch (actionId) {
-      case 'set': return 'Substitui o valor atual';
-      case 'add': return 'Soma ao valor atual';
-      case 'sub': return 'Desconta do valor atual';
-      default: return '';
-    }
-  }
-
-  // ===== FIM DOS NOVOS MÉTODOS =====
 
   Widget _buildDashboardCards(Map<String, dynamic> orcamento) {
     final isEncerrado = orcamento['data_encerramento'] != null;
@@ -473,9 +240,7 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
                     child: MenuMetricCard(
                       def: def,
                       menuActions: _valorInicialActions,
-                      onActionSelected: (actionId) => _showValorInicialDialog(
-                        context, actionId, valorInicial, _updateValorInicial,
-                      ),
+                      onActionSelected: (actionId) => _handleValorInicialAction(actionId, valorInicial),
                     ),
                   ),
                 );
@@ -500,9 +265,7 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
             return MenuMetricCard(
               def: def,
               menuActions: _valorInicialActions,
-              onActionSelected: (actionId) => _showValorInicialDialog(
-                context, actionId, valorInicial, _updateValorInicial,
-              ),
+              onActionSelected: (actionId) => _handleValorInicialAction(actionId, valorInicial),
             );
           } else {
             return MetricCard(def: def);
@@ -569,7 +332,11 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
                 Expanded(child: ElevatedButton(
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo[700], foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 13), elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                   onPressed: () async {
-                    if (nomeController.text.isNotEmpty) { await _renomearOrcamento(nomeController.text); Navigator.of(context).pop(); }
+                    if (nomeController.text.isNotEmpty) {
+                      await _renomearOrcamento(nomeController.text);
+                      if (!context.mounted) return;
+                      Navigator.of(context).pop();
+                    }
                   },
                   child: const Text('Salvar', style: TextStyle(fontWeight: FontWeight.w700)),
                 )),
@@ -651,6 +418,7 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
         if (!_isEncerrado) _menuItem('apagar', Icons.delete_outline_rounded, 'Apagar orçamento', const Color(0xFFE53935), isDanger: true),
       ],
     ).then((value) {
+      if (!context.mounted) return;
       switch (value) {
         case 'rename':
           _showRenameDialog(context);

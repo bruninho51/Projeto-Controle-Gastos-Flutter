@@ -91,9 +91,10 @@ class _CriacaoGastoVariadoPageState extends State<CriacaoGastoVariadoPage> {
       final categorias = await _api.getCategorias();
       setState(() => _categorias = categorias);
     } catch (e) {
+      if (!mounted) return;
       OrcamentosSnackBar.error(context: context, message: 'Erro ao carregar categorias: $e');
     } finally {
-      setState(() => _isLoadingCategories = false);
+      if (mounted) setState(() => _isLoadingCategories = false);
     }
   }
 
@@ -113,12 +114,14 @@ class _CriacaoGastoVariadoPageState extends State<CriacaoGastoVariadoPage> {
           observacoes: _observacoesController.text,
         ),
       );
+      if (!mounted) return;
       OrcamentosSnackBar.success(context: context, message: 'Gasto variado criado com sucesso!');
       Navigator.pop(context, true);
     } catch (e) {
+      if (!mounted) return;
       OrcamentosSnackBar.error(context: context, message: 'Erro: $e');
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 

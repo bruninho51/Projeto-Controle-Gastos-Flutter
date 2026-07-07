@@ -115,9 +115,11 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
   Future<void> _update(GastoFixoUpdateDto dto, String msg) async {
     try {
       await _api.updateGastoFixo(widget.orcamentoId, widget.gastoId, dto);
+      if (!mounted) return;
       OrcamentosSnackBar.success(context: context, message: msg);
       await _getGasto();
     } catch (_) {
+      if (!mounted) return;
       OrcamentosSnackBar.error(context: context, message: 'Falha ao atualizar.');
     }
   }
@@ -125,10 +127,12 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
   Future<void> _delete() async {
     try {
       await _api.deleteGastoFixo(widget.orcamentoId, widget.gastoId);
+      if (!mounted) return;
       OrcamentosSnackBar.success(
           context: context, message: 'Gasto fixo apagado com sucesso!');
       Navigator.pop(context, true);
     } catch (_) {
+      if (!mounted) return;
       OrcamentosSnackBar.error(context: context, message: 'Falha ao apagar.');
     }
   }
