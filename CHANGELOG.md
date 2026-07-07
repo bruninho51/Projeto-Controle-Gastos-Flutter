@@ -1,3 +1,10 @@
+# [1.21.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.20.1...v1.21.0) (2026-07-07)
+
+
+### Features
+
+* quando o app falhar ao identificar um padrão, um botão ficará disponível para tentar novamente ([425b2e3](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/425b2e39a93ad677c9db11973cd7600c45a0396b))
+
 ## [1.20.1](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.20.0...v1.20.1) (2026-07-06)
 
 
