@@ -6,9 +6,9 @@ import 'package:orcamentos_app/components/gastos_variados_page/gastos_variados_p
 import 'package:orcamentos_app/shared/api_models.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
 import 'package:orcamentos_app/utils/formatters.dart';
+import 'package:orcamentos_app/features/shared/utils/card_entrance_animation.dart';
 import '../pages/orcamento_detalhes_page.dart';
 import '../utils/budget_progress.dart';
-import '../utils/card_entrance_animation.dart';
 import 'orcamento_card_action_tile.dart';
 
 class OrcamentoCard extends StatefulWidget {

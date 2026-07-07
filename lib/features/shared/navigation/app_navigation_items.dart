@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
 import 'package:orcamentos_app/features/shared/navigation/navigation_item.dart';
-import 'package:orcamentos_app/components/investimentos_page/investimentos_page.dart';
+import 'package:orcamentos_app/features/investments/pages/investimentos_page.dart';
 import 'package:orcamentos_app/features/notifications/pages/notifications_page.dart';
 import 'package:orcamentos_app/features/budgets/pages/orcamentos_page.dart';
 import 'package:orcamentos_app/features/profile/pages/perfil_page.dart';
