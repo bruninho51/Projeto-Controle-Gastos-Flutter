@@ -9,6 +9,11 @@ import 'package:orcamentos_app/components/gastos_fixos_page/gastos_fixos_page.da
 import 'package:orcamentos_app/components/gastos_variados_page/gastos_variados_page.dart';
 import 'package:orcamentos_app/features/categories/components/charts/grafico_gasto_categorias.dart';
 import 'package:orcamentos_app/features/shared/components/info_state_widget.dart';
+import 'package:orcamentos_app/features/shared/components/shared_appbar.dart';
+import 'package:orcamentos_app/features/shared/components/status_badge.dart';
+import 'package:orcamentos_app/features/shared/components/pulse_dot.dart';
+import 'package:orcamentos_app/features/budgets/components/metric_card.dart';
+import 'package:orcamentos_app/features/budgets/components/menu_metric_card.dart';
 import 'package:orcamentos_app/utils/http.dart';
 import 'package:orcamentos_app/utils/graphql.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_snackbar.dart';
@@ -29,6 +34,13 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
   late Future<Map<String, double>> _spendingData;
   late AnimationController _refreshCtrl;
   bool _isRefreshing = false;
+  final _menuButtonKey = GlobalKey();
+
+  static const _valorInicialActions = [
+    MetricCardAction(id: 'set', label: 'Novo valor', description: 'Substitui o valor atual', icon: Icons.edit_rounded, color: Color(0xFF3949AB)),
+    MetricCardAction(id: 'add', label: 'Adicionar', description: 'Soma ao valor atual', icon: Icons.add_rounded, color: Color(0xFF43A047)),
+    MetricCardAction(id: 'sub', label: 'Subtrair', description: 'Desconta do valor atual', icon: Icons.remove_rounded, color: Color(0xFFE53935)),
+  ];
 
   // Estado extraído do orçamento para o header
   String _nomeOrcamento = '';
@@ -437,12 +449,12 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
     final gastosVencidos = int.parse(orcamento['gastos_vencidos']);
 
     final cardDefs = [
-      _MetricCardDef(title: 'Valor Inicial', value: formatarValorDouble(valorInicial), color: const Color(0xFF3949AB), icon: Icons.account_balance_rounded),
-      _MetricCardDef(title: 'Valor Atual', value: formatarValorDouble(valorAtual), color: const Color(0xFF00897B), icon: Icons.bar_chart_rounded),
-      _MetricCardDef(title: 'Valor Livre', value: formatarValorDouble(valorLivre), color: const Color(0xFF43A047), icon: Icons.account_balance_wallet_rounded),
-      _MetricCardDef(title: 'Gastos Fixos', value: '${orcamento['gastos_fixos']} itens', color: const Color(0xFF1E88E5), icon: Icons.receipt_long_rounded, onTap: _navigateToGastosFixos),
-      _MetricCardDef(title: 'Gastos Variados', value: '${orcamento['gastos_variados']} itens', color: const Color(0xFF5E35B1), icon: Icons.trending_up_rounded, onTap: _navigateToGastosVariados),
-      _MetricCardDef(title: 'Vencidos', value: '$gastosVencidos itens', color: gastosVencidos > 0 ? const Color(0xFFE53935) : const Color(0xFF43A047), icon: gastosVencidos > 0 ? Icons.warning_amber_rounded : Icons.check_circle_outline_rounded),
+      MetricCardDef(title: 'Valor Inicial', value: formatarValorDouble(valorInicial), color: const Color(0xFF3949AB), icon: Icons.account_balance_rounded),
+      MetricCardDef(title: 'Valor Atual', value: formatarValorDouble(valorAtual), color: const Color(0xFF00897B), icon: Icons.bar_chart_rounded),
+      MetricCardDef(title: 'Valor Livre', value: formatarValorDouble(valorLivre), color: const Color(0xFF43A047), icon: Icons.account_balance_wallet_rounded),
+      MetricCardDef(title: 'Gastos Fixos', value: '${orcamento['gastos_fixos']} itens', color: const Color(0xFF1E88E5), icon: Icons.receipt_long_rounded, onTap: _navigateToGastosFixos),
+      MetricCardDef(title: 'Gastos Variados', value: '${orcamento['gastos_variados']} itens', color: const Color(0xFF5E35B1), icon: Icons.trending_up_rounded, onTap: _navigateToGastosVariados),
+      MetricCardDef(title: 'Vencidos', value: '$gastosVencidos itens', color: gastosVencidos > 0 ? const Color(0xFFE53935) : const Color(0xFF43A047), icon: gastosVencidos > 0 ? Icons.warning_amber_rounded : Icons.check_circle_outline_rounded),
     ];
 
     return LayoutBuilder(builder: (context, constraints) {
@@ -453,15 +465,17 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
           child: Row(
             children: cardDefs.asMap().entries.map((e) {
               final def = e.value;
-              // Para o card "Valor Inicial", usamos o widget customizado
+              // Para o card "Valor Inicial", usamos o widget com menu de ações
               if (def.title == 'Valor Inicial' && !isEncerrado) {
                 return Expanded(
                   child: Padding(
                     padding: EdgeInsets.only(left: e.key == 0 ? 0 : 10),
-                    child: _ValorInicialCard(
-                      valorInicial: valorInicial,
-                      onUpdate: _updateValorInicial,
-                      isEnabled: !isEncerrado,
+                    child: MenuMetricCard(
+                      def: def,
+                      menuActions: _valorInicialActions,
+                      onActionSelected: (actionId) => _showValorInicialDialog(
+                        context, actionId, valorInicial, _updateValorInicial,
+                      ),
                     ),
                   ),
                 );
@@ -469,7 +483,7 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
                 return Expanded(
                   child: Padding(
                     padding: EdgeInsets.only(left: e.key == 0 ? 0 : 10),
-                    child: _MetricCard(def: def),
+                    child: MetricCard(def: def),
                   ),
                 );
               }
@@ -483,13 +497,15 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
         crossAxisCount: 2, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 1.35,
         children: cardDefs.map((def) {
           if (def.title == 'Valor Inicial' && !isEncerrado) {
-            return _ValorInicialCard(
-              valorInicial: valorInicial,
-              onUpdate: _updateValorInicial,
-              isEnabled: !isEncerrado,
+            return MenuMetricCard(
+              def: def,
+              menuActions: _valorInicialActions,
+              onActionSelected: (actionId) => _showValorInicialDialog(
+                context, actionId, valorInicial, _updateValorInicial,
+              ),
             );
           } else {
-            return _MetricCard(def: def);
+            return MetricCard(def: def);
           }
         }).toList(),
       );
@@ -596,39 +612,139 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
     child: Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey[500], letterSpacing: 0.4)),
   );
 
+  String _formatDate(String iso) {
+    try {
+      return DateFormat('dd/MM/yyyy').format(DateTime.parse(iso));
+    } catch (_) {
+      return '';
+    }
+  }
+
+  String get _dateLabel {
+    if (_isEncerrado && _dataEncerramento != null) {
+      return 'Encerrado em ${_formatDate(_dataEncerramento!)}';
+    }
+    if (_dataCriacao != null) return 'Criado em ${_formatDate(_dataCriacao!)}';
+    return '';
+  }
+
+  void _showOptionsMenu(BuildContext context) {
+    final renderBox = _menuButtonKey.currentContext!.findRenderObject() as RenderBox;
+    final offset = renderBox.localToGlobal(Offset.zero);
+    final size = renderBox.size;
+
+    showMenu<String>(
+      context: context,
+      color: Colors.white,
+      elevation: 16,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      position: RelativeRect.fromLTRB(
+        offset.dx - 180,
+        offset.dy + size.height + 6,
+        offset.dx + size.width,
+        offset.dy + size.height + 300,
+      ),
+      items: [
+        if (!_isEncerrado) _menuItem('rename', Icons.edit_outlined, 'Renomear', Colors.indigo[700]!),
+        if (!_isEncerrado) _menuItem('encerrar', Icons.lock_outline_rounded, 'Encerrar orçamento', const Color(0xFF546E7A)),
+        if (_isEncerrado) _menuItem('reativar', Icons.lock_open_rounded, 'Reativar orçamento', const Color(0xFF43A047)),
+        if (!_isEncerrado) _menuItem('apagar', Icons.delete_outline_rounded, 'Apagar orçamento', const Color(0xFFE53935), isDanger: true),
+      ],
+    ).then((value) {
+      switch (value) {
+        case 'rename':
+          _showRenameDialog(context);
+          break;
+        case 'encerrar':
+          ConfirmationDialog.confirmAction(
+            context: context, title: 'Confirmar Encerramento',
+            message: 'Deseja encerrar este orçamento?', actionText: 'Encerrar',
+            action: () async { await _encerrarOrcamento(); setState(() {}); },
+          );
+          break;
+        case 'reativar':
+          ConfirmationDialog.confirmAction(
+            context: context, title: 'Confirmar Reativação',
+            message: 'Deseja reativar este orçamento?', actionText: 'Reativar',
+            action: () async { await _reativarOrcamento(); setState(() {}); },
+          );
+          break;
+        case 'apagar':
+          ConfirmationDialog.confirmAction(
+            context: context, title: 'Confirmar Exclusão',
+            message: 'Deseja apagar este orçamento?', actionText: 'Apagar',
+            action: () async { await _deleteOrcamento(); setState(() {}); },
+          );
+          break;
+      }
+    });
+  }
+
+  PopupMenuItem<String> _menuItem(String value, IconData icon, String label, Color color, {bool isDanger = false}) {
+    return PopupMenuItem<String>(
+      value: value,
+      padding: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Row(children: [
+          Container(width: 32, height: 32, decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(9)), child: Icon(icon, color: color, size: 16)),
+          const SizedBox(width: 12),
+          Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: isDanger ? color : const Color(0xFF1A1F36))),
+        ]),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F5F9),
       body: Column(
         children: [
-          // ── Header com tudo integrado ─────────────────────────────────────
-          _DetalhesHeader(
-            nome: _nomeOrcamento.isEmpty ? 'Detalhes' : _nomeOrcamento,
-            isEncerrado: _isEncerrado,
-            dataCriacao: _dataCriacao,
-            dataEncerramento: _dataEncerramento,
-            isRefreshing: _isRefreshing,
-            refreshCtrl: _refreshCtrl,
-            onRefresh: _handleRefresh,
+          // ── Header ────────────────────────────────────────────────────────
+          SharedAppBar(
+            title: _nomeOrcamento.isEmpty ? 'Detalhes' : _nomeOrcamento,
+            subtitle: 'Detalhes do orçamento',
+            mainIcon: Icons.account_balance_wallet_rounded,
+            gradientColors: const [Color(0xFF1A237E), Color(0xFF283593), Color(0xFF3949AB)],
+            showBackButton: true,
             onBack: () => Navigator.of(context).pop(),
-            auth: _auth,
-            onRenomear: _isEncerrado ? null : () => _showRenameDialog(context),
-            onEncerrar: _isEncerrado ? null : () => ConfirmationDialog.confirmAction(
-              context: context, title: 'Confirmar Encerramento',
-              message: 'Deseja encerrar este orçamento?', actionText: 'Encerrar',
-              action: () async { await _encerrarOrcamento(); setState(() {}); },
+            bottomContent: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                StatusBadge(
+                  leading: PulseDot.variant(_isEncerrado ? PulseVariant.negative : PulseVariant.positive),
+                  text: _isEncerrado ? 'Encerrado' : 'Ativo',
+                ),
+                if (_dateLabel.isNotEmpty) ...[
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Text(
+                      _dateLabel,
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.55), fontSize: 9),
+                      overflow: TextOverflow.visible,
+                    ),
+                  ),
+                ],
+              ],
             ),
-            onApagar: _isEncerrado ? null : () => ConfirmationDialog.confirmAction(
-              context: context, title: 'Confirmar Exclusão',
-              message: 'Deseja apagar este orçamento?', actionText: 'Apagar',
-              action: () async { await _deleteOrcamento(); setState(() {}); },
-            ),
-            onReativar: _isEncerrado ? () => ConfirmationDialog.confirmAction(
-              context: context, title: 'Confirmar Reativação',
-              message: 'Deseja reativar este orçamento?', actionText: 'Reativar',
-              action: () async { await _reativarOrcamento(); setState(() {}); },
-            ) : null,
+            actionButtons: [
+              SharedAppBar.headerButton(
+                onTap: _handleRefresh,
+                tooltip: 'Recarregar',
+                isSquare: true,
+                child: RotationTransition(
+                  turns: _refreshCtrl,
+                  child: Icon(Icons.refresh_rounded, color: Colors.white.withValues(alpha: _isRefreshing ? 1.0 : 0.9), size: 18),
+                ),
+              ),
+              SharedAppBar.headerButton(
+                onTap: () => _showOptionsMenu(context),
+                tooltip: 'Opções',
+                isSquare: true,
+                child: Icon(Icons.more_vert_rounded, key: _menuButtonKey, color: Colors.white, size: 18),
+              ),
+            ],
           ),
 
           // ── Corpo ─────────────────────────────────────────────────────────
@@ -665,480 +781,6 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ===== NOVO WIDGET PARA O CARD DE VALOR INICIAL =====
-class _ValorInicialCard extends StatefulWidget {
-  final double valorInicial;
-  final Function(double) onUpdate;
-  final bool isEnabled;
-
-  const _ValorInicialCard({
-    required this.valorInicial,
-    required this.onUpdate,
-    required this.isEnabled,
-  });
-
-  @override
-  State<_ValorInicialCard> createState() => _ValorInicialCardState();
-}
-
-class _ValorInicialCardState extends State<_ValorInicialCard> {
-  bool _hovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = const Color(0xFF3949AB); // mesma cor do card original
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: _hovered ? color.withValues(alpha: 0.18) : Colors.black.withValues(alpha: 0.05),
-              blurRadius: _hovered ? 18 : 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(11),
-                      ),
-                      child: Icon(Icons.account_balance_rounded, color: color, size: 18),
-                    ),
-                    // Botão de três pontinhos
-                    if (widget.isEnabled)
-                      PopupMenuButton<String>(
-                        icon: Icon(Icons.more_vert_rounded, color: Colors.grey[400], size: 18),
-                        offset: const Offset(0, 30),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        color: Colors.white,
-                        elevation: 8,
-                        onSelected: (actionId) {
-                          final pageState = context.findAncestorStateOfType<_OrcamentoDetalhesPageState>();
-                          if (pageState != null) {
-                            pageState._showValorInicialDialog(
-                              context,
-                              actionId,
-                              widget.valorInicial,
-                                  (novoValor) => widget.onUpdate(novoValor),
-                            );
-                          }
-                        },
-                        itemBuilder: (context) => [
-                          _menuItem('set', 'Novo valor', Icons.edit_outlined, const Color(0xFF3949AB)),
-                          _menuItem('add', 'Adicionar', Icons.add_rounded, const Color(0xFF43A047)),
-                          _menuItem('sub', 'Subtrair', Icons.remove_rounded, const Color(0xFFE53935)),
-                        ],
-                      ),
-                  ],
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      formatarValorDouble(widget.valorInicial),
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF1A1F36), letterSpacing: -0.3),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Valor Inicial',
-                      style: TextStyle(fontSize: 11, color: Colors.grey[500], fontWeight: FontWeight.w500),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  PopupMenuItem<String> _menuItem(String value, String label, IconData icon, Color color) {
-    return PopupMenuItem<String>(
-      value: value,
-      padding: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(9),
-              ),
-              child: Icon(icon, color: color, size: 16),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              label,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF1A1F36)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ===== FIM DO NOVO WIDGET =====
-
-// ===== RESTANTE DOS WIDGETS AUXILIARES (PERMANECEM IGUAIS) =====
-class _MetricCardDef {
-  final String title;
-  final String value;
-  final Color color;
-  final IconData icon;
-  final VoidCallback? onTap;
-  const _MetricCardDef({required this.title, required this.value, required this.color, required this.icon, this.onTap});
-}
-
-class _MetricCard extends StatefulWidget {
-  final _MetricCardDef def;
-  const _MetricCard({required this.def});
-
-  @override
-  State<_MetricCard> createState() => _MetricCardState();
-}
-
-class _MetricCardState extends State<_MetricCard> {
-  bool _hovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = widget.def.color;
-    final hasAction = widget.def.onTap != null;
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: _hovered ? color.withValues(alpha: 0.18) : Colors.black.withValues(alpha: 0.05), blurRadius: _hovered ? 18 : 8, offset: const Offset(0, 3))]),
-        child: Material(
-          color: Colors.transparent, borderRadius: BorderRadius.circular(16),
-          child: InkWell(
-            onTap: widget.def.onTap, borderRadius: BorderRadius.circular(16),
-            splashColor: color.withValues(alpha: 0.08), highlightColor: color.withValues(alpha: 0.04),
-            child: Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    Container(width: 36, height: 36, decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(11)), child: Icon(widget.def.icon, color: color, size: 18)),
-                    if (hasAction) Icon(Icons.arrow_forward_ios_rounded, size: 11, color: Colors.grey[400]),
-                  ]),
-                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(widget.def.value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF1A1F36), letterSpacing: -0.3), maxLines: 1, overflow: TextOverflow.ellipsis),
-                    const SizedBox(height: 2),
-                    Text(widget.def.title, style: TextStyle(fontSize: 11, color: Colors.grey[500], fontWeight: FontWeight.w500), maxLines: 1, overflow: TextOverflow.ellipsis),
-                  ]),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DetalhesHeader extends StatelessWidget {
-  final String nome;
-  final bool isEncerrado;
-  final String? dataCriacao;
-  final String? dataEncerramento;
-  final bool isRefreshing;
-  final AnimationController refreshCtrl;
-  final VoidCallback onRefresh;
-  final VoidCallback onBack;
-  final VoidCallback? onRenomear;
-  final VoidCallback? onEncerrar;
-  final VoidCallback? onApagar;
-  final VoidCallback? onReativar;
-  final AuthState auth;
-
-  const _DetalhesHeader({
-    required this.nome,
-    required this.isEncerrado,
-    this.dataCriacao,
-    this.dataEncerramento,
-    required this.isRefreshing,
-    required this.refreshCtrl,
-    required this.onRefresh,
-    required this.onBack,
-    required this.auth,
-    this.onRenomear,
-    this.onEncerrar,
-    this.onApagar,
-    this.onReativar,
-  });
-
-  String _formatDate(String iso) {
-    try {
-      return DateFormat('dd/MM/yyyy').format(DateTime.parse(iso));
-    } catch (_) {
-      return '';
-    }
-  }
-
-  String get _dateLabel {
-    if (isEncerrado && dataEncerramento != null) {
-      return 'Encerrado em ${_formatDate(dataEncerramento!)}';
-    }
-    if (dataCriacao != null) return 'Criado em ${_formatDate(dataCriacao!)}';
-    return '';
-  }
-
-  void _showMenu(BuildContext context, GlobalKey key) {
-    final renderBox = key.currentContext!.findRenderObject() as RenderBox;
-    final offset = renderBox.localToGlobal(Offset.zero);
-    final size = renderBox.size;
-
-    showMenu<String>(
-      context: context,
-      color: Colors.white,
-      elevation: 16,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      position: RelativeRect.fromLTRB(
-        offset.dx - 180,
-        offset.dy + size.height + 6,
-        offset.dx + size.width,
-        offset.dy + size.height + 300,
-      ),
-      items: [
-        if (onRenomear != null) _menuItem('rename', Icons.edit_outlined, 'Renomear', Colors.indigo[700]!),
-        if (onEncerrar != null) _menuItem('encerrar', Icons.lock_outline_rounded, 'Encerrar orçamento', const Color(0xFF546E7A)),
-        if (onReativar != null) _menuItem('reativar', Icons.lock_open_rounded, 'Reativar orçamento', const Color(0xFF43A047)),
-        if (onApagar != null) _menuItem('apagar', Icons.delete_outline_rounded, 'Apagar orçamento', const Color(0xFFE53935), isDanger: true),
-      ],
-    ).then((value) {
-      switch (value) {
-        case 'rename': onRenomear?.call(); break;
-        case 'encerrar': onEncerrar?.call(); break;
-        case 'reativar': onReativar?.call(); break;
-        case 'apagar': onApagar?.call(); break;
-      }
-    });
-  }
-
-  PopupMenuItem<String> _menuItem(String value, IconData icon, String label, Color color, {bool isDanger = false}) {
-    return PopupMenuItem<String>(
-      value: value,
-      padding: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(children: [
-          Container(width: 32, height: 32, decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(9)), child: Icon(icon, color: color, size: 16)),
-          const SizedBox(width: 12),
-          Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: isDanger ? color : const Color(0xFF1A1F36))),
-        ]),
-      ),
-    );
-  }
-
-  Widget _buildAvatar() {
-    if (auth.user?.photoURL != null) {
-      return ClipOval(
-        child: Image.network(
-          auth.user!.photoURL!,
-          width: 38, height: 38, fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => _fallbackAvatar(),
-        ),
-      );
-    }
-    return _fallbackAvatar();
-  }
-
-  Widget _fallbackAvatar() => Container(
-    width: 36, height: 36,
-    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
-    child: const Icon(Icons.person_rounded, color: Colors.white, size: 18),
-  );
-
-  @override
-  Widget build(BuildContext context) {
-    final top = MediaQuery.of(context).padding.top;
-    final canPop = Navigator.of(context).canPop();
-    final menuKey = GlobalKey();
-
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF1A237E), Color(0xFF283593), Color(0xFF3949AB)],
-        ),
-        boxShadow: [BoxShadow(color: Color(0x551A237E), blurRadius: 24, offset: Offset(0, 8))],
-      ),
-      padding: EdgeInsets.fromLTRB(20, top + 16, 20, 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Linha 1: voltar + ícone + nome + avatar ───────────────────────
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              if (canPop) ...[
-                _HeaderButton(onTap: onBack, tooltip: 'Voltar', isSquare: true,
-                    child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 16)),
-                const SizedBox(width: 12),
-              ],
-              Container(
-                width: 40, height: 40,
-                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
-                child: const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      nome,
-                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: 0.1),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Text('Detalhes do orçamento',
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12)),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-              // Avatar
-              _buildAvatar(),
-            ],
-          ),
-
-          const SizedBox(height: 14),
-
-          // ── Linha 2: badge status + data + 3 pontinhos + refresh ──────────
-          Row(
-            children: [
-              // Badge status
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.13), borderRadius: BorderRadius.circular(20)),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Container(
-                    width: 6, height: 6,
-                    decoration: BoxDecoration(
-                      color: isEncerrado ? Colors.grey[400] : const Color(0xFF69F0AE),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(isEncerrado ? 'Encerrado' : 'Ativo',
-                      style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
-                ]),
-              ),
-
-              // Data
-              if (_dateLabel.isNotEmpty) ...[
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    _dateLabel,
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.55), fontSize: 11),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ] else
-                const Spacer(),
-
-              // 3 pontinhos
-              _HeaderButton(
-                onTap: onRefresh,
-                tooltip: 'Recarregar',
-                isSquare: true,
-                child: RotationTransition(
-                  turns: refreshCtrl,
-                  child: Icon(Icons.refresh_rounded, color: Colors.white.withValues(alpha: isRefreshing ? 1.0 : 0.9), size: 18),
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Refresh
-              _HeaderButton(
-                key: menuKey,
-                onTap: () => _showMenu(context, menuKey),
-                tooltip: 'Opções',
-                isSquare: true,
-                child: const Icon(Icons.more_vert_rounded, color: Colors.white, size: 18),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _HeaderButton extends StatefulWidget {
-  final Widget child;
-  final VoidCallback onTap;
-  final String tooltip;
-  final bool isSquare;
-
-  const _HeaderButton({super.key, required this.child, required this.onTap, required this.tooltip, this.isSquare = false});
-
-  @override
-  State<_HeaderButton> createState() => _HeaderButtonState();
-}
-
-class _HeaderButtonState extends State<_HeaderButton> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: widget.tooltip,
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) { setState(() => _pressed = false); widget.onTap(); },
-        onTapCancel: () => setState(() => _pressed = false),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 100),
-          padding: EdgeInsets.symmetric(horizontal: widget.isSquare ? 10 : 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: _pressed ? Colors.white.withValues(alpha: 0.28) : Colors.white.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1),
-          ),
-          child: widget.child,
-        ),
       ),
     );
   }
