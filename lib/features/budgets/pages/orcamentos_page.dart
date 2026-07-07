@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:orcamentos_app/features/shared/components/orcamentos_loading.dart';
 import 'package:provider/provider.dart';
 
-import 'package:orcamentos_app/features/categories/pages/categories_page.dart';
+import 'package:orcamentos_app/features/categories/pages/expense_categories_page.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_snackbar.dart';
 import 'package:orcamentos_app/features/shared/components/pulse_dot.dart';
 import 'package:orcamentos_app/features/shared/components/shared_appbar.dart';
@@ -96,7 +96,7 @@ class OrcamentosPageState extends State<OrcamentosPage> {
   Future<void> _navigateToCategorias() async {
     await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const CategoriesPage()),
+      MaterialPageRoute(builder: (_) => const ExpenseCategoriesPage()),
     );
   }
 

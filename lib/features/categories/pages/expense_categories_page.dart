@@ -7,26 +7,26 @@ import 'package:orcamentos_app/features/shared/components/shared_appbar.dart';
 import 'package:orcamentos_app/features/shared/components/pulse_dot.dart';
 import 'package:orcamentos_app/shared/api_models.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
-import 'package:orcamentos_app/features/categories/services/categories_service.dart';
+import 'package:orcamentos_app/features/categories/services/expense_categories_service.dart';
 import 'package:orcamentos_app/features/categories/utils/category_icon_mapper.dart';
 import 'package:orcamentos_app/features/categories/components/category_card.dart';
 import 'package:orcamentos_app/features/categories/components/categories_empty_state.dart';
 import 'package:orcamentos_app/features/categories/components/category_create_dialog.dart';
 
-class CategoriesPage extends StatefulWidget {
-  const CategoriesPage({super.key});
+class ExpenseCategoriesPage extends StatefulWidget {
+  const ExpenseCategoriesPage({super.key});
 
   @override
-  State<CategoriesPage> createState() => _CategoriesPageState();
+  State<ExpenseCategoriesPage> createState() => _ExpenseCategoriesPageState();
 }
 
-class _CategoriesPageState extends State<CategoriesPage>
+class _ExpenseCategoriesPageState extends State<ExpenseCategoriesPage>
     with SingleTickerProviderStateMixin {
   List<CategoriaGastoResponseDto> _categorias = [];
   bool _isLoading = false;
   late AnimationController _refreshCtrl;
   bool _isRefreshing = false;
-  late CategoriesService _categoriesService;
+  late ExpenseCategoriesService _categoriesService;
 
   static const _gradientColors = [
     Color(0xFF1A237E),
@@ -55,7 +55,7 @@ class _CategoriesPageState extends State<CategoriesPage>
       duration: const Duration(milliseconds: 700),
     );
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _categoriesService = CategoriesService(
+      _categoriesService = ExpenseCategoriesService(
         Provider.of<ApiService>(context, listen: false),
       );
       _fetchCategorias();

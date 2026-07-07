@@ -1,10 +1,10 @@
 import 'package:orcamentos_app/shared/api_models.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
 
-class CategoriesService {
+class ExpenseCategoriesService {
   final ApiService apiService;
 
-  CategoriesService(this.apiService);
+  ExpenseCategoriesService(this.apiService);
 
   Future<List<CategoriaGastoResponseDto>> getCategorias() =>
       apiService.getCategorias();
