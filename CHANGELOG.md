@@ -1,3 +1,19 @@
+# [1.22.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.21.0...v1.22.0) (2026-07-07)
+
+
+### Bug Fixes
+
+* altera nomenclaturas ([2d80470](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/2d80470b91b2c3d4f71657b283c48dd8bfc95cb4))
+* corrige depreciações e move arquivos ([081b5e3](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/081b5e34b49113367e192b363afa02696a9cb815))
+* corrige use_build_context_synchronously no projeto ([ef936d9](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/ef936d980a9de47b73258b2721a5178b521eeef8))
+
+
+### Features
+
+* adiciona menu metric card e metric card ([3f1de9e](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/3f1de9e51fb42c84523dba8ba1d8b096a14ba414))
+* melhora o design e a usabilidade das telas de investimentos ([c1eca92](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/c1eca920ca3866974f3ca3156144a92c450bfe0c))
+* refatora orcamentos detalhes page ([a7fcb66](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/a7fcb66c5bc53a505ff2d7e74a1d8c88e0aeff2e))
+
 # [1.21.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.20.1...v1.21.0) (2026-07-07)
 
 
