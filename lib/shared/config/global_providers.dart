@@ -6,6 +6,7 @@ import 'package:orcamentos_app/features/notifications/regex_patterns/repositorie
 import 'package:orcamentos_app/features/notifications/services/notification_processing_service.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
 import 'package:orcamentos_app/shared/auth_service.dart';
+import 'package:orcamentos_app/shared/biometric_service.dart';
 import 'package:orcamentos_app/shared/config/app_config.dart';
 import 'package:orcamentos_app/shared/device_registration_service.dart';
 import 'package:provider/provider.dart';
@@ -24,6 +25,9 @@ List<SingleChildWidget> globalProviders() {
         ),
       ),
     ),
+    Provider<BiometricService>(
+      create: (_) => BiometricService(),
+    ),
     Provider<DeviceRegistrationService>(
       create: (ctx) => DeviceRegistrationService(ctx.read<ApiService>()),
     ),
@@ -40,6 +44,7 @@ List<SingleChildWidget> globalProviders() {
         final authState = AuthState(
           ctx.read<AuthService>(),
           ctx.read<ApiService>(),
+          ctx.read<BiometricService>(),
         );
         
         // Após autenticar, registra o dispositivo no backend para habilitar

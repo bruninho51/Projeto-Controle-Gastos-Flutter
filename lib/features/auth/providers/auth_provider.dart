@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
 import 'package:orcamentos_app/shared/auth_service.dart';
+import 'package:orcamentos_app/shared/biometric_service.dart';
 
 class AuthState with ChangeNotifier {
   final AuthService authService;
   final ApiService api;
+  final BiometricService biometric;
 
   String? _apiToken;
   User? _user;
   bool _isLoading = true;
+  bool _isLocked = false;
 
   final List<Future<void> Function()> _afterAuthHooks = [];
 
@@ -20,9 +23,13 @@ class AuthState with ChangeNotifier {
   User? get user => _user;
   bool get isLoading => _isLoading;
 
+  /// `true` quando a sessão foi restaurada silenciosamente (método A) e o app
+  /// aguarda a confirmação biométrica antes de liberar o conteúdo.
+  bool get isLocked => _isLocked;
+
   // ================= CONSTRUCTOR =================
 
-  AuthState(this.authService, this.api) {
+  AuthState(this.authService, this.api, this.biometric) {
     _wireApiService();
     _restoreSession();
   }
@@ -69,12 +76,29 @@ class AuthState with ChangeNotifier {
 
       if (!await _trocarIdTokenPorApiToken(user)) return;
 
+      // Método A: exige confirmação biométrica antes de liberar o conteúdo.
+      // Só tranca se o aparelho tiver como autenticar (senão o usuário
+      // ficaria preso sem forma de destravar).
+      _isLocked = await biometric.disponivel;
+
       await _runAfterAuthHooks();
     } catch (e) {
       _user = null;
       _apiToken = null;
     } finally {
       _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // ================= DESBLOQUEIO BIOMÉTRICO =================
+
+  /// Dispara o prompt biométrico e libera o app se a autenticação passar.
+  /// Chamado pela tela de bloqueio (automaticamente ao abrir e no botão de
+  /// tentar novamente).
+  Future<void> desbloquear() async {
+    if (await biometric.autenticar()) {
+      _isLocked = false;
       notifyListeners();
     }
   }
@@ -140,6 +164,7 @@ class AuthState with ChangeNotifier {
 
     _apiToken = null;
     _user = null;
+    _isLocked = false;
 
     notifyListeners();
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:orcamentos_app/features/auth/pages/biometric_lock_page.dart';
 import 'package:orcamentos_app/features/auth/pages/login_page.dart';
 import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
 import 'package:orcamentos_app/features/splash/pages/splash_screen.dart';
@@ -19,6 +20,7 @@ class AuthWrapper extends StatelessWidget {
     return switch (auth) {
       AuthState(isLoading: true) => const SplashScreen(),
       AuthState(isLoggedIn: false) => const LoginPage(),
+      AuthState(isLocked: true) => const BiometricLockPage(),
       _ => home,
     };
   }

@@ -49,6 +49,9 @@ android {
 }
 
 dependencies {
+    // Necessário porque MainActivity estende FlutterFragmentActivity (local_auth),
+    // que exige um tema AppCompat — a lib appcompat provê Theme.AppCompat.*
+    implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation platform('com.google.firebase:firebase-bom:32.0.0')
     implementation 'com.google.firebase:firebase-auth'
     implementation 'com.google.firebase:firebase-firestore'
