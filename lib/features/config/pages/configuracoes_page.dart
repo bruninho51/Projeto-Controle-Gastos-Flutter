@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:orcamentos_app/features/config/pages/gastos_automaticos_page.dart';
 import 'package:orcamentos_app/features/config/pages/permissoes_notificacoes_page.dart';
+import 'package:orcamentos_app/features/config/pages/seguranca_page.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:orcamentos_app/features/shared/components/shared_appbar.dart';
 import 'package:flutter/foundation.dart';
@@ -82,6 +83,21 @@ class _ConfiguracoesPageState extends State<ConfiguracoesPage> {
                 onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const GastosAutomaticosPage()),
+                ),
+              ),
+            ]),
+            const SizedBox(height: 20),
+            _buildSectionLabel('Segurança'),
+            _buildCard([
+              _buildTile(
+                context,
+                icon: Icons.shield_outlined,
+                color: _dark,
+                title: 'Segurança',
+                subtitle: 'Configure as opções de segurança do aplicativo.',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SegurancaPage()),
                 ),
               ),
             ]),

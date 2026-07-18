@@ -77,9 +77,9 @@ class AuthState with ChangeNotifier {
       if (!await _trocarIdTokenPorApiToken(user)) return;
 
       // Método A: exige confirmação biométrica antes de liberar o conteúdo.
-      // Só tranca se o aparelho tiver como autenticar (senão o usuário
-      // ficaria preso sem forma de destravar).
-      _isLocked = await biometric.disponivel;
+      // Só tranca se o usuário ativou o bloqueio (Configurações › Segurança)
+      // E o aparelho tiver como autenticar (senão ficaria preso sem destravar).
+      _isLocked = await biometric.bloqueioAtivo && await biometric.disponivel;
 
       await _runAfterAuthHooks();
     } catch (e) {
