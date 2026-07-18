@@ -31,9 +31,16 @@ class AuthService {
     await _auth.signOut();
   }
 
-  Future<String?> getIdToken() async {
-    return _auth.currentUser?.getIdToken();
+  Future<String?> getIdToken({bool forceRefresh = false}) async {
+    return _auth.currentUser?.getIdToken(forceRefresh);
   }
 
   User? get currentUser => _auth.currentUser;
+
+  /// Emite o usuário assim que o Firebase termina de carregar a sessão
+  /// persistida localmente (ou `null`, se não houver nenhuma). Ao contrário
+  /// de [currentUser], que pode retornar `null` momentaneamente logo após o
+  /// app iniciar (antes do Firebase restaurar a sessão do disco), este
+  /// stream é a forma confiável de aguardar esse carregamento.
+  Stream<User?> get authStateChanges => _auth.authStateChanges();
 }

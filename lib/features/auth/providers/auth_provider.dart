@@ -9,7 +9,7 @@ class AuthState with ChangeNotifier {
 
   String? _apiToken;
   User? _user;
-  bool _isLoading = false;
+  bool _isLoading = true;
 
   final List<Future<void> Function()> _afterAuthHooks = [];
 
@@ -24,14 +24,80 @@ class AuthState with ChangeNotifier {
 
   AuthState(this.authService, this.api) {
     _wireApiService();
+    _restoreSession();
   }
 
   void _wireApiService() {
     api.onTokenRequested(() => _apiToken);
+    api.onTokenExpired(_renovarToken);
 
     api.onUnauthorized(() async {
       await logout();
     });
+  }
+
+  // ================= TROCA DE TOKEN (compartilhada) =================
+
+  /// Troca o ID token do Firebase do [user] informado por um token da API
+  /// (via [ApiService.verifyGoogle]), atualizando [_user]/[_apiToken].
+  /// Usado tanto no login interativo quanto na restauração de sessão e na
+  /// renovação automática — os três só diferem em *como* obtêm o [User] e
+  /// em *quando* forçam um ID token novo.
+  /// Retorna `false` se não houver ID token disponível.
+  Future<bool> _trocarIdTokenPorApiToken(
+    User user, {
+    bool forceRefresh = false,
+  }) async {
+    final idToken = await authService.getIdToken(forceRefresh: forceRefresh);
+    if (idToken == null) return false;
+
+    final response = await api.verifyGoogle(idToken);
+    _user = user;
+    _apiToken = response.accessToken;
+    return true;
+  }
+
+  // ================= RESTAURAÇÃO DE SESSÃO =================
+
+  /// Aguarda o Firebase restaurar (ou não) a sessão persistida localmente e,
+  /// se houver um usuário, troca o ID token do Firebase por um token da API
+  /// — sem exigir que o usuário toque em "Entrar com Google" novamente.
+  Future<void> _restoreSession() async {
+    try {
+      final user = await authService.authStateChanges.first;
+      if (user == null) return;
+
+      if (!await _trocarIdTokenPorApiToken(user)) return;
+
+      await _runAfterAuthHooks();
+    } catch (e) {
+      _user = null;
+      _apiToken = null;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // ================= RENOVAÇÃO DE TOKEN =================
+
+  /// Chamado pelo [ApiService] quando uma requisição falha com 401/403.
+  /// Força a renovação do ID token do Firebase e troca por um novo token
+  /// da API. Retorna `null` se não houver sessão para renovar ou se a
+  /// renovação falhar — nesse caso o [ApiService] desloga o usuário.
+  Future<String?> _renovarToken() async {
+    final user = authService.currentUser;
+    if (user == null) return null;
+
+    try {
+      if (!await _trocarIdTokenPorApiToken(user, forceRefresh: true)) {
+        return null;
+      }
+      notifyListeners();
+      return _apiToken;
+    } catch (_) {
+      return null;
+    }
   }
 
   // ================= HOOK API =================
@@ -56,14 +122,7 @@ class AuthState with ChangeNotifier {
       final user = await authService.signInWithGoogle();
       if (user == null) return;
 
-      _user = user;
-
-      final idToken = await authService.getIdToken();
-      if (idToken == null) return;
-
-      final response = await api.verifyGoogle(idToken);
-
-      _apiToken = response.accessToken;
+      if (!await _trocarIdTokenPorApiToken(user)) return;
 
       notifyListeners();
 

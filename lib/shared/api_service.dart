@@ -23,7 +23,10 @@ class ApiService {
   final http.Client client;
 
   String? Function()? _onTokenRequested;
+  Future<String?> Function()? _onTokenExpired;
   VoidCallback? _onUnauthorized;
+
+  Future<String?>? _tokenRefreshInFlight;
 
   ApiService({
     String? baseUrl,
@@ -35,6 +38,14 @@ class ApiService {
 
   void onTokenRequested(String? Function() provider) {
     _onTokenRequested = provider;
+  }
+
+  /// Chamado quando uma requisição falha por token expirado/inválido
+  /// (401/403). Deve tentar renovar o token e retornar o novo valor, ou
+  /// `null` se não for possível renovar — nesse caso [onUnauthorized] é
+  /// acionado e o usuário é deslogado.
+  void onTokenExpired(Future<String?> Function() callback) {
+    _onTokenExpired = callback;
   }
 
   void onUnauthorized(VoidCallback callback) {
@@ -49,6 +60,7 @@ class ApiService {
     Map<String, dynamic>? queryParams,
     dynamic body,
     required T Function(dynamic) fromJson,
+    bool allowTokenRefresh = true,
   }) async {
     final uri = Uri.parse(
       '${baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl}'
@@ -99,9 +111,23 @@ class ApiService {
       return fromJson(json);
     }
 
-    if (response.statusCode == 401) {
+    if (response.statusCode == 401 || response.statusCode == 403) {
+      if (allowTokenRefresh && _onTokenExpired != null) {
+        final novoToken = await _renovarTokenDeduplicado();
+        if (novoToken != null) {
+          return _request(
+            method: method,
+            path: path,
+            queryParams: queryParams,
+            body: body,
+            fromJson: fromJson,
+            allowTokenRefresh: false,
+          );
+        }
+      }
+
       _onUnauthorized?.call();
-      throw ApiException('Não autorizado', statusCode: 401);
+      throw ApiException('Não autorizado', statusCode: response.statusCode);
     }
 
     String message = 'Erro na requisição';
@@ -114,6 +140,15 @@ class ApiService {
     throw ApiException(message, statusCode: response.statusCode);
   }
 
+  /// Garante que, quando várias requisições falham por token expirado ao
+  /// mesmo tempo (ex.: chamadas em paralelo no dashboard), apenas uma
+  /// renovação seja disparada — as demais aguardam o mesmo resultado.
+  Future<String?> _renovarTokenDeduplicado() {
+    return _tokenRefreshInFlight ??= _onTokenExpired!.call().whenComplete(() {
+      _tokenRefreshInFlight = null;
+    });
+  }
+
   // -------------------- Autenticação --------------------
   Future<AuthResponseDto> verifyGoogle(String idToken) async {
     return await _request(
@@ -121,6 +156,10 @@ class ApiService {
       path: '/auth/google/verify',
       body: AuthCreateDto(idToken: idToken).toJson(),
       fromJson: (json) => AuthResponseDto.fromJson(json),
+      // Esta chamada é quem gera o token da API — se ela mesma retornar
+      // 401/403, não faz sentido tentar renovar via onTokenExpired (que
+      // chamaria verifyGoogle de novo, gerando reentrância/deadlock).
+      allowTokenRefresh: false,
     );
   }
 
