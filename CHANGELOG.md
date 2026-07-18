@@ -1,3 +1,15 @@
+# [1.23.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.22.0...v1.23.0) (2026-07-18)
+
+
+### Features
+
+* adiciona configuração para habilitar ou desabilitar a biometria ([eedca05](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/eedca05c20b1813ea61a3f707d28b28f6546a5da))
+* caso a notificação não tenha título, usa a primeira palavra da notificação como título ([eaedeac](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/eaedeac86a88a8364d81b4bf78e2726750994bd8))
+* implementa autenticação biométrica ([004c453](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/004c45317df3e2ed9156ac912192de03c6bd9133))
+* inicia a processamento das notificações no dart apenas após o login ([f552dc6](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/f552dc6605a151df2e5ae13e88bfe3b550c22a42))
+* loga automaticamente quando a conta do google está salva no dispositivo ([116c94d](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/116c94d938bc88e26225af1d55bc34dc596b7059))
+* unifica listas de orçamentos ativos e orçamentos encerrados nos mesmos componentes e adiciona filtros ([82b5fe5](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/82b5fe5eda22fcb942a9724a2b438cbae3dc27f3))
+
 # [1.22.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.21.0...v1.22.0) (2026-07-07)
 
 
