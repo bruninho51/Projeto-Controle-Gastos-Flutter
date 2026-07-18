@@ -36,7 +36,7 @@ class AuthState with ChangeNotifier {
 
   // ================= HOOK API =================
 
-  void onAfterAuth(Future<void> Function() callback) {
+  void addPostAuthAction(Future<void> Function() callback) {
     _afterAuthHooks.add(callback);
   }
 

@@ -14,6 +14,21 @@ class NotificationProcessingService {
 
   NotificationProcessingService(this.regexRepository);
 
+  /// Inicializa o processamento de notificações do aplicativo.
+  ///
+  /// Este método:
+  /// - registra um listener para receber eventos enviados pela camada nativa
+  ///   (Android) através do [NotificationsChannel];
+  /// - processa notificações pendentes que possam ter sido recebidas enquanto
+  ///   o aplicativo estava fechado ou antes da inicialização do serviço.
+  ///
+  /// Deve ser chamado apenas uma vez durante o ciclo de vida da aplicação,
+  /// após a autenticação do usuário.
+  Future<void> initialize() async {
+    NotificationsChannel.listenToBridge(processarEvento);
+    await processarNotificacoesPendentes();
+  }
+
   /// Reprocessa notificações que ficaram sem extração (ex.: capturadas pelo
   /// nativo enquanto o app estava totalmente fechado, sem engine Flutter
   /// ativa para receber o evento em tempo real via [NotificationsChannel]).
