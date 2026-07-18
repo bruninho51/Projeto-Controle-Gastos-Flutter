@@ -36,6 +36,8 @@ class NotificationListener : NotificationListenerService() {
         // Não reconhece valores por extenso ou em outros formatos (ex.: "32.50", "32", "R$ 32").
         private val VALOR_REGEX =
             Regex("""\b\d{1,3}(?:\.\d{3})*,\d{2}\b|\b\d+,\d{2}\b""")
+
+        private val WHITESPACE_REGEX = Regex("""\s+""")
     }
 
     override fun onCreate() {
@@ -77,6 +79,12 @@ class NotificationListener : NotificationListenerService() {
                 return@post
             }
 
+            // Notificações sem título (comum em estilos BigText/Messaging) usam a
+            // primeira palavra do corpo como título, para não colapsar formatos
+            // diferentes do mesmo banco na mesma chave de cache de regex
+            // (instituicao_financeira + titulo_notificacao) do lado Dart.
+            val tituloFinal = title.ifBlank { primeiraPalavra(content) }
+
             val valoresEncontrados = VALOR_REGEX.findAll(content).map { it.value }.toList()
             if (valoresEncontrados.size != 1) {
                 Log.d(
@@ -94,7 +102,7 @@ class NotificationListener : NotificationListenerService() {
             // cache local/API e atualiza este registro pelo canal "update".
             val payload = JSONObject().apply {
                 put("package",   packageName)
-                put("title",     title)
+                put("title",     tituloFinal)
                 put("content",   content)
                 put("timestamp", postTime)
             }.toString()
@@ -125,7 +133,7 @@ class NotificationListener : NotificationListenerService() {
                     mapOf(
                         "id"        to inserted,
                         "package"   to packageName,
-                        "title"     to title,
+                        "title"     to tituloFinal,
                         "content"   to content,
                         "timestamp" to postTime,
                     )
@@ -148,6 +156,11 @@ class NotificationListener : NotificationListenerService() {
             null
         }
     }
+
+    // ── Título de fallback (primeira palavra do corpo) ────────────────────────
+
+    private fun primeiraPalavra(texto: String): String =
+        texto.trim().split(WHITESPACE_REGEX).first()
 
     // ── Valor monetário em formato brasileiro (ex.: "1.234,56" → 1234.56) ────
 

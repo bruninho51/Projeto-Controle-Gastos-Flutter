@@ -1,0 +1,150 @@
+@startuml fluxo_kotlin_para_dart
+title Fluxo Detalhado: Captura Kotlin (Android) → Ponte → Processamento Dart (Flutter)
+
+|#LightBlue|Kotlin · NotificationListenerService|
+start
+:Sistema Android posta notificação\n(onNotificationPosted(sbn));
+
+if (sbn.packageName está em\nALLOWED_PACKAGES?) then (não)
+  :Ignorar (return imediato,\nfora da worker thread);
+  stop
+else (sim)
+endif
+
+:Extrair postTime = sbn.postTime;
+:Postar trabalho na HandlerThread\n"NotificationWorker" (fora da main thread);
+
+partition "Worker thread" {
+  :title = extras["android.title"]?.trim() ?: "";
+  :content = extras["android.text"]?.trim() ?: "";
+  :Log.d(title, content);
+
+  if (content vazio?) then (sim)
+    :Descartar\n(log "conteúdo vazio");
+    stop
+  else (não)
+  endif
+
+  :tituloFinal = title.ifBlank {\n  primeiraPalavra(content)\n};
+  note right
+    Título ausente (comum em estilos
+    BigText/Messaging) usa a 1ª palavra
+    do corpo, para não colapsar formatos
+    diferentes do mesmo banco na mesma
+    chave de cache de regex no Dart.
+  end note
+
+  :VALOR_REGEX.findAll(content)\n(regex nativa: \d{1,3}(.\d{3})*,\d{2});
+
+  if (encontrou exatamente\n1 valor monetário?) then (não)
+    :Descartar\n(0 ou >1 valores);
+    stop
+  else (sim)
+  endif
+
+  :valor = parseValorBrasileiro(match);
+  :payload JSON = {package, title: tituloFinal,\ncontent, timestamp};
+
+  :mapeamento = db.mapeamentoDao()\n.findByDescricao(content);
+  note right
+    Tabela mapeamentos_notificacoes:
+    aprendida de correções manuais
+    do usuário (salvarMapeamento).
+  end note
+
+  :hashUnico = SHA-256(banco|content|postTime)\n(deduplicação via UNIQUE index);
+
+  :INSERT em notificacoes_bancarias (Room)\ndescricaoOriginal = content\ndescricaoNormalizada = mapeamento?.descricaoNormalizada\nvalor, payloadBruto, dataNotificacao,\nhashUnico, dataCriacao;
+
+  if (mapeamento encontrado?) then (sim)
+    :atualizarUltimoUso(mapeamento.id);
+  else (não)
+  endif
+
+  :NotificationBridge.sendNotification(\n  id, package, title: tituloFinal,\n  content, timestamp\n);
+  note right
+    Throttle de 500ms + buffer de até
+    50 eventos pendentes se o Flutter
+    engine ainda não estiver anexado
+    (app totalmente fechado).
+  end note
+}
+
+|#LightGray|Ponte MethodChannel|
+if (Flutter engine anexado\n(methodChannel != null)?) then (sim)
+  :invokeMethod("onNotification", data)\nno canal "notification_bridge";
+else (não — app fechado)
+  :Evento fica em pendingEvents\n(máx. 50, descarta o mais antigo);
+  :Ao anexar o engine (initialize()),\nflush de todos os pendentes;
+endif
+
+|#LightYellow|Dart · Flutter|
+split
+  :NotificationsChannel.listenToBridge\nrecebe "onNotification" em tempo real;
+split again
+  :App inicia → global_providers.dart\nchama processarNotificacoesPendentes();
+  :NotificationsChannel.getAll()\n→ MethodChannel "com.bapps.orcamentos/notificacoes"\n(request/response, lê Room via\nNotificacoesFlutterCallReceiver.getAll);
+  :Filtrar apenas notificações\n"naoProcessada"\n(sem descricao_normalizada e sem erro);
+end split
+
+:NotificationProcessingService\n.processarEvento({id, package, title, content});
+
+:PadraoRegexNotificacaoRepository\n.getRegex(instituicao, tituloFinal, corpo);
+
+if (regex em cache local?\n(sqflite: padroes_regex_notificacoes\nUNIQUE(instituicao, titulo))) then (não existe)
+  |#LightGreen|API|
+  :POST /padroes-notificacoes-bancarias\n{instituicao, titulo, corpo};
+  if (sucesso?) then (sim)
+    :dao.insert() — cacheia\n(instituicao, titulo) → regex + expiração;
+  else (não)
+    |#LightYellow|Dart · Flutter|
+    :throw RegexIndisponivelException;
+    :NotificationsChannel\n.marcarErroProcessamento(id, true)\n→ Room: erro_processamento = 1;
+    stop
+  endif
+  |#LightYellow|Dart · Flutter|
+else (existe)
+  if (regex expirada?) then (sim)
+    |#LightGreen|API|
+    :POST /padroes-notificacoes-bancarias\n(renovação);
+    if (sucesso?) then (sim)
+      :dao.updateRegex() — atualiza\nregex + nova expiração;
+    else (não)
+      :Fallback: reutiliza\nregex antiga expirada;
+    endif
+    |#LightYellow|Dart · Flutter|
+  else (não)
+    :Usa regex do cache\ndiretamente;
+  endif
+endif
+
+if (regex nula?) then (sim)
+  :Ignorar notificação\n(nenhuma regex disponível);
+  stop
+else (não)
+endif
+
+:RegExp(regex).firstMatch(corpo);
+
+if (deu match?) then (não)
+  :Ignorar\n(log "regex não deu match");
+  stop
+else (sim)
+endif
+
+:Extrair grupos nomeados\n"valor" e "estabelecimento";
+
+if (estabelecimento vazio?) then (sim)
+  :descricao = corpo bruto\n(fallback);
+else (não)
+  :descricao = estabelecimento.trim();
+endif
+
+:NotificationsChannel.update(\n  id, valor, descricaoOriginal: descricao,\n  descricaoNormalizada: descricao\n);
+
+|#LightBlue|Kotlin · NotificacoesFlutterCallReceiver|
+:UPDATE notificacoes_bancarias SET\n  valor, descricao_original,\n  descricao_normalizada,\n  erro_processamento = 0\nWHERE id = :id\n(Room DB);
+
+stop
+
+@enduml
