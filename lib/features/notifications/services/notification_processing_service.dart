@@ -90,47 +90,58 @@ class NotificationProcessingService {
         return;
       }
 
-      if (extraido.usouFallback) {
-        debugPrint(
-          'NotificationProcessingService: regex "$regex" não retornou grupo '
-          '"estabelecimento" válido — usando corpo bruto como descrição',
-        );
-      }
-
       await NotificationsChannel.update(
         id: id,
         valor: extraido.valor,
         descricaoOriginal: extraido.descricao,
         descricaoNormalizada: extraido.descricao,
       );
+
+      if (extraido.usouFallback) {
+        debugPrint(
+          'NotificationProcessingService: regex "$regex" não retornou grupo '
+          '"estabelecimento" válido — usando corpo bruto como descrição',
+        );
+        // update() acima zera erro_processamento; marcamos de novo aqui para
+        // que o botão de reprocessar apareça — a descrição ficou com o corpo
+        // bruto em vez do estabelecimento, então vale tentar de novo depois
+        // (ex.: quando uma regex melhor estiver disponível na API).
+        await NotificationsChannel.marcarErroProcessamento(id: id, erro: true);
+      }
     } catch (e) {
       debugPrint('NotificationProcessingService: erro ao processar notificação — $e');
     }
   }
 
-  _DadosExtraidos? _extrair(String regexPattern, String corpoNotificacao) {
+  ({double valor, String descricao, bool usouFallback})? _extrair(
+    String regexPattern,
+    String corpoNotificacao,
+  ) {
     final match = RegExp(regexPattern).firstMatch(corpoNotificacao);
     if (match == null) return null;
 
-    String? valorBruto;
-    String? descricao;
-    try {
-      valorBruto = match.namedGroup('valor');
-    } catch (_) {}
-    try {
-      descricao = match.namedGroup('estabelecimento');
-    } catch (_) {}
-
-    final valor = _parseValor(valorBruto);
+    final valor = _parseValor(_namedGroupOrNull(match, 'valor'));
     if (valor == null) return null;
 
-    final semEstabelecimento = descricao == null || descricao.trim().isEmpty;
+    final descricao = _namedGroupOrNull(match, 'estabelecimento')?.trim();
+    final semEstabelecimento = descricao == null || descricao.isEmpty;
 
-    return _DadosExtraidos(
+    return (
       valor: valor,
-      descricao: semEstabelecimento ? corpoNotificacao : descricao.trim(),
+      descricao: semEstabelecimento ? corpoNotificacao : descricao,
       usouFallback: semEstabelecimento,
     );
+  }
+
+  /// Regex vindas da API podem não definir todos os grupos nomeados
+  /// esperados — `namedGroup` lança nesse caso (grupo inexistente no
+  /// padrão), diferente de retornar null (grupo existe mas não casou).
+  String? _namedGroupOrNull(RegExpMatch match, String nome) {
+    try {
+      return match.namedGroup(nome);
+    } catch (_) {
+      return null;
+    }
   }
 
   double? _parseValor(String? bruto) {
@@ -138,16 +149,4 @@ class NotificationProcessingService {
     final normalizado = bruto.replaceAll('.', '').replaceAll(',', '.');
     return double.tryParse(normalizado);
   }
-}
-
-class _DadosExtraidos {
-  final double valor;
-  final String descricao;
-  final bool usouFallback;
-
-  _DadosExtraidos({
-    required this.valor,
-    required this.descricao,
-    required this.usouFallback,
-  });
 }

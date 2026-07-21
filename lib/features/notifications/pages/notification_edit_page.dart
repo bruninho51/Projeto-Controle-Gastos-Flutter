@@ -481,8 +481,8 @@ class _ErroProcessamentoBanner extends StatelessWidget {
               const SizedBox(width: 10),
               const Expanded(
                 child: Text(
-                  'Não foi possível identificar o valor desta notificação '
-                  'automaticamente.',
+                  'Não foi possível identificar automaticamente todos os '
+                  'dados desta notificação.',
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,

@@ -25,7 +25,16 @@ class NotificacaoBancariaModel {
     this.erroProcessamento = false,
   });
 
-  bool get naoProcessada => valor == 0.0;
+  /// `true` quando a notificação ainda não teve uma descrição gravada (nunca
+  /// passou por [NotificationProcessingService.processarEvento] com sucesso)
+  /// ou ficou marcada com erro (regex indisponível, ou só o valor foi
+  /// extraído e a descrição caiu no fallback do corpo bruto). Usada para
+  /// decidir quais notificações reprocessar ao abrir o app.
+  ///
+  /// Não usar `valor == 0.0` aqui: o nativo já preenche `valor` via regex
+  /// antes mesmo do processamento Dart rodar, então essa condição nunca
+  /// reflete se a descrição foi extraída.
+  bool get naoProcessada => descricaoNormalizada == null || erroProcessamento;
 
   factory NotificacaoBancariaModel.fromMap(Map<Object?, Object?> map) {
     return NotificacaoBancariaModel(
