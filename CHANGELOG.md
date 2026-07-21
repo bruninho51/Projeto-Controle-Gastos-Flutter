@@ -1,3 +1,10 @@
+## [1.23.1](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.23.0...v1.23.1) (2026-07-21)
+
+
+### Bug Fixes
+
+* corrige processamento de notificações em background ([54ce71d](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/54ce71d8959885164b99e9021307194cba5aa428))
+
 # [1.23.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.22.0...v1.23.0) (2026-07-18)
 
 
