@@ -1,3 +1,10 @@
+## [1.23.2](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.23.1...v1.23.2) (2026-10-20)
+
+
+### Bug Fixes
+
+* atualiza segredo gitlab registry ([2a10c2b](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/2a10c2b2f5a2309a713ca11883c3d40f5e1914a5))
+
 ## [1.23.1](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.23.0...v1.23.1) (2026-07-21)
 
 
