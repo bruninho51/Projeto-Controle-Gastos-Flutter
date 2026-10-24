@@ -29,7 +29,8 @@ class NotificationListener : NotificationListenerService() {
             "one.inter",
             "com.mand.notitest",
             "br.com.ifood.benefits",
-            "air.br.com.alelo.mobile.android"
+            "air.br.com.alelo.mobile.android",
+            "ws.hanzo.Vrrh"
         )
 
         // Valor monetário em formato brasileiro (ex.: "1.234,56" ou "32,50").
