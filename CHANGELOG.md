@@ -1,3 +1,10 @@
+# [1.24.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.23.2...v1.24.0) (2026-10-24)
+
+
+### Features
+
+* adiciona VR beneficios ([61a0b6e](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/61a0b6eb478d84094079e5c199559d6c39399759))
+
 ## [1.23.2](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.23.1...v1.23.2) (2026-10-20)
 
 
