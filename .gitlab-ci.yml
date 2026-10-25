@@ -2,6 +2,9 @@ variables:
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: "/certs"
   FLUTTER_VERSION: "3.41.1"  # Atualize para a versão do seu projeto
+  # Incrementar sempre que ci_cd/android.Dockerfile mudar (força nova imagem)
+  ANDROID_IMAGE_REV: "1"
+  ANDROID_IMAGE: "$CI_REGISTRY_IMAGE/android-builder:${FLUTTER_VERSION}-r${ANDROID_IMAGE_REV}"
 
 stages:
   - release   # 1. semantic-release → gera versão e salva em version.txt
@@ -27,6 +30,34 @@ release:
     paths:
       - version.txt      # gerado pelo .releaserc (ver comentário abaixo)
     expire_in: 1 hour
+  only:
+    refs:
+      - main
+
+# ─────────────────────────────────────────────────────────────
+# STAGE 1 — Imagem de build Android (paralelo com release)
+# Gera a imagem com NDK/SDK pré-instalados. Se a tag já existe no
+# registry, o job termina em segundos sem rebuild.
+# Para forçar rebuild: rode a pipeline com REBUILD_ANDROID_IMAGE=true.
+# ─────────────────────────────────────────────────────────────
+android-image:
+  stage: release
+  image: docker:latest
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2376
+    DOCKER_TLS_VERIFY: "1"
+    DOCKER_CERT_PATH: "/certs/client"
+  script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+    - |
+      if [ "$REBUILD_ANDROID_IMAGE" != "true" ] && docker manifest inspect "$ANDROID_IMAGE" > /dev/null 2>&1; then
+        echo "✅ $ANDROID_IMAGE já existe, nada a fazer"
+        exit 0
+      fi
+    - docker build --build-arg FLUTTER_VERSION="$FLUTTER_VERSION" -t "$ANDROID_IMAGE" -f ci_cd/android.Dockerfile ci_cd
+    - docker push "$ANDROID_IMAGE"
   only:
     refs:
       - main
@@ -63,19 +94,25 @@ container:
 android:
   stage: build
   environment: production
-  image: ghcr.io/cirruslabs/flutter:${FLUTTER_VERSION}
+  image: $ANDROID_IMAGE
+  needs:
+    - release
+    - android-image
+  variables:
+    # Caches dentro do projeto para o GitLab conseguir salvá-los
+    GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
+    PUB_CACHE: "$CI_PROJECT_DIR/.pub-cache"
+  cache:
+    key:
+      files:
+        - pubspec.lock
+        - android/app/build.gradle
+    paths:
+      - .gradle/caches
+      - .gradle/wrapper
+      - .pub-cache
   before_script:
-    - |
-      if command -v apt-get > /dev/null 2>&1; then
-        apt-get update -qq
-        apt-get install -y --no-install-recommends curl
-      elif command -v apk > /dev/null 2>&1; then
-        apk add --no-cache curl
-      fi
     - flutter --version
-    # Aceita todas as licenças sem interação (o runner não tem stdin)
-    - yes | sdkmanager --licenses > /dev/null || true
-    - yes | flutter doctor --android-licenses > /dev/null || true
   script:
     - chmod +x ./ci_cd/build_android.sh
     - ./ci_cd/build_android.sh

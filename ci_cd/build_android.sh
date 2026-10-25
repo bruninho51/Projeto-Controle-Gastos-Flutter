@@ -95,8 +95,8 @@ fi
 echo "📦 Instalando dependências..."
 flutter pub get
 
-echo "🔨 Compilando APK release (assinado)..."
-flutter build apk --release
+echo "🔨 Compilando APK release arm64 (assinado)..."
+flutter build apk --release --target-platform android-arm64
 
 apk_source="build/app/outputs/flutter-apk/app-release.apk"
 if [ ! -f "$apk_source" ]; then
