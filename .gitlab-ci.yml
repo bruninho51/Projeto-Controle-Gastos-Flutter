@@ -73,7 +73,9 @@ android:
         apk add --no-cache curl
       fi
     - flutter --version
-    - flutter doctor --android-licenses || true
+    # Aceita todas as licenças sem interação (o runner não tem stdin)
+    - yes | sdkmanager --licenses > /dev/null || true
+    - yes | flutter doctor --android-licenses > /dev/null || true
   script:
     - chmod +x ./ci_cd/build_android.sh
     - ./ci_cd/build_android.sh
