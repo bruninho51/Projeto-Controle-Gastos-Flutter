@@ -1,3 +1,10 @@
+## [1.24.1](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.24.0...v1.24.1) (2026-10-25)
+
+
+### Bug Fixes
+
+* aceita licenças do android sdk automaticamente no ci ([d468d74](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/d468d74ce2af32064bc8153e65cfffe8cbb0cf88))
+
 # [1.24.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.23.2...v1.24.0) (2026-10-24)
 
 
