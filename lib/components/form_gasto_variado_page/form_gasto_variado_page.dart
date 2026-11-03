@@ -31,6 +31,11 @@ class _CriacaoGastoVariadoPageState extends State<CriacaoGastoVariadoPage> {
 
   int? _categoriaIdSelecionada;
   List<CategoriaGastoResponseDto> _categorias = [];
+
+  TipoCategoriaGasto? get _tipoSelecionado => _categorias
+      .where((c) => c.id == _categoriaIdSelecionada)
+      .map((c) => c.tipo)
+      .firstOrNull;
   bool _isLoading           = false;
   bool _isLoadingCategories = false;
 
@@ -375,7 +380,9 @@ class _CriacaoGastoVariadoPageState extends State<CriacaoGastoVariadoPage> {
       },
       validator: (v) => (v == null || v.isEmpty) ? 'Selecione uma data' : null,
       decoration: InputDecoration(
-        labelText: 'Data de Pagamento',
+        labelText: _tipoSelecionado == TipoCategoriaGasto.patrimonio
+            ? 'Data do Aporte'
+            : 'Data de Pagamento',
         labelStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
         prefixIcon: const Icon(Icons.calendar_today_outlined, color: _accent, size: 20),
         suffixIcon: _dataController.text.isNotEmpty

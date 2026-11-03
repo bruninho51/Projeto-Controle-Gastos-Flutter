@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_loading.dart';
 import 'package:orcamentos_app/shared/api_models.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
+import 'package:orcamentos_app/features/categories/components/category_tipo_badge.dart';
+import 'package:orcamentos_app/features/categories/components/category_tipo_style.dart';
 import 'package:orcamentos_app/shared/patch_field.dart';
 import 'package:orcamentos_app/utils/formatters.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_snackbar.dart';
@@ -95,6 +97,8 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
 
   // ─── Helpers ─────────────────────────────────────────────────────────────────
   bool get _isPago => gasto?.valor != null;
+  bool get _isPatrimonio =>
+      gasto?.categoriaGasto.tipo == TipoCategoriaGasto.patrimonio;
   bool get _isOrcamentoAtivo => orcamento?.dataEncerramento == null;
 
   String _fmtDate(DateTime? data) {
@@ -129,7 +133,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
       await _api.deleteGastoFixo(widget.orcamentoId, widget.gastoId);
       if (!mounted) return;
       OrcamentosSnackBar.success(
-          context: context, message: 'Gasto fixo apagado com sucesso!');
+          context: context, message: _isPatrimonio ? 'Aporte apagado com sucesso!' : 'Gasto fixo apagado com sucesso!');
       Navigator.pop(context, true);
     } catch (_) {
       if (!mounted) return;
@@ -267,7 +271,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
         controller: ctrl,
         autofocus: true,
         style: const TextStyle(fontSize: 15),
-        decoration: _inputDec('Nome do gasto', Icons.label_outline_rounded),
+        decoration: _inputDec(_isPatrimonio ? 'Nome do aporte' : 'Nome do gasto', Icons.label_outline_rounded),
         validator: (v) => (v == null || v.trim().isEmpty) ? 'Insira um nome' : null,
       ),
       onConfirm: () => _update(GastoFixoUpdateDto(descricao: PatchField.value(ctrl.text.trim())), 'Nome atualizado!'),
@@ -303,7 +307,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
     _valorCtrl.clear();
     final fk = GlobalKey<FormState>();
     _showEditDialog(
-      title: 'Valor Pago',
+      title: _isPatrimonio ? 'Valor Guardado' : 'Valor Pago',
       icon: Icons.check_circle_outline_rounded,
       formKey: fk,
       content: TextFormField(
@@ -320,7 +324,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
         validator: (v) => (v == null || v.isEmpty) ? 'Insira um valor' : null,
       ),
       onConfirm: () =>
-          _update(GastoFixoUpdateDto(valor: PatchField.value(_toNumeric(_valorCtrl.text))), 'Valor pago atualizado!'),
+          _update(GastoFixoUpdateDto(valor: PatchField.value(_toNumeric(_valorCtrl.text))), _isPatrimonio ? 'Valor guardado atualizado!' : 'Valor pago atualizado!'),
     );
   }
 
@@ -328,7 +332,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
     _dataCtrl.clear();
     final fk = GlobalKey<FormState>();
     _showEditDialog(
-      title: 'Data de Pagamento',
+      title: _isPatrimonio ? 'Data do Aporte' : 'Data de Pagamento',
       icon: Icons.calendar_today_rounded,
       formKey: fk,
       content: TextFormField(
@@ -358,7 +362,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
       ),
       onConfirm: () async {
         final parsed = DateFormat('dd/MM/yyyy').parse(_dataCtrl.text);
-        await _update(GastoFixoUpdateDto(dataPgto: PatchField.value(parsed)), 'Data de pagamento atualizada!');
+        await _update(GastoFixoUpdateDto(dataPgto: PatchField.value(parsed)), _isPatrimonio ? 'Data do aporte atualizada!' : 'Data de pagamento atualizada!');
       },
     );
   }
@@ -477,7 +481,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
     _dataCtrl.clear();
     final fk = GlobalKey<FormState>();
     _showEditDialog(
-      title: 'Registrar Pagamento',
+      title: _isPatrimonio ? 'Registrar Aporte' : 'Registrar Pagamento',
       icon: Icons.payments_rounded,
       formKey: fk,
       content: Column(
@@ -496,14 +500,16 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
                   selection: TextSelection.collapsed(offset: f.length));
             },
             validator: (v) =>
-            (v == null || v.isEmpty) ? 'Insira o valor pago' : null,
+            (v == null || v.isEmpty)
+                ? (_isPatrimonio ? 'Insira o valor guardado' : 'Insira o valor pago')
+                : null,
           ),
           const SizedBox(height: 12),
           TextFormField(
             controller: _dataCtrl,
             readOnly: true,
             style: const TextStyle(fontSize: 15),
-            decoration: _inputDec('Data do pagamento', Icons.calendar_today_rounded),
+            decoration: _inputDec(_isPatrimonio ? 'Data do aporte' : 'Data do pagamento', Icons.calendar_today_rounded),
             onTap: () async {
               final picked = await showDatePicker(
                 context: context,
@@ -533,7 +539,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
             valor: PatchField.value(_toNumeric(_valorCtrl.text)),
             dataPgto: PatchField.value(parsed),
           ),
-          'Pagamento registrado!',
+          _isPatrimonio ? 'Aporte registrado!' : 'Pagamento registrado!',
         );
       },
     );
@@ -545,6 +551,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
     final o = orcamento;
     final descricao = g?.descricao ?? 'Gasto Fixo';
     final categoriaNome = g?.categoriaGasto.nome ?? 'Sem categoria';
+    final tipo = g?.categoriaGasto.tipo ?? TipoCategoriaGasto.despesa;
 
     // Vencimento com alerta de atraso
     final dataVenc = g?.dataVenc;
@@ -561,6 +568,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
           _FixoHeader(
             descricao: descricao,
             isPago: _isPago,
+            isPatrimonio: _isPatrimonio,
             isOrcamentoAtivo: _isOrcamentoAtivo,
             isVencido: isVencido,
             isRefreshing: _isRefreshing,
@@ -570,8 +578,10 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
             onDelete: _isOrcamentoAtivo
                 ? () => ConfirmationDialog.confirmAction(
               context: context,
-              title: 'Apagar Gasto',
-              message: 'Deseja realmente apagar este gasto fixo?',
+              title: _isPatrimonio ? 'Apagar Aporte' : 'Apagar Gasto',
+              message: _isPatrimonio
+                  ? 'Deseja realmente apagar este aporte?'
+                  : 'Deseja realmente apagar este gasto fixo?',
               actionText: 'Apagar',
               action: _delete,
             )
@@ -597,6 +607,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
                     dataPgto: g.dataPgto,
                     dataVenc: g.dataVenc,
                     categoriaNome: categoriaNome,
+                    tipo: tipo,
                     isVencido: isVencido,
                   ),
 
@@ -608,8 +619,8 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
                       child: ElevatedButton.icon(
                         onPressed: _registrarPagamento,
                         icon: const Icon(Icons.payments_rounded, size: 18),
-                        label: const Text('Registrar Pagamento',
-                            style: TextStyle(
+                        label: Text(_isPatrimonio ? 'Registrar Aporte' : 'Registrar Pagamento',
+                            style: const TextStyle(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 14)),
                         style: ElevatedButton.styleFrom(
@@ -653,10 +664,10 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
                       color: _isPago
                           ? const Color(0xFF43A047)
                           : Colors.grey,
-                      label: 'Valor pago',
+                      label: _isPatrimonio ? 'Valor guardado' : 'Valor pago',
                       value: _isPago
                           ? formatarValorDynamic(g.valor!)
-                          : 'Não pago',
+                          : (_isPatrimonio ? 'Não guardado' : 'Não pago'),
                       onTap: _isPago && _isOrcamentoAtivo
                           ? _editValorPago
                           : null,
@@ -666,7 +677,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
                       _InfoRow(
                         icon: Icons.calendar_today_rounded,
                         color: const Color(0xFF00897B),
-                        label: 'Data de pagamento',
+                        label: _isPatrimonio ? 'Data do aporte' : 'Data de pagamento',
                         value: _fmtDate(g.dataPgto),
                         onTap: _isOrcamentoAtivo ? _editDataPagamento : null,
                       ),
@@ -698,6 +709,13 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
                       label: 'Categoria',
                       value: categoriaNome,
                       onTap: _isOrcamentoAtivo ? _editCategoria : null,
+                    ),
+                    _Divider(),
+                    _InfoRow(
+                      icon: tipo.icon,
+                      color: tipo.color,
+                      label: 'Tipo',
+                      value: tipo.label,
                     ),
                     _Divider(),
                     _InfoRow(
@@ -751,6 +769,7 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
 class _FixoHeader extends StatelessWidget {
   final String descricao;
   final bool isPago;
+  final bool isPatrimonio;
   final bool isOrcamentoAtivo;
   final bool isVencido;
   final bool isRefreshing;
@@ -762,6 +781,7 @@ class _FixoHeader extends StatelessWidget {
   const _FixoHeader({
     required this.descricao,
     required this.isPago,
+    required this.isPatrimonio,
     required this.isOrcamentoAtivo,
     required this.isVencido,
     required this.isRefreshing,
@@ -841,7 +861,7 @@ class _FixoHeader extends StatelessWidget {
                             letterSpacing: 0.1),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis),
-                    Text('Gasto fixo',
+                    Text(isPatrimonio ? 'Aporte fixo' : 'Gasto fixo',
                         style: TextStyle(
                             color: Colors.white.withOpacity(0.6),
                             fontSize: 12)),
@@ -894,7 +914,7 @@ class _FixoHeader extends StatelessWidget {
               if (onDelete != null) ...[
                 _HeaderButton(
                   onTap: onDelete!,
-                  tooltip: 'Apagar gasto',
+                  tooltip: isPatrimonio ? 'Apagar aporte' : 'Apagar gasto',
                   isSquare: true,
                   child: const Icon(Icons.delete_outline_rounded,
                       color: Colors.white, size: 18),
@@ -932,6 +952,7 @@ class _ValorDestaque extends StatelessWidget {
   final DateTime? dataPgto;
   final DateTime? dataVenc;
   final String categoriaNome;
+  final TipoCategoriaGasto tipo;
   final bool isVencido;
 
   const _ValorDestaque({
@@ -941,6 +962,7 @@ class _ValorDestaque extends StatelessWidget {
     required this.dataPgto,
     required this.dataVenc,
     required this.categoriaNome,
+    required this.tipo,
     required this.isVencido,
   });
 
@@ -977,7 +999,7 @@ class _ValorDestaque extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            isPago ? 'Valor pago' : isVencido ? 'Valor previsto (vencido)' : 'Valor previsto',
+            isPago ? (tipo == TipoCategoriaGasto.patrimonio ? 'Valor guardado' : 'Valor pago') : isVencido ? 'Valor previsto (vencido)' : 'Valor previsto',
             style: TextStyle(
                 color: Colors.white.withOpacity(0.75),
                 fontSize: 12,
@@ -1010,6 +1032,8 @@ class _ValorDestaque extends StatelessWidget {
                         fontSize: 11,
                         fontWeight: FontWeight.w600)),
               ),
+              // Tipo
+              CategoryTipoBadge(tipo: tipo, onDark: true),
               // Data
               if (dataPgto != null || dataVenc != null)
                 Container(

@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_loading.dart';
 import 'package:orcamentos_app/shared/api_models.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
+import 'package:orcamentos_app/features/categories/components/category_tipo_style.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_snackbar.dart';
 import 'package:provider/provider.dart';
 
@@ -493,6 +494,11 @@ class _GastoCheckItem extends StatelessWidget {
 
   const _GastoCheckItem({required this.gasto, required this.selected, required this.onToggle});
 
+  /// Itens de patrimônio se destacam pela cor do ícone.
+  Color get _iconColor => gasto.categoriaGasto.tipo == TipoCategoriaGasto.patrimonio
+      ? gasto.categoriaGasto.tipo.color
+      : const Color(0xFF1A237E);
+
   @override
   Widget build(BuildContext context) {
     final fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
@@ -545,10 +551,10 @@ class _GastoCheckItem extends StatelessWidget {
               Container(
                 width: 38, height: 38,
                 decoration: BoxDecoration(
-                    color: const Color(0xFF1A237E).withOpacity(0.07),
+                    color: _iconColor.withOpacity(0.07),
                     borderRadius: BorderRadius.circular(10)),
-                child: const Icon(Icons.receipt_long_rounded,
-                    color: Color(0xFF1A237E), size: 18),
+                child: Icon(Icons.receipt_long_rounded,
+                    color: _iconColor, size: 18),
               ),
               const SizedBox(width: 12),
 

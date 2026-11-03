@@ -51,6 +51,8 @@ CategoriaGastoResponseDto _$CategoriaGastoResponseDtoFromJson(
     CategoriaGastoResponseDto(
       id: (json['id'] as num).toInt(),
       nome: json['nome'] as String,
+      tipo: $enumDecodeNullable(_$TipoCategoriaGastoEnumMap, json['tipo']) ??
+          TipoCategoriaGasto.despesa,
       dataCriacao: DateTime.parse(json['data_criacao'] as String),
       dataAtualizacao: DateTime.parse(json['data_atualizacao'] as String),
       dataInatividade: json['data_inatividade'] == null
@@ -63,21 +65,30 @@ Map<String, dynamic> _$CategoriaGastoResponseDtoToJson(
     <String, dynamic>{
       'id': instance.id,
       'nome': instance.nome,
+      'tipo': _$TipoCategoriaGastoEnumMap[instance.tipo]!,
       'data_criacao': instance.dataCriacao.toIso8601String(),
       'data_atualizacao': instance.dataAtualizacao.toIso8601String(),
       'data_inatividade': instance.dataInatividade?.toIso8601String(),
     };
 
+const _$TipoCategoriaGastoEnumMap = {
+  TipoCategoriaGasto.despesa: 'DESPESA',
+  TipoCategoriaGasto.patrimonio: 'PATRIMONIO',
+};
+
 CategoriaGastoCreateDto _$CategoriaGastoCreateDtoFromJson(
         Map<String, dynamic> json) =>
     CategoriaGastoCreateDto(
       nome: json['nome'] as String,
+      tipo: $enumDecodeNullable(_$TipoCategoriaGastoEnumMap, json['tipo']) ??
+          TipoCategoriaGasto.despesa,
     );
 
 Map<String, dynamic> _$CategoriaGastoCreateDtoToJson(
         CategoriaGastoCreateDto instance) =>
     <String, dynamic>{
       'nome': instance.nome,
+      'tipo': _$TipoCategoriaGastoEnumMap[instance.tipo]!,
     };
 
 OrcamentoCreateDto _$OrcamentoCreateDtoFromJson(Map<String, dynamic> json) =>

@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
 
 class CategoriesEmptyState extends StatelessWidget {
-  const CategoriesEmptyState({super.key});
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  const CategoriesEmptyState({
+    super.key,
+    this.icon = Icons.category_outlined,
+    this.title = 'Nenhuma categoria cadastrada',
+    this.subtitle = 'Toque em "Nova" para começar',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -12,16 +21,16 @@ class CategoriesEmptyState extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(28),
             decoration: BoxDecoration(color: Colors.indigo[50], shape: BoxShape.circle),
-            child: Icon(Icons.category_outlined, size: 52, color: Colors.indigo[300]),
+            child: Icon(icon, size: 52, color: Colors.indigo[300]),
           ),
           const SizedBox(height: 20),
           Text(
-            'Nenhuma categoria cadastrada',
+            title,
             style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600, color: Colors.grey[700]),
           ),
           const SizedBox(height: 8),
           Text(
-            'Toque em "Nova Categoria" para começar',
+            subtitle,
             style: TextStyle(fontSize: 13, color: Colors.grey[450]),
           ),
           const SizedBox(height: 100),

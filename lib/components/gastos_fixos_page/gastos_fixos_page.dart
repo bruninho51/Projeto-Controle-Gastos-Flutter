@@ -5,6 +5,7 @@ import 'package:orcamentos_app/components/gasto_fixo_detalhes_page/gasto_fixo_de
 import 'package:orcamentos_app/components/gastos_fixos_page/copiar_gastos_fixos_page.dart';
 import 'package:orcamentos_app/shared/api_models.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
+import 'package:orcamentos_app/features/categories/components/category_tipo_style.dart';
 import 'package:provider/provider.dart';
 import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
 
@@ -156,6 +157,36 @@ class _GastosFixosPageState extends State<GastosFixosPage>
     return map;
   }
 
+  /// Separa os pendentes em duas seções: gastos (despesas) e patrimônio.
+  /// Com um único tipo presente, a seção mantém o título "Pendentes".
+  List<Widget> _gruposPendentes(List<GastoFixoResponseDto> itens) {
+    final patrimonio = itens
+        .where((g) => g.categoriaGasto.tipo == TipoCategoriaGasto.patrimonio)
+        .toList();
+    final gastos = itens
+        .where((g) => g.categoriaGasto.tipo != TipoCategoriaGasto.patrimonio)
+        .toList();
+    final separar = patrimonio.isNotEmpty && gastos.isNotEmpty;
+
+    return [
+      if (gastos.isNotEmpty)
+        _StatusGroup(
+          status: 'PENDENTE',
+          itens: gastos,
+          onTapItem: _navegar,
+          titulo: separar ? 'Gastos pendentes' : null,
+        ),
+      if (patrimonio.isNotEmpty)
+        _StatusGroup(
+          status: 'PENDENTE',
+          itens: patrimonio,
+          onTapItem: _navegar,
+          tipo: TipoCategoriaGasto.patrimonio,
+          titulo: separar ? 'Patrimônio pendente' : null,
+        ),
+    ];
+  }
+
   void _sortByDate(List<GastoFixoResponseDto> list,
       DateTime? Function(GastoFixoResponseDto) field, {required bool asc}) {
     list.sort((a, b) {
@@ -268,7 +299,9 @@ class _GastosFixosPageState extends State<GastosFixosPage>
 
                 for (final chave in grupos.keys) {
                   final itens = grupos[chave]!;
-                  if (chave != 'PAGO') {
+                  if (chave == 'PENDENTE') {
+                    widgets.addAll(_gruposPendentes(itens));
+                  } else if (chave != 'PAGO') {
                     widgets.add(_StatusGroup(
                         status: chave, itens: itens, onTapItem: _navegar));
                   } else {
@@ -362,14 +395,34 @@ class _StatusGroup extends StatelessWidget {
   final List<GastoFixoResponseDto> itens;
   final Future<void> Function(GastoFixoResponseDto) onTapItem;
 
-  const _StatusGroup(
-      {required this.status, required this.itens, required this.onTapItem});
+  /// Quando [TipoCategoriaGasto.patrimonio], a seção usa o visual de patrimônio.
+  final TipoCategoriaGasto? tipo;
 
-  Color get _color => status == 'VENCIDO'
-      ? const Color(0xFFE53935) : const Color(0xFFF4511E);
-  IconData get _icon => status == 'VENCIDO'
-      ? Icons.warning_amber_rounded : Icons.schedule_rounded;
-  String get _label => status == 'VENCIDO' ? 'Vencidos' : 'Pendentes';
+  /// Substitui o título padrão ("Vencidos" / "Pendentes").
+  final String? titulo;
+
+  const _StatusGroup({
+    required this.status,
+    required this.itens,
+    required this.onTapItem,
+    this.tipo,
+    this.titulo,
+  });
+
+  bool get _isPatrimonio => tipo == TipoCategoriaGasto.patrimonio;
+
+  Color get _color => _isPatrimonio
+      ? tipo!.color
+      : status == 'VENCIDO'
+          ? const Color(0xFFE53935)
+          : const Color(0xFFF4511E);
+  IconData get _icon => _isPatrimonio
+      ? tipo!.icon
+      : status == 'VENCIDO'
+          ? Icons.warning_amber_rounded
+          : Icons.schedule_rounded;
+  String get _label =>
+      titulo ?? (status == 'VENCIDO' ? 'Vencidos' : 'Pendentes');
   double get _totalPrevisto => itens.fold(
       0, (s, g) => s + (double.tryParse(g.previsto) ?? 0));
 
@@ -520,6 +573,18 @@ class _GastoFixoItem extends StatelessWidget {
     return 'PENDENTE';
   }
 
+  /// Itens de patrimônio se destacam pela cor do ícone; o status segue nas demais cores.
+  Color get _iconColor => gasto.categoriaGasto.tipo == TipoCategoriaGasto.patrimonio
+      ? gasto.categoriaGasto.tipo.color
+      : _color;
+
+  /// O PENDENTE de patrimônio acompanha a cor da seção "Patrimônio pendente";
+  /// VENCIDO mantém o vermelho de alerta.
+  Color _statusChipColor(String status) =>
+      status == 'PENDENTE' && gasto.categoriaGasto.tipo == TipoCategoriaGasto.patrimonio
+          ? gasto.categoriaGasto.tipo.color
+          : _color;
+
   Color get _color {
     switch (_statusOf()) {
       case 'VENCIDO': return const Color(0xFFE53935);
@@ -570,8 +635,8 @@ class _GastoFixoItem extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(children: [
               Container(width: 40, height: 40,
-                  decoration: BoxDecoration(color: _color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                  child: Icon(_icon, color: _color, size: 20)),
+                  decoration: BoxDecoration(color: _iconColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                  child: Icon(_icon, color: _iconColor, size: 20)),
               const SizedBox(width: 14),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(descricao, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1A1F36)),
@@ -598,8 +663,8 @@ class _GastoFixoItem extends StatelessWidget {
                   const SizedBox(height: 4),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                    decoration: BoxDecoration(color: _color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
-                    child: Text(status, style: TextStyle(fontSize: 9, color: _color, fontWeight: FontWeight.w700, letterSpacing: 0.3)),
+                    decoration: BoxDecoration(color: _statusChipColor(status).withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+                    child: Text(status, style: TextStyle(fontSize: 9, color: _statusChipColor(status), fontWeight: FontWeight.w700, letterSpacing: 0.3)),
                   ),
                 ],
               ]),

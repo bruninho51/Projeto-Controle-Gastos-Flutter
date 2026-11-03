@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:orcamentos_app/shared/api_models.dart';
+import 'package:orcamentos_app/features/categories/components/category_tipo_badge.dart';
 
 class CategoryCard extends StatefulWidget {
   final CategoriaGastoResponseDto categoria;
   final Color color;
   final IconData icon;
   final int index;
+  final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   const CategoryCard({
@@ -14,6 +16,7 @@ class CategoryCard extends StatefulWidget {
     required this.color,
     required this.icon,
     required this.index,
+    required this.onEdit,
     required this.onDelete,
   });
 
@@ -69,7 +72,7 @@ class _CategoryCardState extends State<CategoryCard>
             borderRadius: BorderRadius.circular(16),
             child: InkWell(
               borderRadius: BorderRadius.circular(16),
-              onTap: () {},
+              onTap: widget.onEdit,
               splashColor: widget.color.withValues(alpha: 0.08),
               highlightColor: widget.color.withValues(alpha: 0.04),
               child: Padding(
@@ -100,17 +103,23 @@ class _CategoryCardState extends State<CategoryCard>
                               letterSpacing: 0.1,
                             ),
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'ID #${widget.categoria.id}',
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[400],
-                                fontWeight: FontWeight.w400),
-                          ),
+                          const SizedBox(height: 4),
+                          CategoryTipoBadge(tipo: widget.categoria.tipo),
                         ],
                       ),
                     ),
+                    IconButton(
+                      icon: Icon(Icons.edit_outlined,
+                          color: Colors.indigo[300], size: 22),
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.indigo[50],
+                        padding: const EdgeInsets.all(8),
+                        minimumSize: const Size(36, 36),
+                      ),
+                      onPressed: widget.onEdit,
+                      tooltip: 'Editar categoria',
+                    ),
+                    const SizedBox(width: 6),
                     IconButton(
                       icon: Icon(Icons.delete_outline_rounded,
                           color: Colors.red[300], size: 22),

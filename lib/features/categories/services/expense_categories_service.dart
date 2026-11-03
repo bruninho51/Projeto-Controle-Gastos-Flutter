@@ -12,5 +12,8 @@ class ExpenseCategoriesService {
   Future<void> createCategoria(CategoriaGastoCreateDto dto) =>
       apiService.createCategoria(dto);
 
+  Future<void> updateCategoria(int id, CategoriaGastoUpdateDto dto) =>
+      apiService.updateCategoria(id, dto);
+
   Future<void> deleteCategoria(int id) => apiService.deleteCategoria(id);
 }

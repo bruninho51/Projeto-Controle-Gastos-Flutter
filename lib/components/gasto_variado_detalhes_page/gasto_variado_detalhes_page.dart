@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_loading.dart';
 import 'package:orcamentos_app/shared/api_models.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
+import 'package:orcamentos_app/features/categories/components/category_tipo_badge.dart';
+import 'package:orcamentos_app/features/categories/components/category_tipo_style.dart';
 import 'package:orcamentos_app/shared/patch_field.dart';
 import 'package:orcamentos_app/utils/formatters.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_snackbar.dart';
@@ -121,7 +123,7 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
       await _api.deleteGastoVariado(widget.orcamentoId, widget.gastoId);
       if (!mounted) return;
       OrcamentosSnackBar.success(
-          context: context, message: 'Gasto apagado com sucesso!');
+          context: context, message: _isPatrimonio ? 'Aporte apagado com sucesso!' : 'Gasto apagado com sucesso!');
       Navigator.pop(context, true);
     } catch (_) {
       if (!mounted) return;
@@ -278,7 +280,7 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
         autofocus: true,
         style: const TextStyle(fontSize: 15),
         decoration:
-        _inputDecoration('Nome do gasto', Icons.label_outline_rounded),
+        _inputDecoration(_isPatrimonio ? 'Nome do aporte' : 'Nome do gasto', Icons.label_outline_rounded),
         validator: (v) =>
         (v == null || v.trim().isEmpty) ? 'Insira um nome' : null,
       ),
@@ -316,10 +318,13 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
     );
   }
 
+  bool get _isPatrimonio =>
+      gasto?.categoriaGasto.tipo == TipoCategoriaGasto.patrimonio;
+
   void _editData() {
     _dataController.clear();
     _showEditDialog(
-      title: 'Data de Pagamento',
+      title: _isPatrimonio ? 'Data do Aporte' : 'Data de Pagamento',
       icon: Icons.calendar_today_rounded,
       formKey: _formDataKey,
       content: TextFormField(
@@ -429,6 +434,7 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
     final isAtivo = o?.dataEncerramento == null;
     final descricao = g?.descricao ?? 'Gasto Variado';
     final categoriaNome = g?.categoriaGasto.nome ?? 'Sem categoria';
+    final tipo = g?.categoriaGasto.tipo ?? TipoCategoriaGasto.despesa;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F5F9),
@@ -438,6 +444,7 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
           _GastoHeader(
             descricao: descricao,
             isAtivo: isAtivo,
+            isPatrimonio: _isPatrimonio,
             isRefreshing: _isRefreshing,
             refreshCtrl: _refreshCtrl,
             onRefresh: _handleRefresh,
@@ -445,9 +452,10 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
             onDelete: isAtivo
                 ? () => ConfirmationDialog.confirmAction(
               context: context,
-              title: 'Apagar Gasto',
-              message:
-              'Deseja realmente apagar este gasto variado?',
+              title: _isPatrimonio ? 'Apagar Aporte' : 'Apagar Gasto',
+              message: _isPatrimonio
+                  ? 'Deseja realmente apagar este aporte?'
+                  : 'Deseja realmente apagar este gasto variado?',
               actionText: 'Apagar',
               action: _delete,
             )
@@ -470,6 +478,7 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
                     valor: g.valor,
                     dataPgto: g.dataPgto,
                     categoriaNome: categoriaNome,
+                    tipo: tipo,
                   ),
                   const SizedBox(height: 20),
 
@@ -496,7 +505,7 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
                     _InfoRow(
                       icon: Icons.calendar_today_rounded,
                       color: const Color(0xFF6A1B9A),
-                      label: 'Data de pagamento',
+                      label: _isPatrimonio ? 'Data do aporte' : 'Data de pagamento',
                       value: _formatDate(g.dataPgto),
                       onTap: isAtivo ? _editData : null,
                     ),
@@ -507,6 +516,13 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
                       label: 'Categoria',
                       value: categoriaNome,
                       onTap: isAtivo ? _editCategoria : null,
+                    ),
+                    _Divider(),
+                    _InfoRow(
+                      icon: tipo.icon,
+                      color: tipo.color,
+                      label: 'Tipo',
+                      value: tipo.label,
                     ),
                     _Divider(),
                     _InfoRow(
@@ -560,6 +576,7 @@ class _DetalhesGastoVariadoPageState extends State<DetalhesGastoVariadoPage>
 class _GastoHeader extends StatelessWidget {
   final String descricao;
   final bool isAtivo;
+  final bool isPatrimonio;
   final bool isRefreshing;
   final AnimationController refreshCtrl;
   final VoidCallback onRefresh;
@@ -569,6 +586,7 @@ class _GastoHeader extends StatelessWidget {
   const _GastoHeader({
     required this.descricao,
     required this.isAtivo,
+    required this.isPatrimonio,
     required this.isRefreshing,
     required this.refreshCtrl,
     required this.onRefresh,
@@ -637,7 +655,7 @@ class _GastoHeader extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    Text('Gasto variado',
+                    Text(isPatrimonio ? 'Aporte variado' : 'Gasto variado',
                         style: TextStyle(
                             color: Colors.white.withOpacity(0.6),
                             fontSize: 12)),
@@ -685,7 +703,7 @@ class _GastoHeader extends StatelessWidget {
               if (onDelete != null) ...[
                 _HeaderButton(
                   onTap: onDelete!,
-                  tooltip: 'Apagar gasto',
+                  tooltip: isPatrimonio ? 'Apagar aporte' : 'Apagar gasto',
                   isSquare: true,
                   child: const Icon(Icons.delete_outline_rounded,
                       color: Colors.white, size: 18),
@@ -720,11 +738,13 @@ class _ValorDestaque extends StatelessWidget {
   final String valor;
   final DateTime? dataPgto;
   final String categoriaNome;
+  final TipoCategoriaGasto tipo;
 
   const _ValorDestaque({
     required this.valor,
     required this.dataPgto,
     required this.categoriaNome,
+    required this.tipo,
   });
 
   @override
@@ -758,7 +778,7 @@ class _ValorDestaque extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Valor pago',
+          Text(tipo == TipoCategoriaGasto.patrimonio ? 'Valor guardado' : 'Valor pago',
               style: TextStyle(
                   color: Colors.white.withOpacity(0.7),
                   fontSize: 12,
@@ -775,17 +795,24 @@ class _ValorDestaque extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(20)),
-            child: Text(categoriaNome,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600)),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(20)),
+                child: Text(categoriaNome,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600)),
+              ),
+              CategoryTipoBadge(tipo: tipo, onDark: true),
+            ],
           ),
           const SizedBox(width: 12, height: 12,),
           Text(dataStr,

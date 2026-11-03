@@ -7,11 +7,13 @@ import 'package:orcamentos_app/features/shared/components/shared_appbar.dart';
 import 'package:orcamentos_app/features/shared/components/pulse_dot.dart';
 import 'package:orcamentos_app/shared/api_models.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
+import 'package:orcamentos_app/shared/patch_field.dart';
 import 'package:orcamentos_app/features/categories/services/expense_categories_service.dart';
 import 'package:orcamentos_app/features/categories/utils/category_icon_mapper.dart';
 import 'package:orcamentos_app/features/categories/components/category_card.dart';
 import 'package:orcamentos_app/features/categories/components/categories_empty_state.dart';
-import 'package:orcamentos_app/features/categories/components/category_create_dialog.dart';
+import 'package:orcamentos_app/features/categories/components/category_form_dialog.dart';
+import 'package:orcamentos_app/features/categories/components/category_tipo_style.dart';
 
 class ExpenseCategoriesPage extends StatefulWidget {
   const ExpenseCategoriesPage({super.key});
@@ -27,6 +29,7 @@ class _ExpenseCategoriesPageState extends State<ExpenseCategoriesPage>
   late AnimationController _refreshCtrl;
   bool _isRefreshing = false;
   late ExpenseCategoriesService _categoriesService;
+  TipoCategoriaGasto? _filtroTipo;
 
   static const _gradientColors = [
     Color(0xFF1A237E),
@@ -108,10 +111,15 @@ class _ExpenseCategoriesPageState extends State<ExpenseCategoriesPage>
     }
   }
 
-  Future<void> _createCategoria(String nomeCategoria) async {
+  List<CategoriaGastoResponseDto> get _categoriasFiltradas =>
+      _filtroTipo == null
+          ? _categorias
+          : _categorias.where((c) => c.tipo == _filtroTipo).toList();
+
+  Future<void> _createCategoria(String nome, TipoCategoriaGasto tipo) async {
     try {
       await _categoriesService
-          .createCategoria(CategoriaGastoCreateDto(nome: nomeCategoria));
+          .createCategoria(CategoriaGastoCreateDto(nome: nome, tipo: tipo));
       if (!mounted) return;
       Navigator.of(context).pop(); // pop PRIMEIRO
       OrcamentosSnackBar.success(
@@ -124,21 +132,62 @@ class _ExpenseCategoriesPageState extends State<ExpenseCategoriesPage>
     }
   }
 
+  Future<void> _updateCategoria(
+    CategoriaGastoResponseDto categoria,
+    String nome,
+    TipoCategoriaGasto tipo,
+  ) async {
+    final dto = CategoriaGastoUpdateDto(
+      nome: nome != categoria.nome
+          ? PatchField.value(nome)
+          : const PatchField.absent(),
+      tipo: tipo != categoria.tipo
+          ? PatchField.value(tipo)
+          : const PatchField.absent(),
+    );
+
+    if (dto.toJson().isEmpty) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    try {
+      await _categoriesService.updateCategoria(categoria.id, dto);
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      OrcamentosSnackBar.success(
+          context: context, message: 'Categoria atualizada com sucesso!');
+      await _fetchCategorias();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      OrcamentosSnackBar.error(
+        context: context,
+        message: e.statusCode == 409 && tipo != categoria.tipo
+            ? 'Não é possível alterar o tipo de uma categoria que já possui gastos lançados.'
+            : 'Erro ao atualizar categoria',
+      );
+    } catch (e) {
+      if (!mounted) return;
+      OrcamentosSnackBar.error(
+          context: context, message: 'Erro ao atualizar categoria');
+    }
+  }
+
   Widget _buildCategoryBadge() {
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 300),
       transitionBuilder: (child, anim) => FadeTransition(
         opacity: anim,
         child: SlideTransition(
-          position: Tween<Offset>(
-                  begin: const Offset(0, 0.3), end: Offset.zero)
+          position: Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
               .animate(anim),
           child: child,
         ),
       ),
       child: Container(
         key: ValueKey(_categorias.length),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), // ligeiramente reduzido
+        padding: const EdgeInsets.symmetric(
+            horizontal: 10, vertical: 5), // ligeiramente reduzido
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.13),
           borderRadius: BorderRadius.circular(20),
@@ -148,7 +197,8 @@ class _ExpenseCategoriesPageState extends State<ExpenseCategoriesPage>
           children: [
             const PulseDot.positive(),
             const SizedBox(width: 6),
-            Flexible( // <-- envolve o Text com Flexible
+            Flexible(
+              // <-- envolve o Text com Flexible
               child: Text(
                 _categorias.isEmpty
                     ? 'Nenhuma'
@@ -183,7 +233,7 @@ class _ExpenseCategoriesPageState extends State<ExpenseCategoriesPage>
             bottomContent: _buildCategoryBadge(),
             actionButtons: [
               SharedAppBar.headerButton(
-                onTap: () => showCategoryCreateDialog(
+                onTap: () => showCategoryFormDialog(
                   context: context,
                   onConfirm: _createCategoria,
                 ),
@@ -191,7 +241,8 @@ class _ExpenseCategoriesPageState extends State<ExpenseCategoriesPage>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.add_rounded, color: Colors.white, size: 16),
+                    const Icon(Icons.add_rounded,
+                        color: Colors.white, size: 16),
                     const SizedBox(width: 6),
                     Text(
                       'Nova',
@@ -223,8 +274,8 @@ class _ExpenseCategoriesPageState extends State<ExpenseCategoriesPage>
           Expanded(
             child: _isLoading
                 ? Center(
-                    child: OrcamentosLoading(
-                        message: 'Carregando categorias...'))
+                    child:
+                        OrcamentosLoading(message: 'Carregando categorias...'))
                 : _categorias.isEmpty
                     ? const CategoriesEmptyState()
                     : _buildList(),
@@ -234,47 +285,92 @@ class _ExpenseCategoriesPageState extends State<ExpenseCategoriesPage>
     );
   }
 
+  Widget _buildFiltros() {
+    int contar(TipoCategoriaGasto? tipo) => tipo == null
+        ? _categorias.length
+        : _categorias.where((c) => c.tipo == tipo).length;
+
+    Widget chip(String label, TipoCategoriaGasto? tipo, Color cor) {
+      final selecionado = _filtroTipo == tipo;
+      return ChoiceChip(
+        label: Text('$label (${contar(tipo)})'),
+        selected: selecionado,
+        showCheckmark: false,
+        selectedColor: cor.withValues(alpha: 0.15),
+        backgroundColor: Colors.white,
+        side: BorderSide(
+            color: selecionado ? cor : Colors.grey.shade300, width: 1),
+        labelStyle: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: selecionado ? cor : Colors.grey[600],
+        ),
+        onSelected: (_) => setState(() => _filtroTipo = tipo),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          chip('Todas', null, Colors.indigo),
+          for (final tipo in TipoCategoriaGasto.values)
+            chip(tipo.label, tipo, tipo.color),
+        ],
+      ),
+    );
+  }
+
   Widget _buildList() {
+    final categorias = _categoriasFiltradas;
+
     return CustomScrollView(
       slivers: [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child: Text(
-              '${_categorias.length} ${_categorias.length == 1 ? 'categoria' : 'categorias'}',
-              style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.grey[500],
-                  letterSpacing: 0.3),
+        SliverToBoxAdapter(child: _buildFiltros()),
+        if (categorias.isEmpty)
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: CategoriesEmptyState(
+              icon: _filtroTipo!.icon,
+              title: 'Nenhuma categoria deste tipo',
+              subtitle: 'Toque em "Nova" para criar uma de ${_filtroTipo!.label}',
+            ),
+          )
+        else
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final categoria = categorias[index];
+                  final color = _categoryColors[index % _categoryColors.length];
+                  return CategoryCard(
+                    key: ValueKey(categoria.id),
+                    categoria: categoria,
+                    color: color,
+                    icon: CategoryIconMapper.getIcon(categoria.nome),
+                    index: index,
+                    onEdit: () => showCategoryFormDialog(
+                      context: context,
+                      categoria: categoria,
+                      onConfirm: (nome, tipo) =>
+                          _updateCategoria(categoria, nome, tipo),
+                    ),
+                    onDelete: () => ConfirmationDialog.confirmAction(
+                      context: context,
+                      title: 'Excluir Categoria',
+                      message: 'Deseja realmente excluir esta categoria?',
+                      actionText: 'Excluir',
+                      action: () => _deleteCategoria(categoria.id),
+                    ),
+                  );
+                },
+                childCount: categorias.length,
+              ),
             ),
           ),
-        ),
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-          sliver: SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) {
-                final categoria = _categorias[index];
-                final color = _categoryColors[index % _categoryColors.length];
-                return CategoryCard(
-                  categoria: categoria,
-                  color: color,
-                  icon: CategoryIconMapper.getIcon(categoria.nome),
-                  index: index,
-                  onDelete: () => ConfirmationDialog.confirmAction(
-                    context: context,
-                    title: 'Excluir Categoria',
-                    message: 'Deseja realmente excluir esta categoria?',
-                    actionText: 'Excluir',
-                    action: () => _deleteCategoria(categoria.id),
-                  ),
-                );
-              },
-              childCount: _categorias.length,
-            ),
-          ),
-        ),
       ],
     );
   }

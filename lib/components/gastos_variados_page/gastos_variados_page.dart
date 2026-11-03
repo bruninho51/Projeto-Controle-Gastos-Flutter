@@ -5,6 +5,7 @@ import 'package:orcamentos_app/components/gasto_variado_detalhes_page/gasto_vari
 import 'package:orcamentos_app/components/gastos_variados_page/gastos_page_empty_state.dart';
 import 'package:orcamentos_app/shared/api_models.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
+import 'package:orcamentos_app/features/categories/components/category_tipo_style.dart';
 import 'package:provider/provider.dart';
 import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
 
@@ -881,7 +882,9 @@ class _ExtratoItem extends StatelessWidget {
     final valor = double.tryParse(gasto.valor) ?? 0;
     final descricao = gasto.descricao;
     final categoriaNome = gasto.categoriaGasto.nome;
-    final color = _colorForCategoria(categoriaNome);
+    final tipo = gasto.categoriaGasto.tipo;
+    final isPatrimonio = tipo == TipoCategoriaGasto.patrimonio;
+    final color = isPatrimonio ? tipo.color : _colorForCategoria(categoriaNome);
 
     final radius = BorderRadius.vertical(
       top: isLast && gasto == gasto ? Radius.zero : Radius.zero,
@@ -911,8 +914,7 @@ class _ExtratoItem extends StatelessWidget {
                       color: color.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(_iconForCategoria(categoriaNome),
-                        color: color, size: 20),
+                    child: Icon(_iconForCategoria(categoriaNome), color: color, size: 20),
                   ),
                   const SizedBox(width: 14),
 
@@ -946,11 +948,11 @@ class _ExtratoItem extends StatelessWidget {
 
                   // Valor
                   Text(
-                    '- ${fmt.format(valor)}',
+                    isPatrimonio ? fmt.format(valor) : '- ${fmt.format(valor)}',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: Colors.grey[800],
+                      color: isPatrimonio ? color : Colors.grey[800],
                       letterSpacing: -0.2,
                     ),
                   ),

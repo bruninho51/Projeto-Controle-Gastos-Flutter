@@ -55,11 +55,33 @@ class TokenDispositivoResponseDto {
   Map<String, dynamic> toJson() => _$TokenDispositivoResponseDtoToJson(this);
 }
 
+/// Tipo da categoria: DESPESA é dinheiro que saiu; PATRIMONIO é dinheiro
+/// poupado, investido ou guardado.
+@JsonEnum(alwaysCreate: true)
+enum TipoCategoriaGasto {
+  @JsonValue('DESPESA')
+  despesa,
+  @JsonValue('PATRIMONIO')
+  patrimonio;
+
+  /// Valor enviado/recebido pela API.
+  String get apiValue => _$TipoCategoriaGastoEnumMap[this]!;
+
+  String get label => switch (this) {
+        TipoCategoriaGasto.despesa => 'Despesa',
+        TipoCategoriaGasto.patrimonio => 'Patrimônio',
+      };
+}
+
 /// Categoria de gasto (resposta)
 @JsonSerializable()
 class CategoriaGastoResponseDto {
   final int id;
   final String nome;
+
+  /// Servidores anteriores à introdução do tipo não enviam o campo.
+  @JsonKey(defaultValue: TipoCategoriaGasto.despesa)
+  final TipoCategoriaGasto tipo;
 
   @JsonKey(name: 'data_criacao')
   final DateTime dataCriacao;
@@ -73,6 +95,7 @@ class CategoriaGastoResponseDto {
   CategoriaGastoResponseDto({
     required this.id,
     required this.nome,
+    this.tipo = TipoCategoriaGasto.despesa,
     required this.dataCriacao,
     required this.dataAtualizacao,
     this.dataInatividade,
@@ -88,8 +111,12 @@ class CategoriaGastoResponseDto {
 @JsonSerializable()
 class CategoriaGastoCreateDto {
   final String nome;
+  final TipoCategoriaGasto tipo;
 
-  CategoriaGastoCreateDto({required this.nome});
+  CategoriaGastoCreateDto({
+    required this.nome,
+    this.tipo = TipoCategoriaGasto.despesa,
+  });
 
   factory CategoriaGastoCreateDto.fromJson(Map<String, dynamic> json) =>
       _$CategoriaGastoCreateDtoFromJson(json);
@@ -100,16 +127,21 @@ class CategoriaGastoCreateDto {
 /// DTO de atualização de categoria de gasto
 class CategoriaGastoUpdateDto {
   final PatchField<String> nome;
+  final PatchField<TipoCategoriaGasto> tipo;
   final PatchField<DateTime> dataInatividade;
 
   CategoriaGastoUpdateDto({
     this.nome = const PatchField.absent(),
+    this.tipo = const PatchField.absent(),
     this.dataInatividade = const PatchField.absent(),
   });
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};
     nome.addToMap(map, 'nome');
+    if (tipo case Present<TipoCategoriaGasto>(value: final valor)) {
+      map['tipo'] = valor.apiValue;
+    }
     dataInatividade.addToMap(map, 'data_inatividade');
     return map;
   }
@@ -477,10 +509,12 @@ class PadraoRegexNotificacaoRequestDto {
     required this.corpoNotificacao,
   });
 
-  factory PadraoRegexNotificacaoRequestDto.fromJson(Map<String, dynamic> json) =>
+  factory PadraoRegexNotificacaoRequestDto.fromJson(
+          Map<String, dynamic> json) =>
       _$PadraoRegexNotificacaoRequestDtoFromJson(json);
 
-  Map<String, dynamic> toJson() => _$PadraoRegexNotificacaoRequestDtoToJson(this);
+  Map<String, dynamic> toJson() =>
+      _$PadraoRegexNotificacaoRequestDtoToJson(this);
 }
 
 /// Resposta de um padrão de regex de notificação bancária
@@ -515,8 +549,10 @@ class PadraoRegexNotificacaoResponseDto {
     required this.dataExpiracao,
   });
 
-  factory PadraoRegexNotificacaoResponseDto.fromJson(Map<String, dynamic> json) =>
+  factory PadraoRegexNotificacaoResponseDto.fromJson(
+          Map<String, dynamic> json) =>
       _$PadraoRegexNotificacaoResponseDtoFromJson(json);
 
-  Map<String, dynamic> toJson() => _$PadraoRegexNotificacaoResponseDtoToJson(this);
+  Map<String, dynamic> toJson() =>
+      _$PadraoRegexNotificacaoResponseDtoToJson(this);
 }

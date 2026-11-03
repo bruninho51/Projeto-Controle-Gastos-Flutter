@@ -1,34 +1,46 @@
 import 'package:flutter/material.dart';
+import 'package:orcamentos_app/shared/api_models.dart';
+import 'package:orcamentos_app/features/categories/components/category_tipo_style.dart';
 
-Future<void> showCategoryCreateDialog({
+/// Abre o formulário de categoria. Sem [categoria] cria uma nova; com
+/// [categoria] edita a existente, já preenchida.
+Future<void> showCategoryFormDialog({
   required BuildContext context,
-  required Future<void> Function(String nome) onConfirm,
+  CategoriaGastoResponseDto? categoria,
+  required Future<void> Function(String nome, TipoCategoriaGasto tipo)
+      onConfirm,
 }) async {
   await showDialog<void>(
     context: context,
     barrierDismissible: true,
-    builder: (_) => _CategoryCreateDialog(onConfirm: onConfirm),
+    builder: (_) =>
+        _CategoryFormDialog(categoria: categoria, onConfirm: onConfirm),
   );
 }
 
-class _CategoryCreateDialog extends StatefulWidget {
-  final Future<void> Function(String nome) onConfirm;
+class _CategoryFormDialog extends StatefulWidget {
+  final CategoriaGastoResponseDto? categoria;
+  final Future<void> Function(String nome, TipoCategoriaGasto tipo) onConfirm;
 
-  const _CategoryCreateDialog({required this.onConfirm});
+  const _CategoryFormDialog({required this.categoria, required this.onConfirm});
 
   @override
-  State<_CategoryCreateDialog> createState() => _CategoryCreateDialogState();
+  State<_CategoryFormDialog> createState() => _CategoryFormDialogState();
 }
 
-class _CategoryCreateDialogState extends State<_CategoryCreateDialog> {
+class _CategoryFormDialogState extends State<_CategoryFormDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _controller;
+  late TipoCategoriaGasto _tipo;
   bool _isLoading = false;
+
+  bool get _isEdicao => widget.categoria != null;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController();
+    _controller = TextEditingController(text: widget.categoria?.nome ?? '');
+    _tipo = widget.categoria?.tipo ?? TipoCategoriaGasto.despesa;
   }
 
   @override
@@ -41,8 +53,10 @@ class _CategoryCreateDialogState extends State<_CategoryCreateDialog> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _isLoading = true);
     try {
-      await widget.onConfirm(_controller.text.trim());
+      await widget.onConfirm(_controller.text.trim(), _tipo);
     } catch (_) {
+      // O chamador já informa o erro ao usuário; aqui só destravamos o botão.
+    } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -90,12 +104,16 @@ class _CategoryCreateDialogState extends State<_CategoryCreateDialog> {
                         color: Colors.indigo[50],
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(Icons.add_circle_outline,
-                          color: Colors.indigo[700], size: 22),
+                      child: Icon(
+                          _isEdicao
+                              ? Icons.edit_outlined
+                              : Icons.add_circle_outline,
+                          color: Colors.indigo[700],
+                          size: 22),
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      'Nova Categoria',
+                      _isEdicao ? 'Editar Categoria' : 'Nova Categoria',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
@@ -151,6 +169,41 @@ class _CategoryCreateDialogState extends State<_CategoryCreateDialog> {
                       return null;
                     },
                   ),
+                ),
+                const SizedBox(height: 20),
+
+                // ── Tipo ───────────────────────────────────────────────
+                Text(
+                  'Tipo',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: SegmentedButton<TipoCategoriaGasto>(
+                    showSelectedIcon: false,
+                    segments: [
+                      for (final tipo in TipoCategoriaGasto.values)
+                        ButtonSegment(
+                          value: tipo,
+                          label: Text(tipo.label),
+                          icon: Icon(tipo.icon, size: 18),
+                        ),
+                    ],
+                    selected: {_tipo},
+                    onSelectionChanged: _isLoading
+                        ? null
+                        : (selecao) => setState(() => _tipo = selecao.first),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _tipo.description,
+                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                 ),
                 const SizedBox(height: 24),
 
