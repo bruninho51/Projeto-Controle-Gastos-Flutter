@@ -1,3 +1,10 @@
+# [1.25.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.24.1...v1.25.0) (2026-11-03)
+
+
+### Features
+
+* adiciona o conceito de patrimonio no aplicativo ([f87e109](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/f87e10927797508570ad9d87b6de5a0af48f7d42))
+
 ## [1.24.1](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.24.0...v1.24.1) (2026-10-25)
 
 
