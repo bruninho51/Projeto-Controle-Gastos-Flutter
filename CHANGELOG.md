@@ -1,3 +1,11 @@
+# [1.26.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.25.0...v1.26.0) (2026-11-04)
+
+
+### Features
+
+* melhora UX da versão web do aplicativo ([33caca2](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/33caca22f53f442e1eb3a2f29493f10114ee13fa))
+* melhora versão web dos gastos fixos e variáveis ([44d3bf1](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/commit/44d3bf1cd58bf104bbb9a6d063a2bf1e380fc741))
+
 # [1.25.0](https://gitlab.com/bruninho51/projeto-controle-gastos-flutter/compare/v1.24.1...v1.25.0) (2026-11-03)
 
 
