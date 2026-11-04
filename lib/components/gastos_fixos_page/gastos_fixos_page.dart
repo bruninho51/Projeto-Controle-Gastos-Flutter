@@ -1,15 +1,23 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:orcamentos_app/components/form_gasto_fixo_page/form_gasto_fixo_page.dart';
 import 'package:orcamentos_app/components/gasto_fixo_detalhes_page/gasto_fixo_detalhes_page.dart';
 import 'package:orcamentos_app/components/gastos_fixos_page/copiar_gastos_fixos_page.dart';
+import 'package:orcamentos_app/components/gastos_fixos_page/filtros_sheet.dart';
+import 'package:orcamentos_app/components/gastos_fixos_page/fixos_empty_state.dart';
+import 'package:orcamentos_app/components/gastos_fixos_page/fixos_header.dart';
+import 'package:orcamentos_app/components/gastos_fixos_page/gasto_fixo_status.dart';
+import 'package:orcamentos_app/components/gastos_fixos_page/pagos_dia_group.dart';
+import 'package:orcamentos_app/components/gastos_fixos_page/pagos_header.dart';
+import 'package:orcamentos_app/components/gastos_fixos_page/status_group.dart';
+import 'package:orcamentos_app/components/gastos_fixos_page/web/gastos_fixos_web_content.dart';
+import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
+import 'package:orcamentos_app/features/shared/components/orcamentos_loading.dart';
+import 'package:orcamentos_app/features/shared/components/web/web_page_toolbar.dart';
 import 'package:orcamentos_app/shared/api_models.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
-import 'package:orcamentos_app/features/categories/components/category_tipo_style.dart';
 import 'package:provider/provider.dart';
-import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
-
-import '../../features/shared/components/orcamentos_loading.dart';
 
 class GastosFixosPage extends StatefulWidget {
   final int orcamentoId;
@@ -31,6 +39,8 @@ class _GastosFixosPageState extends State<GastosFixosPage>
   DateTime? _filtroData;
   int? _filtroCategoriaId;
   List<CategoriaGastoResponseDto> _categorias = [];
+
+  late final Future<OrcamentoResponseDto> _orcamento = _getOrcamento();
 
   late AnimationController _refreshCtrl;
   bool _isRefreshing = false;
@@ -107,17 +117,10 @@ class _GastosFixosPageState extends State<GastosFixosPage>
     if (copiou == true) _handleRefresh();
   }
 
-  String _statusOf(GastoFixoResponseDto g) {
-    if (g.valor != null) return 'PAGO';
-    final venc = g.dataVenc;
-    if (venc != null && venc.isBefore(DateTime.now())) return 'VENCIDO';
-    return 'PENDENTE';
-  }
-
   List<GastoFixoResponseDto> _filtrar(List<GastoFixoResponseDto> gastos) {
     return gastos.where((g) {
       final desc = g.descricao.toLowerCase();
-      final status = _statusOf(g);
+      final status = statusDoGastoFixo(g);
       final nomeOk = desc.contains(_filtroNome.toLowerCase());
       final statusOk = _filtroStatus == null || _filtroStatus == status;
       final dataOk = _filtroData == null || (() {
@@ -140,7 +143,7 @@ class _GastosFixosPageState extends State<GastosFixosPage>
     final pagos = <GastoFixoResponseDto>[];
 
     for (final g in gastos) {
-      final s = _statusOf(g);
+      final s = statusDoGastoFixo(g);
       if (s == 'VENCIDO') vencidos.add(g);
       else if (s == 'PENDENTE') pendentes.add(g);
       else pagos.add(g);
@@ -170,14 +173,14 @@ class _GastosFixosPageState extends State<GastosFixosPage>
 
     return [
       if (gastos.isNotEmpty)
-        _StatusGroup(
+        StatusGroup(
           status: 'PENDENTE',
           itens: gastos,
           onTapItem: _navegar,
           titulo: separar ? 'Gastos pendentes' : null,
         ),
       if (patrimonio.isNotEmpty)
-        _StatusGroup(
+        StatusGroup(
           status: 'PENDENTE',
           itens: patrimonio,
           onTapItem: _navegar,
@@ -216,8 +219,9 @@ class _GastosFixosPageState extends State<GastosFixosPage>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      constraints: const BoxConstraints(maxWidth: 560),
       backgroundColor: Colors.transparent,
-      builder: (_) => _FiltrosSheet(
+      builder: (_) => FiltrosSheet(
         filtroNome: _filtroNome,
         filtroStatus: _filtroStatus,
         filtroData: _filtroData,
@@ -239,876 +243,238 @@ class _GastosFixosPageState extends State<GastosFixosPage>
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF4F5F9),
-      body: Column(
-        children: [
-          _FixosHeader(
-            auth: Provider.of<AuthState>(context),
-            isRefreshing: _isRefreshing,
-            refreshCtrl: _refreshCtrl,
-            onRefresh: _handleRefresh,
-            onFiltros: _showFiltros,
-            onBack: () => Navigator.of(context).pop(),
-            onCopiar: _abrirCopiarGastos,
-            gastosFuture: _gastosFixos,
-            filtrar: _filtrar,
-            temFiltroAtivo: _filtroNome.isNotEmpty ||
-                _filtroStatus != null ||
-                _filtroData != null ||
-                _filtroCategoriaId != null,
-          ),
-          Expanded(
-            child: FutureBuilder<List<GastoFixoResponseDto>>(
-              future: _gastosFixos,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting &&
-                    snapshot.data == null) {
-                  return Center(
-                      child: OrcamentosLoading(message: 'Carregando gastos fixos...'));
-                }
-                if (snapshot.hasError) {
-                  return Center(
-                      child: Text('Erro: ${snapshot.error}',
-                          style: TextStyle(color: Colors.grey[600])));
-                }
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return _EmptyState(
-                      message: 'Nenhum gasto fixo cadastrado',
-                      subtitle: 'Adicione um novo gasto usando o botão abaixo');
-                }
+  static const _indigo = Color(0xFF1A237E);
 
-                final filtrados = _filtrar(snapshot.data!);
-                if (filtrados.isEmpty) {
-                  return _EmptyState(
-                    message: 'Nenhum resultado para os filtros',
-                    subtitle: 'Tente limpar os filtros aplicados',
-                    showClearButton: true,
-                    onClear: () => setState(() {
-                      _filtroNome = '';
-                      _filtroStatus = null;
-                      _filtroData = null;
-                    }),
-                  );
-                }
+  bool get _temFiltroAtivo =>
+      _filtroNome.isNotEmpty ||
+      _filtroStatus != null ||
+      _filtroData != null ||
+      _filtroCategoriaId != null;
 
-                final grupos = _agrupar(filtrados);
-                final widgets = <Widget>[];
+  void _limparFiltros() => setState(() {
+        _filtroNome = '';
+        _filtroStatus = null;
+        _filtroData = null;
+        _filtroCategoriaId = null;
+      });
 
-                for (final chave in grupos.keys) {
-                  final itens = grupos[chave]!;
-                  if (chave == 'PENDENTE') {
-                    widgets.addAll(_gruposPendentes(itens));
-                  } else if (chave != 'PAGO') {
-                    widgets.add(_StatusGroup(
-                        status: chave, itens: itens, onTapItem: _navegar));
-                  } else {
-                    final totalPagos = itens.fold<double>(
-                        0,
-                            (s, g) => s +
-                            (double.tryParse(g.valor ?? '0') ?? 0));
-                    widgets.add(_PagosHeader(
-                        totalItens: itens.length, totalValor: totalPagos));
-
-                    final porDia = _agruparPorDia(itens);
-                    for (final diaKey in porDia.keys) {
-                      final diaItens = porDia[diaKey]!;
-                      final totalDia = diaItens.fold<double>(
-                          0,
-                              (s, g) =>
-                          s + (double.tryParse(g.valor ?? '0') ?? 0));
-                      widgets.add(_PagosDiaGroup(
-                        diaKey: diaKey,
-                        itens: diaItens,
-                        totalDia: totalDia,
-                        onTapItem: _navegar,
-                      ));
-                    }
-                  }
-                }
-
-                return RefreshIndicator(
-                  color: const Color(0xFF1A237E),
-                  onRefresh: () async {
-                    _handleRefresh();
-                  },
-                  child: CustomScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    slivers: [
-                      SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-                        sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                                (_, i) => widgets[i],
-                            childCount: widgets.length,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: FutureBuilder<OrcamentoResponseDto>(
-        future: _getOrcamento(),
-        builder: (context, snapshot) {
-          final isAtivo = snapshot.hasData &&
-              snapshot.data!.dataEncerramento == null;
-          if (!isAtivo) return const SizedBox.shrink();
-          return FloatingActionButton.extended(
-            onPressed: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => CriacaoGastoFixoPage(
-                    orcamentoId: widget.orcamentoId,
-                  ),
-                ),
-              );
-              setState(() {
-                _gastosFixos = _fetchGastos();
-              });
-            },
-            backgroundColor: const Color(0xFF1A237E),
-            foregroundColor: Colors.white,
-            elevation: 4,
-            icon: const Icon(Icons.add, size: 20),
-            label: const Text('Novo Gasto',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-          );
-        },
+  Future<void> _novoGasto() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => CriacaoGastoFixoPage(orcamentoId: widget.orcamentoId),
       ),
     );
+    if (!mounted) return;
+    setState(() => _gastosFixos = _fetchGastos());
   }
-}
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Grupo de status (VENCIDO / PENDENTE)
-// ═══════════════════════════════════════════════════════════════════════════════
-class _StatusGroup extends StatelessWidget {
-  final String status;
-  final List<GastoFixoResponseDto> itens;
-  final Future<void> Function(GastoFixoResponseDto) onTapItem;
-
-  /// Quando [TipoCategoriaGasto.patrimonio], a seção usa o visual de patrimônio.
-  final TipoCategoriaGasto? tipo;
-
-  /// Substitui o título padrão ("Vencidos" / "Pendentes").
-  final String? titulo;
-
-  const _StatusGroup({
-    required this.status,
-    required this.itens,
-    required this.onTapItem,
-    this.tipo,
-    this.titulo,
-  });
-
-  bool get _isPatrimonio => tipo == TipoCategoriaGasto.patrimonio;
-
-  Color get _color => _isPatrimonio
-      ? tipo!.color
-      : status == 'VENCIDO'
-          ? const Color(0xFFE53935)
-          : const Color(0xFFF4511E);
-  IconData get _icon => _isPatrimonio
-      ? tipo!.icon
-      : status == 'VENCIDO'
-          ? Icons.warning_amber_rounded
-          : Icons.schedule_rounded;
-  String get _label =>
-      titulo ?? (status == 'VENCIDO' ? 'Vencidos' : 'Pendentes');
-  double get _totalPrevisto => itens.fold(
-      0, (s, g) => s + (double.tryParse(g.previsto) ?? 0));
+  /// Layout de desktop apenas na web e com espaço suficiente.
+  static const double _larguraMinimaWeb = 720;
 
   @override
   Widget build(BuildContext context) {
-    final fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(4, 20, 4, 10),
-          child: Row(children: [
-            Container(width: 28, height: 28,
-                decoration: BoxDecoration(color: _color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                child: Icon(_icon, color: _color, size: 15)),
-            const SizedBox(width: 10),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(_label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: _color)),
-              Text('${itens.length} ${itens.length == 1 ? 'item' : 'itens'}',
-                  style: TextStyle(fontSize: 11, color: Colors.grey[400])),
-            ])),
-            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              Text(fmt.format(_totalPrevisto),
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: _color, letterSpacing: -0.2)),
-              Text('previsto', style: TextStyle(fontSize: 10, color: Colors.grey[400])),
-            ]),
-          ]),
-        ),
-        Container(
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))]),
-          child: Column(children: itens.asMap().entries.map((e) => _GastoFixoItem(
-              gasto: e.value, isLast: e.key == itens.length - 1,
-              onTap: () => onTapItem(e.value))).toList()),
-        ),
-      ],
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// Cabeçalho da seção PAGO
-// ═══════════════════════════════════════════════════════════════════════════════
-class _PagosHeader extends StatelessWidget {
-  final int totalItens;
-  final double totalValor;
-  const _PagosHeader({required this.totalItens, required this.totalValor});
-
-  @override
-  Widget build(BuildContext context) {
-    final fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-    const color = Color(0xFF43A047);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 24, 4, 4),
-      child: Row(children: [
-        Container(width: 28, height: 28,
-            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-            child: const Icon(Icons.check_circle_rounded, color: color, size: 15)),
-        const SizedBox(width: 10),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Pagos', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: color)),
-          Text('$totalItens ${totalItens == 1 ? 'item' : 'itens'}',
-              style: TextStyle(fontSize: 11, color: Colors.grey[400])),
-        ])),
-        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Text(fmt.format(totalValor),
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: color, letterSpacing: -0.2)),
-          Text('total pago', style: TextStyle(fontSize: 10, color: Colors.grey[400])),
-        ]),
-      ]),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// Sub-grupo de pagos por dia
-// ═══════════════════════════════════════════════════════════════════════════════
-class _PagosDiaGroup extends StatelessWidget {
-  final String diaKey;
-  final List<GastoFixoResponseDto> itens;
-  final double totalDia;
-  final Future<void> Function(GastoFixoResponseDto) onTapItem;
-
-  const _PagosDiaGroup({required this.diaKey, required this.itens, required this.totalDia, required this.onTapItem});
-
-  String get _diaLabel {
-    if (diaKey == 'sem_data') return 'Sem data';
-    try {
-      final dt = DateTime.parse(diaKey);
-      final hoje = DateTime.now();
-      final ontem = hoje.subtract(const Duration(days: 1));
-      if (dt.year == hoje.year && dt.month == hoje.month && dt.day == hoje.day) return 'Hoje';
-      if (dt.year == ontem.year && dt.month == ontem.month && dt.day == ontem.day) return 'Ontem';
-      return DateFormat("d 'de' MMMM", 'pt_BR').format(dt);
-    } catch (_) { return diaKey; }
-  }
-
-  String get _diaSemana {
-    if (diaKey == 'sem_data') return '';
-    try { return DateFormat('EEEE', 'pt_BR').format(DateTime.parse(diaKey)); } catch (_) { return ''; }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Padding(
-        padding: const EdgeInsets.fromLTRB(4, 14, 4, 8),
-        child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(_diaLabel, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF1A1F36))),
-            if (_diaSemana.isNotEmpty)
-              Text(_diaSemana, style: TextStyle(fontSize: 11, color: Colors.grey[400])),
-          ])),
-          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text(fmt.format(totalDia),
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF43A047), letterSpacing: -0.2)),
-            Text('${itens.length} ${itens.length == 1 ? 'lançamento' : 'lançamentos'}',
-                style: TextStyle(fontSize: 10, color: Colors.grey[400])),
-          ]),
-        ]),
-      ),
-      Container(
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))]),
-        child: Column(children: itens.asMap().entries.map((e) => _GastoFixoItem(
-            gasto: e.value, isLast: e.key == itens.length - 1,
-            onTap: () => onTapItem(e.value))).toList()),
-      ),
-    ]);
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// Item individual
-// ═══════════════════════════════════════════════════════════════════════════════
-class _GastoFixoItem extends StatelessWidget {
-  final GastoFixoResponseDto gasto;
-  final bool isLast;
-  final VoidCallback onTap;
-
-  const _GastoFixoItem({required this.gasto, required this.isLast, required this.onTap});
-
-  String _statusOf() {
-    if (gasto.valor != null) return 'PAGO';
-    final v = gasto.dataVenc;
-    if (v != null && v.isBefore(DateTime.now())) return 'VENCIDO';
-    return 'PENDENTE';
-  }
-
-  /// Itens de patrimônio se destacam pela cor do ícone; o status segue nas demais cores.
-  Color get _iconColor => gasto.categoriaGasto.tipo == TipoCategoriaGasto.patrimonio
-      ? gasto.categoriaGasto.tipo.color
-      : _color;
-
-  /// O PENDENTE de patrimônio acompanha a cor da seção "Patrimônio pendente";
-  /// VENCIDO mantém o vermelho de alerta.
-  Color _statusChipColor(String status) =>
-      status == 'PENDENTE' && gasto.categoriaGasto.tipo == TipoCategoriaGasto.patrimonio
-          ? gasto.categoriaGasto.tipo.color
-          : _color;
-
-  Color get _color {
-    switch (_statusOf()) {
-      case 'VENCIDO': return const Color(0xFFE53935);
-      case 'PENDENTE': return const Color(0xFFF4511E);
-      default: return const Color(0xFF43A047);
-    }
-  }
-
-  IconData get _icon {
-    switch (_statusOf()) {
-      case 'VENCIDO': return Icons.warning_amber_rounded;
-      case 'PENDENTE': return Icons.schedule_rounded;
-      default: return Icons.check_circle_rounded;
-    }
-  }
-
-  String _fmtDate(DateTime? data) {
-    if (data == null) return '';
-    return DateFormat('dd/MM/yyyy').format(data);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-    final previsto = double.tryParse(gasto.previsto) ?? 0.0;
-    final valorPago = gasto.valor != null ? double.tryParse(gasto.valor!) ?? 0.0 : null;
-    final descricao = gasto.descricao;
-    final categoriaNome = gasto.categoriaGasto.nome;
-    final status = _statusOf();
-
-    String subtitulo = '';
-    if (status == 'PAGO') subtitulo = 'Pago em ${_fmtDate(gasto.dataPgto)}';
-    else if (gasto.dataVenc != null) {
-      subtitulo = status == 'VENCIDO'
-          ? 'Venceu em ${_fmtDate(gasto.dataVenc)}'
-          : 'Vence em ${_fmtDate(gasto.dataVenc)}';
-    }
-    subtitulo = subtitulo.isNotEmpty ? '$categoriaNome · $subtitulo' : categoriaNome;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: isLast ? const BorderRadius.vertical(bottom: Radius.circular(16)) : BorderRadius.zero,
-        splashColor: _color.withOpacity(0.06), highlightColor: _color.withOpacity(0.03),
-        child: Column(children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(children: [
-              Container(width: 40, height: 40,
-                  decoration: BoxDecoration(color: _iconColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                  child: Icon(_icon, color: _iconColor, size: 20)),
-              const SizedBox(width: 14),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(descricao, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1A1F36)),
-                    maxLines: 1, overflow: TextOverflow.ellipsis),
-                if (subtitulo.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(subtitulo, style: TextStyle(fontSize: 11, color: Colors.grey[400]),
-                      maxLines: 1, overflow: TextOverflow.ellipsis),
-                ],
-              ])),
-              Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                Text(
-                  status == 'PAGO' && valorPago != null ? fmt.format(valorPago) : fmt.format(previsto),
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700,
-                      color: status == 'PAGO' ? const Color(0xFF43A047) : const Color(0xFF1A1F36),
-                      letterSpacing: -0.2),
-                ),
-                if (status == 'PAGO' && valorPago != null && valorPago != previsto) ...[
-                  const SizedBox(height: 2),
-                  Text('prev. ${fmt.format(previsto)}',
-                      style: TextStyle(fontSize: 10, color: Colors.grey[400], decoration: TextDecoration.lineThrough)),
-                ],
-                if (status != 'PAGO') ...[
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                    decoration: BoxDecoration(color: _statusChipColor(status).withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
-                    child: Text(status, style: TextStyle(fontSize: 9, color: _statusChipColor(status), fontWeight: FontWeight.w700, letterSpacing: 0.3)),
-                  ),
-                ],
-              ]),
-            ]),
-          ),
-          if (!isLast) Padding(padding: const EdgeInsets.only(left: 70), child: Container(height: 1, color: Colors.grey[100])),
-        ]),
-      ),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// Header navbar com botão ⋮
-// ═══════════════════════════════════════════════════════════════════════════════
-class _FixosHeader extends StatelessWidget {
-  final bool isRefreshing;
-  final AnimationController refreshCtrl;
-  final VoidCallback onRefresh;
-  final VoidCallback onFiltros;
-  final VoidCallback onBack;
-  final VoidCallback onCopiar;
-  final bool temFiltroAtivo;
-  final AuthState auth;
-  final Future<List<GastoFixoResponseDto>> gastosFuture;
-  final List<GastoFixoResponseDto> Function(List<GastoFixoResponseDto>) filtrar;
-
-  const _FixosHeader({
-    required this.isRefreshing, required this.refreshCtrl,
-    required this.onRefresh, required this.onFiltros,
-    required this.onBack, required this.onCopiar,
-    required this.temFiltroAtivo, required this.auth,
-    required this.gastosFuture, required this.filtrar,
-  });
-
-  Widget _buildAvatar() {
-    if (auth.user?.photoURL != null) {
-      return ClipOval(
-        child: Image.network(auth.user!.photoURL!,
-            width: 38, height: 38, fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => _fallbackAvatar()),
+    return LayoutBuilder(builder: (context, constraints) {
+      final isWeb = kIsWeb && constraints.maxWidth >= _larguraMinimaWeb;
+      return Scaffold(
+        backgroundColor: const Color(0xFFF4F5F9),
+        body: isWeb ? _buildWeb() : _buildMobile(),
+        floatingActionButton: isWeb ? null : _buildFab(),
       );
-    }
-    return _fallbackAvatar();
-  }
-
-  Widget _fallbackAvatar() => Container(
-    width: 36, height: 36,
-    decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
-    child: const Icon(Icons.person_rounded, color: Colors.white, size: 18),
-  );
-
-  void _showMenu(BuildContext context, GlobalKey key) {
-    final box = key.currentContext!.findRenderObject() as RenderBox;
-    final offset = box.localToGlobal(Offset.zero);
-    final size = box.size;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-
-    showMenu<String>(
-      context: context,
-      color: Colors.white,
-      elevation: 16,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      position: RelativeRect.fromLTRB(
-        offset.dx,                           // alinhado à esquerda do botão
-        offset.dy + size.height + 4,         // logo abaixo do botão
-        screenWidth - (offset.dx + size.width), // distância da borda direita
-        screenHeight - (offset.dy + size.height + 4), // distância da borda inferior
-      ),
-      items: [
-        PopupMenuItem<String>(
-          value: 'copiar',
-          padding: EdgeInsets.zero,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(children: [
-              Container(width: 32, height: 32,
-                  decoration: BoxDecoration(color: const Color(0xFF1A237E).withOpacity(0.1), borderRadius: BorderRadius.circular(9)),
-                  child: const Icon(Icons.copy_all_rounded, color: Color(0xFF1A237E), size: 16)),
-              const SizedBox(width: 12),
-              const Text('Copiar do Orçamento',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF1A1F36))),
-            ]),
-          ),
-        ),
-      ],
-    ).then((value) {
-      if (value == 'copiar') onCopiar();
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final top = MediaQuery.of(context).padding.top;
-    final canPop = Navigator.of(context).canPop();
-    final menuKey = GlobalKey();
-
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft, end: Alignment.bottomRight,
-          colors: [Color(0xFF1A237E), Color(0xFF283593), Color(0xFF3949AB)],
-        ),
-        boxShadow: [BoxShadow(color: Color(0x551A237E), blurRadius: 24, offset: Offset(0, 8))],
-      ),
-      padding: EdgeInsets.fromLTRB(20, top + 16, 20, 20),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        // ── Linha 1 ────────────────────────────────────────────────────────────
-        Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-          if (canPop) ...[
-            _HeaderButton(onTap: onBack, tooltip: 'Voltar', isSquare: true,
-                child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 16)),
-            const SizedBox(width: 12),
-          ],
-          Container(width: 40, height: 40,
-              decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
-              child: const Icon(Icons.receipt_long_rounded, color: Colors.white, size: 20)),
-          const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Gastos Fixos', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: 0.2)),
-            Text('Planejamento de despesas', style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
-          ])),
-          const SizedBox(width: 10),
-          _buildAvatar(),
-        ]),
-
-        const SizedBox(height: 16),
-
-        // ── Total gasto ───────────────────────────────────────────────────────
-        FutureBuilder<List<GastoFixoResponseDto>>(
-          future: gastosFuture,
-          builder: (context, snapshot) {
-            final filtrados = filtrar(snapshot.data ?? []);
-            final totalGasto = filtrados.fold<double>(
-                0, (s, g) => s + (double.tryParse(g.valor ?? '0') ?? 0));
-            final fmt = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-            return Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.13),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Row(children: [
-                Container(width: 30, height: 30,
-                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(9)),
-                    child: const Icon(Icons.payments_rounded, color: Colors.white, size: 16)),
-                const SizedBox(width: 10),
-                Text('Total gasto', style: TextStyle(color: Colors.white.withOpacity(0.75), fontSize: 12, fontWeight: FontWeight.w500)),
-                const Spacer(),
-                Text(fmt.format(totalGasto),
-                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w800, letterSpacing: -0.3)),
-              ]),
-            );
-          },
-        ),
-
-        const SizedBox(height: 16),
-
-        // ── Linha 2 ────────────────────────────────────────────────────────────
-        Row(children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(color: Colors.white.withOpacity(0.13), borderRadius: BorderRadius.circular(20)),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Container(width: 7, height: 7, decoration: const BoxDecoration(color: Color(0xFF69F0AE), shape: BoxShape.circle)),
-              const SizedBox(width: 7),
-              const Text('Planejamentos', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
-            ]),
-          ),
-          const Spacer(),
-
-          // Filtros
-          Stack(children: [
-            _HeaderButton(onTap: onFiltros, tooltip: 'Filtros',
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  const Icon(Icons.filter_list_rounded, color: Colors.white, size: 16),
-                  const SizedBox(width: 6),
-                  Text('Filtros', style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12, fontWeight: FontWeight.w600)),
-                ])),
-            if (temFiltroAtivo)
-              Positioned(top: 2, right: 2,
-                  child: Container(width: 8, height: 8, decoration: const BoxDecoration(color: Color(0xFFFFD740), shape: BoxShape.circle))),
-          ]),
-          const SizedBox(width: 8),
-
-          // Refresh
-          _HeaderButton(onTap: onRefresh, tooltip: 'Recarregar', isSquare: true,
-              child: RotationTransition(
-                turns: refreshCtrl,
-                child: Icon(Icons.refresh_rounded, color: Colors.white.withOpacity(isRefreshing ? 1.0 : 0.9), size: 18),
-              )),
-          const SizedBox(width: 8),
-
-          // 3 pontinhos
-          _HeaderButton(
-            key: menuKey,
-            onTap: () => _showMenu(context, menuKey),
-            tooltip: 'Mais opções',
-            isSquare: true,
-            child: const Icon(Icons.more_vert_rounded, color: Colors.white, size: 18),
-          ),
-        ]),
-      ]),
-    );
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// Modal de filtros
-// ═══════════════════════════════════════════════════════════════════════════════
-class _FiltrosSheet extends StatefulWidget {
-  final String filtroNome;
-  final String? filtroStatus;
-  final DateTime? filtroData;
-  final int? filtroCategoriaId;
-  final List<CategoriaGastoResponseDto> categorias;
-  final void Function(String nome, String? status, DateTime? data, int? categoriaId) onAplicar;
-  final VoidCallback onLimpar;
-
-  const _FiltrosSheet({
-    required this.filtroNome, required this.filtroStatus,
-    required this.filtroData, required this.filtroCategoriaId,
-    required this.categorias, required this.onAplicar, required this.onLimpar,
-  });
-
-  @override
-  State<_FiltrosSheet> createState() => _FiltrosSheetState();
-}
-
-class _FiltrosSheetState extends State<_FiltrosSheet> {
-  late TextEditingController _nomeCtrl;
-  String? _status;
-  DateTime? _data;
-  int? _categoriaId;
-
-  @override
-  void initState() {
-    super.initState();
-    _nomeCtrl = TextEditingController(text: widget.filtroNome);
-    _status = widget.filtroStatus;
-    _data = widget.filtroData;
-    _categoriaId = widget.filtroCategoriaId;
+  /// Loading, erro ou vazio; `null` quando há gastos a exibir.
+  Widget? _estadoVazio(AsyncSnapshot<List<GastoFixoResponseDto>> snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting &&
+        snapshot.data == null) {
+      return Center(
+          child: OrcamentosLoading(message: 'Carregando gastos fixos...'));
+    }
+    if (snapshot.hasError) {
+      return Center(
+          child: Text('Erro: ${snapshot.error}',
+              style: TextStyle(color: Colors.grey[600])));
+    }
+    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+      return const FixosEmptyState(
+          message: 'Nenhum gasto fixo cadastrado',
+          subtitle: 'Adicione um novo gasto usando o botão abaixo');
+    }
+    if (_filtrar(snapshot.data!).isEmpty) {
+      return FixosEmptyState(
+        message: 'Nenhum resultado para os filtros',
+        subtitle: 'Tente limpar os filtros aplicados',
+        showClearButton: true,
+        onClear: _limparFiltros,
+      );
+    }
+    return null;
   }
 
-  @override
-  void dispose() { _nomeCtrl.dispose(); super.dispose(); }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(context).viewInsets.bottom + 24),
-      child: SingleChildScrollView(
-        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Center(child: Container(width: 36, height: 4, margin: const EdgeInsets.only(bottom: 20),
-              decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)))),
-          Row(children: [
-            Container(padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: const Color(0xFF1A237E).withOpacity(0.08), borderRadius: BorderRadius.circular(10)),
-                child: const Icon(Icons.filter_list_rounded, color: Color(0xFF1A237E), size: 18)),
-            const SizedBox(width: 12),
-            const Text('Filtros', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: Color(0xFF1A1F36))),
-          ]),
-          const SizedBox(height: 20),
-          TextField(controller: _nomeCtrl, style: const TextStyle(fontSize: 15),
-              decoration: InputDecoration(
-                hintText: 'Buscar por nome…', hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
-                prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF3949AB), size: 20),
-                filled: true, fillColor: Colors.grey[50],
-                contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[200]!)),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[200]!)),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF3949AB), width: 1.5)),
-              )),
-          const SizedBox(height: 16),
-          Text('Status', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey[500], letterSpacing: 0.5)),
-          const SizedBox(height: 10),
-          Wrap(spacing: 8, children: ['PAGO', 'PENDENTE', 'VENCIDO'].map((s) {
-            final selected = _status == s;
-            final color = s == 'PAGO' ? const Color(0xFF43A047) : s == 'VENCIDO' ? const Color(0xFFE53935) : const Color(0xFFF4511E);
-            return FilterChip(
-              label: Text(s, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: selected ? Colors.white : color)),
-              selected: selected, onSelected: (v) => setState(() => _status = v ? s : null),
-              backgroundColor: color.withOpacity(0.08), selectedColor: color, checkmarkColor: Colors.white,
-              side: BorderSide(color: color.withOpacity(0.3)), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            );
-          }).toList()),
-          const SizedBox(height: 16),
-          Text('Categoria', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey[500], letterSpacing: 0.5)),
-          const SizedBox(height: 10),
-          DropdownButtonFormField<int?>(
-            value: _categoriaId,
-            isExpanded: true,
-            icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF3949AB)),
-            decoration: InputDecoration(
-              filled: true, fillColor: Colors.grey[50],
-              contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[200]!)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey[200]!)),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF3949AB), width: 1.5)),
-            ),
-            items: [
-              const DropdownMenuItem<int?>(value: null, child: Text('Todas as categorias')),
-              ...widget.categorias.map((c) => DropdownMenuItem<int?>(
-                    value: c.id,
-                    child: Text(c.nome, overflow: TextOverflow.ellipsis),
-                  )),
-            ],
-            onChanged: (v) => setState(() => _categoriaId = v),
-          ),
-          const SizedBox(height: 16),
-          Text('Data', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey[500], letterSpacing: 0.5)),
-          const SizedBox(height: 10),
-          Row(children: [
-            Expanded(child: GestureDetector(
-              onTap: () async {
-                final picked = await showDatePicker(
-                  context: context, initialDate: _data ?? DateTime.now(),
-                  firstDate: DateTime(2000), lastDate: DateTime(2100),
-                  builder: (ctx, child) => Theme(
-                    data: Theme.of(ctx).copyWith(colorScheme: const ColorScheme.light(primary: Color(0xFF1A237E))),
-                    child: child!,
-                  ),
-                );
-                if (picked != null) setState(() => _data = picked);
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50], borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: _data != null ? const Color(0xFF3949AB) : Colors.grey[200]!, width: _data != null ? 1.5 : 1),
+  // ── Versão web ──────────────────────────────────────────────────────────────
+  Widget _buildWeb() {
+    return Column(
+      children: [
+        FutureBuilder<OrcamentoResponseDto>(
+          future: _orcamento,
+          builder: (context, snapshot) => WebPageToolbar(
+            titulo: 'Gastos Fixos',
+            subtitulo: 'Planejamento de despesas',
+            cor: _indigo,
+            busca: _filtroNome,
+            temFiltroAtivo: _temFiltroAtivo,
+            podeCriar:
+                snapshot.hasData && snapshot.data!.dataEncerramento == null,
+            isRefreshing: _isRefreshing,
+            refreshCtrl: _refreshCtrl,
+            onBuscar: (v) => setState(() => _filtroNome = v),
+            onFiltros: _showFiltros,
+            onRefresh: _handleRefresh,
+            onNovoGasto: _novoGasto,
+            onBack: Navigator.of(context).canPop()
+                ? () => Navigator.of(context).pop()
+                : null,
+            acoes: [
+              OutlinedButton.icon(
+                onPressed: _abrirCopiarGastos,
+                icon: const Icon(Icons.copy_all_rounded, size: 18),
+                label: const Text('Copiar do Orçamento'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: _indigo,
+                  backgroundColor: _indigo.withOpacity(0.1),
+                  side: BorderSide.none,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
                 ),
-                child: Row(children: [
-                  Icon(Icons.calendar_today_rounded, size: 16, color: _data != null ? const Color(0xFF3949AB) : Colors.grey[400]),
-                  const SizedBox(width: 10),
-                  Text(
-                    _data != null ? '${_data!.day.toString().padLeft(2, '0')}/${_data!.month.toString().padLeft(2, '0')}/${_data!.year}' : 'Selecionar data',
-                    style: TextStyle(fontSize: 14, color: _data != null ? const Color(0xFF1A1F36) : Colors.grey[400]),
-                  ),
-                ]),
               ),
-            )),
-            if (_data != null) ...[
-              const SizedBox(width: 8),
-              GestureDetector(onTap: () => setState(() => _data = null),
-                  child: Container(width: 40, height: 40,
-                      decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(12)),
-                      child: Icon(Icons.close_rounded, size: 18, color: Colors.grey[500]))),
             ],
-          ]),
-          const SizedBox(height: 24),
-          Row(children: [
-            Expanded(child: TextButton(
-              style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 13),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey[200]!))),
-              onPressed: () { widget.onLimpar(); Navigator.of(context).pop(); },
-              child: Text('Limpar', style: TextStyle(color: Colors.grey[600], fontWeight: FontWeight.w600)),
-            )),
-            const SizedBox(width: 12),
-            Expanded(child: ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1A237E), foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 13), elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-              onPressed: () { widget.onAplicar(_nomeCtrl.text, _status, _data, _categoriaId); Navigator.of(context).pop(); },
-              child: const Text('Aplicar', style: TextStyle(fontWeight: FontWeight.w700)),
-            )),
-          ]),
-        ]),
-      ),
+          ),
+        ),
+        Expanded(
+          child: FutureBuilder<List<GastoFixoResponseDto>>(
+            future: _gastosFixos,
+            builder: (context, snapshot) {
+              final estado = _estadoVazio(snapshot);
+              if (estado != null) return estado;
+
+              return GastosFixosWebContent(
+                filtrados: _filtrar(snapshot.data!),
+                categorias: _categorias,
+                status: _filtroStatus,
+                categoriaId: _filtroCategoriaId,
+                data: _filtroData,
+                onStatus: (s) => setState(() => _filtroStatus = s),
+                onCategoria: (id) => setState(() => _filtroCategoriaId = id),
+                onData: (d) => setState(() => _filtroData = d),
+                onLimpar: _limparFiltros,
+                onTapItem: _navegar,
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
-}
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// Empty state
-// ═══════════════════════════════════════════════════════════════════════════════
-class _EmptyState extends StatelessWidget {
-  final String message;
-  final String subtitle;
-  final bool showClearButton;
-  final VoidCallback? onClear;
-
-  const _EmptyState({required this.message, required this.subtitle, this.showClearButton = false, this.onClear});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Container(padding: const EdgeInsets.all(28),
-          decoration: BoxDecoration(color: const Color(0xFF1A237E).withOpacity(0.06), shape: BoxShape.circle),
-          child: Icon(showClearButton ? Icons.filter_alt_off_rounded : Icons.receipt_long_rounded,
-              size: 48, color: const Color(0xFF3949AB).withOpacity(0.5))),
-      const SizedBox(height: 20),
-      Text(message, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey[700])),
-      const SizedBox(height: 6),
-      Text(subtitle, style: TextStyle(fontSize: 13, color: Colors.grey[450])),
-      if (showClearButton && onClear != null) ...[
-        const SizedBox(height: 20),
-        TextButton.icon(onPressed: onClear, icon: const Icon(Icons.clear_all_rounded, size: 16),
-            label: const Text('Limpar filtros'),
-            style: TextButton.styleFrom(foregroundColor: const Color(0xFF3949AB))),
-      ],
-      const SizedBox(height: 100),
-    ]));
-  }
-}
-
-// ─── Botão glassmorphism ──────────────────────────────────────────────────────
-class _HeaderButton extends StatefulWidget {
-  final Widget child;
-  final VoidCallback onTap;
-  final String tooltip;
-  final bool isSquare;
-
-  const _HeaderButton({super.key, required this.child, required this.onTap, required this.tooltip, this.isSquare = false});
-
-  @override
-  State<_HeaderButton> createState() => _HeaderButtonState();
-}
-
-class _HeaderButtonState extends State<_HeaderButton> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: widget.tooltip,
-      child: GestureDetector(
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) { setState(() => _pressed = false); widget.onTap(); },
-        onTapCancel: () => setState(() => _pressed = false),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 100),
-          padding: EdgeInsets.symmetric(horizontal: widget.isSquare ? 10 : 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: _pressed ? Colors.white.withOpacity(0.28) : Colors.white.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
-          ),
-          child: widget.child,
+  // ── Versão mobile ───────────────────────────────────────────────────────────
+  Widget _buildMobile() {
+    return Column(
+      children: [
+        FixosHeader(
+          auth: Provider.of<AuthState>(context),
+          isRefreshing: _isRefreshing,
+          refreshCtrl: _refreshCtrl,
+          onRefresh: _handleRefresh,
+          onFiltros: _showFiltros,
+          onBack: () => Navigator.of(context).pop(),
+          onCopiar: _abrirCopiarGastos,
+          gastosFuture: _gastosFixos,
+          filtrar: _filtrar,
+          temFiltroAtivo: _temFiltroAtivo,
         ),
-      ),
+        Expanded(
+          child: FutureBuilder<List<GastoFixoResponseDto>>(
+            future: _gastosFixos,
+            builder: (context, snapshot) {
+              final estado = _estadoVazio(snapshot);
+              if (estado != null) return estado;
+
+              final grupos = _agrupar(_filtrar(snapshot.data!));
+              final widgets = <Widget>[];
+
+              for (final chave in grupos.keys) {
+                final itens = grupos[chave]!;
+                if (chave == 'PENDENTE') {
+                  widgets.addAll(_gruposPendentes(itens));
+                } else if (chave != 'PAGO') {
+                  widgets.add(StatusGroup(
+                      status: chave, itens: itens, onTapItem: _navegar));
+                } else {
+                  final totalPagos = itens.fold<double>(
+                      0, (s, g) => s + (double.tryParse(g.valor ?? '0') ?? 0));
+                  widgets.add(PagosHeader(
+                      totalItens: itens.length, totalValor: totalPagos));
+
+                  final porDia = _agruparPorDia(itens);
+                  for (final diaKey in porDia.keys) {
+                    final diaItens = porDia[diaKey]!;
+                    final totalDia = diaItens.fold<double>(
+                        0, (s, g) => s + (double.tryParse(g.valor ?? '0') ?? 0));
+                    widgets.add(PagosDiaGroup(
+                      diaKey: diaKey,
+                      itens: diaItens,
+                      totalDia: totalDia,
+                      onTapItem: _navegar,
+                    ));
+                  }
+                }
+              }
+
+              return RefreshIndicator(
+                color: _indigo,
+                onRefresh: () async => _handleRefresh(),
+                child: CustomScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  slivers: [
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (_, i) => widgets[i],
+                          childCount: widgets.length,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFab() {
+    return FutureBuilder<OrcamentoResponseDto>(
+      future: _orcamento,
+      builder: (context, snapshot) {
+        final isAtivo =
+            snapshot.hasData && snapshot.data!.dataEncerramento == null;
+        if (!isAtivo) return const SizedBox.shrink();
+        return FloatingActionButton.extended(
+          onPressed: _novoGasto,
+          backgroundColor: _indigo,
+          foregroundColor: Colors.white,
+          elevation: 4,
+          icon: const Icon(Icons.add, size: 20),
+          label: const Text('Novo Gasto',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+        );
+      },
     );
   }
 }
