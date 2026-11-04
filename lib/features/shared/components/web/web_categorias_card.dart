@@ -113,4 +113,3 @@ class WebCategoriasCard extends StatelessWidget {
     );
   }
 }
-

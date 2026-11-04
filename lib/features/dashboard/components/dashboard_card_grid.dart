@@ -2,12 +2,21 @@ import 'package:flutter/material.dart';
 
 import 'package:orcamentos_app/features/dashboard/components/dashboard_card.dart';
 import 'package:orcamentos_app/features/dashboard/constants/dashboard_cards.dart';
+import 'package:orcamentos_app/features/dashboard/components/charts/dashboard_comparativo.dart';
+import 'package:orcamentos_app/features/dashboard/components/charts/dashboard_distribuicao.dart';
+import 'package:orcamentos_app/features/dashboard/components/charts/dashboard_fixos_variaveis.dart';
+import 'package:orcamentos_app/features/dashboard/components/charts/dashboard_situacao.dart';
 import 'package:orcamentos_app/features/dashboard/models/dashboard_data.dart';
 
 class DashboardCardGrid extends StatelessWidget {
   final DashboardData data;
+  final VoidCallback onVerOrcamentos;
 
-  const DashboardCardGrid({super.key, required this.data});
+  const DashboardCardGrid({
+    super.key,
+    required this.data,
+    required this.onVerOrcamentos,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -53,6 +62,14 @@ class DashboardCardGrid extends StatelessWidget {
                   itemBuilder: (_, i) =>
                       DashboardCard(config: cards[i], index: i),
                 ),
+                const SizedBox(height: 16),
+                DashboardDistribuicao(data: data),
+                const SizedBox(height: 12),
+                DashboardFixosVariaveis(data: data),
+                const SizedBox(height: 12),
+                DashboardComparativo(data: data),
+                const SizedBox(height: 12),
+                DashboardSituacao(data: data, onVerOrcamentos: onVerOrcamentos),
               ],
             ),
           ),

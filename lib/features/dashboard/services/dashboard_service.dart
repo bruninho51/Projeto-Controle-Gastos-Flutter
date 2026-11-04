@@ -1,4 +1,5 @@
 import 'package:orcamentos_app/features/dashboard/models/dashboard_data.dart';
+import 'package:orcamentos_app/features/dashboard/models/dashboard_orcamento.dart';
 import 'package:orcamentos_app/features/dashboard/repositories/dashboard_repository.dart';
 
 class DashboardService {
@@ -26,6 +27,10 @@ class DashboardService {
       gastosFixosAtivos: consolidado['gastosFixosComprometidos'],
       gastosVariaveisAtivos: consolidado['gastosVariadosRealizados'],
       valorPoupado: consolidado['valorPoupado'],
+      orcamentosAtivos: orcamentos
+          .where((o) => o['data_encerramento'] == null)
+          .map((o) => DashboardOrcamento.fromJson(o as Map<String, dynamic>))
+          .toList(),
     );
   }
 }

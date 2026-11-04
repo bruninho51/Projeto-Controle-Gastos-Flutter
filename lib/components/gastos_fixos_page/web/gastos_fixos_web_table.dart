@@ -20,13 +20,13 @@ class GastosFixosWebTable extends StatelessWidget {
   static const _ordem = ['VENCIDO', 'PENDENTE', 'PAGO'];
 
   List<GastoFixoResponseDto> _doStatus(String status) {
-    final lista =
-        gastos.where((g) => statusDoGastoFixo(g) == status).toList();
+    final lista = gastos.where((g) => statusDoGastoFixo(g) == status).toList();
     DateTime? data(GastoFixoResponseDto g) =>
         status == 'PAGO' ? g.dataPgto : g.dataVenc;
     lista.sort((a, b) {
       final da = data(a), db = data(b);
-      if (da == null || db == null) return da == null ? (db == null ? 0 : 1) : -1;
+      if (da == null || db == null)
+        return da == null ? (db == null ? 0 : 1) : -1;
       return status == 'PAGO' ? db.compareTo(da) : da.compareTo(db);
     });
     return lista;
@@ -65,7 +65,8 @@ class GastosFixosWebTable extends StatelessWidget {
     if (itens.isEmpty) return const [];
     final total = itens.fold<double>(
         0,
-        (s, g) => s +
+        (s, g) =>
+            s +
             (status == 'PAGO'
                 ? GastosFixosResumo.pagoDe(g)
                 : GastosFixosResumo.previstoDe(g)));
@@ -143,10 +144,10 @@ class _CabecalhoSecao extends StatelessWidget {
               TextSpan(children: [
                 TextSpan(
                     text: titulo,
-                    style: TextStyle(
-                        fontWeight: FontWeight.w700, color: cor)),
+                    style: TextStyle(fontWeight: FontWeight.w700, color: cor)),
                 TextSpan(
-                    text: '  •  $quantidade ${quantidade == 1 ? 'item' : 'itens'}',
+                    text:
+                        '  •  $quantidade ${quantidade == 1 ? 'item' : 'itens'}',
                     style: TextStyle(color: Colors.grey[500])),
               ]),
               style: const TextStyle(fontSize: 13),

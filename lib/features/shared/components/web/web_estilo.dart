@@ -16,3 +16,4 @@ BoxDecoration webCardDecoration() => BoxDecoration(
         ),
       ],
     );
+const Color kIndigo = Color(0xFF1A237E);

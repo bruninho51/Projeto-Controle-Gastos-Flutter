@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:provider/provider.dart';
+import 'package:orcamentos_app/features/categories/components/web/categories_web_content.dart';
+import 'package:orcamentos_app/features/shared/components/web/web_breadcrumb.dart';
+import 'package:orcamentos_app/features/shared/components/web/web_page_toolbar.dart';
+import 'package:orcamentos_app/features/shared/navigation/navigation_controller.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_loading.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_snackbar.dart';
 import 'package:orcamentos_app/features/shared/components/confirmation_dialog.dart';
@@ -30,6 +35,11 @@ class _ExpenseCategoriesPageState extends State<ExpenseCategoriesPage>
   bool _isRefreshing = false;
   late ExpenseCategoriesService _categoriesService;
   TipoCategoriaGasto? _filtroTipo;
+  String _busca = '';
+
+  /// Quantidade de categorias exibidas na versão web (paginação local).
+  static const int _tamanhoPagina = 11;
+  int _limite = _tamanhoPagina;
 
   static const _gradientColors = [
     Color(0xFF1A237E),
@@ -111,10 +121,35 @@ class _ExpenseCategoriesPageState extends State<ExpenseCategoriesPage>
     }
   }
 
-  List<CategoriaGastoResponseDto> get _categoriasFiltradas =>
-      _filtroTipo == null
-          ? _categorias
-          : _categorias.where((c) => c.tipo == _filtroTipo).toList();
+  List<CategoriaGastoResponseDto> get _categoriasFiltradas {
+    final termo = _busca.trim().toLowerCase();
+    return _categorias
+        .where((c) =>
+            (_filtroTipo == null || c.tipo == _filtroTipo) &&
+            (termo.isEmpty || c.nome.toLowerCase().contains(termo)))
+        .toList();
+  }
+
+  void _abrirNovaCategoria() => showCategoryFormDialog(
+        context: context,
+        onConfirm: _createCategoria,
+      );
+
+  void _editarCategoria(CategoriaGastoResponseDto categoria) =>
+      showCategoryFormDialog(
+        context: context,
+        categoria: categoria,
+        onConfirm: (nome, tipo) => _updateCategoria(categoria, nome, tipo),
+      );
+
+  void _excluirCategoria(CategoriaGastoResponseDto categoria) =>
+      ConfirmationDialog.confirmAction(
+        context: context,
+        title: 'Excluir Categoria',
+        message: 'Deseja realmente excluir esta categoria?',
+        actionText: 'Excluir',
+        action: () => _deleteCategoria(categoria.id),
+      );
 
   Future<void> _createCategoria(String nome, TipoCategoriaGasto tipo) async {
     try {
@@ -216,8 +251,81 @@ class _ExpenseCategoriesPageState extends State<ExpenseCategoriesPage>
     );
   }
 
+  /// Layout de desktop apenas na web e com espaço suficiente.
+  static const double _larguraMinimaWeb = 720;
+
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, constraints) {
+      final isWeb = kIsWeb && constraints.maxWidth >= _larguraMinimaWeb;
+      return isWeb ? _buildWeb() : _buildMobile();
+    });
+  }
+
+  // ── Versão web ──────────────────────────────────────────────────────────────
+  Widget _buildWeb() {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF4F5F9),
+      body: Column(
+        children: [
+          WebPageToolbar(
+            titulo: 'Categorias',
+            subtitulo: 'Organize seus tipos de gasto',
+            breadcrumb: [
+              WebCrumb('Orçamentos',
+                  onTap: () => context
+                      .read<NavigationController>()
+                      .select(NavigationController.orcamentosIndex)),
+              const WebCrumb('Categorias'),
+            ],
+            busca: _busca,
+            placeholderBusca: 'Buscar categorias...',
+            rotuloNovo: 'Nova categoria',
+            mostrarFiltros: false,
+            temFiltroAtivo: false,
+            podeCriar: true,
+            isRefreshing: _isRefreshing,
+            refreshCtrl: _refreshCtrl,
+            onBuscar: (v) => setState(() {
+              _busca = v;
+              _limite = _tamanhoPagina;
+            }),
+            onFiltros: () {},
+            onRefresh: _handleRefresh,
+            onNovoGasto: _abrirNovaCategoria,
+            onBack: () => Navigator.of(context).pop(),
+          ),
+          Expanded(
+            child: _isLoading
+                ? Center(
+                    child:
+                        OrcamentosLoading(message: 'Carregando categorias...'))
+                : _categorias.isEmpty
+                    ? const CategoriesEmptyState()
+                    : CategoriesWebContent(
+                        todas: _categorias,
+                        filtradas: _categoriasFiltradas,
+                        tipo: _filtroTipo,
+                        limite: _limite,
+                        cores: _categoryColors,
+                        onTipo: (t) => setState(() {
+                          _filtroTipo = t;
+                          _limite = _tamanhoPagina;
+                        }),
+                        onCarregarMais: () =>
+                            setState(() => _limite += _tamanhoPagina),
+                        onNova: _abrirNovaCategoria,
+                        onEditar: _editarCategoria,
+                        onExcluir: _excluirCategoria,
+                      ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Versão mobile ───────────────────────────────────────────────────────────
+  Widget _buildMobile() {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F5F9),
       body: Column(

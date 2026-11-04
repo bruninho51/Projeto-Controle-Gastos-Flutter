@@ -4,6 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
 import 'package:orcamentos_app/features/notifications/regex_patterns/repositories/padrao_regex_notificacao_repository.dart';
 import 'package:orcamentos_app/features/notifications/services/notification_processing_service.dart';
+import 'package:orcamentos_app/features/shared/navigation/navigation_controller.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
 import 'package:orcamentos_app/shared/auth_service.dart';
 import 'package:orcamentos_app/shared/biometric_service.dart';
@@ -14,6 +15,9 @@ import 'package:provider/single_child_widget.dart';
 
 List<SingleChildWidget> globalProviders() {
   return [
+    ChangeNotifierProvider<NavigationController>(
+      create: (_) => NavigationController(),
+    ),
     Provider<ApiService>(
       create: (_) => ApiService(),
     ),

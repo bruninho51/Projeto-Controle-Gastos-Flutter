@@ -1,6 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:orcamentos_app/features/shared/components/orcamentos_loading.dart';
+import 'package:orcamentos_app/features/shared/components/web/web_botoes.dart';
+import 'package:orcamentos_app/features/shared/components/web/web_page_toolbar.dart';
+import 'package:orcamentos_app/components/gastos_fixos_page/gastos_fixos_page.dart';
+import 'package:orcamentos_app/components/gastos_variados_page/gastos_variados_page.dart';
+import 'package:orcamentos_app/features/budgets/components/web/orcamentos_web_content.dart';
+import 'package:orcamentos_app/features/budgets/components/web/orcamentos_web_resumo.dart';
+import 'package:orcamentos_app/features/budgets/pages/orcamento_detalhes_page.dart';
+import 'package:orcamentos_app/features/budgets/utils/orcamentos_aba.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import 'package:orcamentos_app/features/categories/pages/expense_categories_page.dart';
@@ -35,6 +46,11 @@ class OrcamentosPageState extends State<OrcamentosPage> {
   bool _isLoading = false;
   bool _isMenuOpen = false;
 
+  /// Quantidade de lançamentos por orçamento (usada na versão web).
+  Map<int, ContagemGastos> _contagens = {};
+  Timer? _buscaDebounce;
+  late OrcamentosAba _aba;
+
   final _menuButtonKey = GlobalKey();
 
   // ── Filtros ─────────────────────────────────────────────────────────────
@@ -54,7 +70,7 @@ class OrcamentosPageState extends State<OrcamentosPage> {
 
   ApiService get _api => Provider.of<ApiService>(context, listen: false);
 
-  bool get _isEncerrados => widget.encerrados;
+  bool get _isEncerrados => _aba == OrcamentosAba.encerrados;
 
   void _safeSetState(VoidCallback fn) {
     if (mounted) setState(fn);
@@ -65,12 +81,19 @@ class OrcamentosPageState extends State<OrcamentosPage> {
   @override
   void initState() {
     super.initState();
+    _aba = widget.encerrados ? OrcamentosAba.encerrados : OrcamentosAba.ativos;
     // Padrão de ordenação por modo: encerrados pela data de encerramento,
     // ativos pela data de criação (ambos decrescentes — mais recentes no topo).
     _ordenacaoCampo = _isEncerrados ? 'data_encerramento' : 'data_criacao';
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _fetchOrcamentos();
     });
+  }
+
+  @override
+  void dispose() {
+    _buscaDebounce?.cancel();
+    super.dispose();
   }
 
   bool get _temFiltroAtivo => _filtroNome.isNotEmpty;
@@ -82,7 +105,7 @@ class OrcamentosPageState extends State<OrcamentosPage> {
 
     try {
       final orcamentos = await _api.getOrcamentos(
-        encerrado: _isEncerrados,
+        encerrado: _aba.encerrado,
         nome: _filtroNome.isEmpty ? null : _filtroNome,
       );
 
@@ -92,6 +115,7 @@ class OrcamentosPageState extends State<OrcamentosPage> {
         _orcamentos = orcamentos;
         _isLoading = false;
       });
+      if (kIsWeb) _carregarContagens(orcamentos);
     } catch (e) {
       _safeSetState(() => _isLoading = false);
 
@@ -99,6 +123,19 @@ class OrcamentosPageState extends State<OrcamentosPage> {
         OrcamentosSnackBar.error(context: context, message: 'Erro: $e');
       }
     }
+  }
+
+  /// Carrega a quantidade de gastos fixos e variados de cada orçamento.
+  Future<void> _carregarContagens(List<OrcamentoResponseDto> orcamentos) async {
+    final contagens = <int, ContagemGastos>{};
+    await Future.wait(orcamentos.map((o) async {
+      try {
+        final fixos = await _api.getGastosFixos(orcamentoId: o.id);
+        final variados = await _api.getGastosVariados(orcamentoId: o.id);
+        contagens[o.id] = ContagemGastos(fixos.length, variados.length);
+      } catch (_) {}
+    }));
+    _safeSetState(() => _contagens = contagens);
   }
 
   /// Ordena a lista no cliente conforme [_ordenacaoCampo]/[_ordenacaoAscendente]
@@ -157,11 +194,56 @@ class OrcamentosPageState extends State<OrcamentosPage> {
   void _limparFiltros() {
     setState(() {
       _filtroNome = '';
+      _aba = widget.encerrados
+          ? OrcamentosAba.encerrados
+          : OrcamentosAba.ativos;
       _ordenacaoCampo = _isEncerrados ? 'data_encerramento' : 'data_criacao';
       _ordenacaoAscendente = false;
     });
     _fetchOrcamentos();
   }
+
+  // ── Ações da versão web ──────────────────────────────────────────────────
+
+  void _buscar(String nome) {
+    _filtroNome = nome;
+    _buscaDebounce?.cancel();
+    _buscaDebounce =
+        Timer(const Duration(milliseconds: 350), _fetchOrcamentos);
+    setState(() {});
+  }
+
+  void _mudarAba(OrcamentosAba aba) {
+    setState(() {
+      _aba = aba;
+      // Data de encerramento só existe fora da aba de ativos.
+      if (aba == OrcamentosAba.ativos &&
+          _ordenacaoCampo == 'data_encerramento') {
+        _ordenacaoCampo = 'data_criacao';
+      }
+    });
+    _fetchOrcamentos();
+  }
+
+  void _ordenarPor(String campo, bool ascendente) {
+    setState(() {
+      _ordenacaoCampo = campo;
+      _ordenacaoAscendente = ascendente;
+      _ordenar(_orcamentos);
+    });
+  }
+
+  Future<void> _abrir(Widget pagina) async {
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => pagina));
+    if (mounted) _fetchOrcamentos();
+  }
+
+  void _abrirDetalhes(OrcamentoResponseDto o) =>
+      _abrir(OrcamentoDetalhesPage(orcamentoId: o.id));
+  void _abrirFixos(OrcamentoResponseDto o) =>
+      _abrir(GastosFixosPage(orcamentoId: o.id));
+  void _abrirVariados(OrcamentoResponseDto o) =>
+      _abrir(GastosVariadosPage(orcamentoId: o.id));
 
   Future<void> _navigateToNovoOrcamento() async {
     final result = await Navigator.push<bool>(
@@ -196,15 +278,54 @@ class OrcamentosPageState extends State<OrcamentosPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF4F5F9),
-      body: Column(
-        children: [
-          _buildHeader(),
-          Expanded(child: _buildBody()),
-        ],
-      ),
-      floatingActionButton: _isEncerrados ? null : _buildFAB(),
+    return LayoutBuilder(builder: (context, constraints) {
+      final isWeb = kIsWeb && constraints.maxWidth >= _larguraMinimaWeb;
+      return Scaffold(
+        backgroundColor: const Color(0xFFF4F5F9),
+        body: isWeb
+            ? Column(
+                children: [
+                  _buildWebToolbar(),
+                  Expanded(child: _buildBody(web: true)),
+                ],
+              )
+            : Column(
+                children: [
+                  _buildHeader(),
+                  Expanded(child: _buildBody()),
+                ],
+              ),
+        floatingActionButton: (isWeb || _isEncerrados) ? null : _buildFAB(),
+      );
+    });
+  }
+
+  /// Layout de desktop apenas na web e com espaço suficiente.
+  static const double _larguraMinimaWeb = 720;
+
+  Widget _buildWebToolbar() {
+    final mes = toBeginningOfSentenceCase(
+        DateFormat("MMMM 'de' yyyy", 'pt_BR').format(DateTime.now()));
+    return WebPageToolbar(
+      titulo: 'Orçamentos',
+      subtitulo: 'Controle seus gastos ativos · $mes',
+      cor: _gradientColors[0],
+      busca: _filtroNome,
+      placeholderBusca: 'Buscar orçamentos...',
+      rotuloNovo: 'Novo orçamento',
+      temFiltroAtivo: _temFiltroAtivo,
+      podeCriar: true,
+      onBuscar: _buscar,
+      onFiltros: _abrirFiltros,
+      onRefresh: _fetchOrcamentos,
+      onNovoGasto: _navigateToNovoOrcamento,
+      acoes: [
+        WebOutlinedButton(
+          icon: Icons.grid_view_rounded,
+          label: 'Categorias',
+          onTap: _navigateToCategorias,
+        ),
+      ],
     );
   }
 
@@ -390,8 +511,8 @@ class OrcamentosPageState extends State<OrcamentosPage> {
 
   // ── Body ─────────────────────────────────────────────────────────────────
 
-  Widget _buildBody() {
-    if (_isLoading) {
+  Widget _buildBody({bool web = false}) {
+    if (_isLoading && !(web && _orcamentos.isNotEmpty)) {
       return Center(
         child: OrcamentosLoading(message: 'Carregando orçamentos...'),
       );
@@ -417,6 +538,22 @@ class OrcamentosPageState extends State<OrcamentosPage> {
           : OrcamentosPageEmptyState(
               onAddOrcamento: _navigateToNovoOrcamento,
             );
+    }
+
+    if (web) {
+      return OrcamentosWebContent(
+        orcamentos: _orcamentos,
+        contagens: _contagens,
+        aba: _aba,
+        ordenacaoCampo: _ordenacaoCampo,
+        ordenacaoAscendente: _ordenacaoAscendente,
+        onAba: _mudarAba,
+        onOrdenar: _ordenarPor,
+        onLimpar: _limparFiltros,
+        onAbrir: _abrirDetalhes,
+        onFixos: _abrirFixos,
+        onVariados: _abrirVariados,
+      );
     }
 
     return RefreshIndicator(

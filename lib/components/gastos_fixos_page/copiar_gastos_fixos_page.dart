@@ -1,10 +1,16 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:orcamentos_app/components/gastos_fixos_page/copiar_gastos_fixos_service.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_loading.dart';
 import 'package:orcamentos_app/shared/api_models.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
 import 'package:orcamentos_app/features/categories/components/category_tipo_style.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_snackbar.dart';
+import 'package:orcamentos_app/components/gastos_fixos_page/web/copiar_web_content.dart';
+import 'package:orcamentos_app/features/budgets/pages/orcamento_detalhes_page.dart';
+import 'package:orcamentos_app/features/shared/components/web/web_breadcrumb.dart';
+import 'package:orcamentos_app/features/shared/navigation/navigation_controller.dart';
 import 'package:provider/provider.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -27,16 +33,18 @@ class _CopiarGastosFixosPageState extends State<CopiarGastosFixosPage> {
   late ApiService apiService;
 
   late Future<List<OrcamentoResponseDto>> _orcamentos;
+  late Future<OrcamentoResponseDto> _destino;
+
+  /// Orçamentos de origem e orçamento de destino, carregados juntos (web).
+  late Future<List<dynamic>> _dadosWeb;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      apiService = Provider.of<ApiService>(context, listen: false);
-      setState(() {
-        _orcamentos = _fetchOrcamentos(); // síncrono — só atribui o Future
-      });
-    });
+    apiService = Provider.of<ApiService>(context, listen: false);
+    _orcamentos = _fetchOrcamentos();
+    _destino = apiService.getOrcamentoById(widget.orcamentoDestinoId);
+    _dadosWeb = Future.wait([_orcamentos, _destino]);
   }
 
   Future<List<OrcamentoResponseDto>> _fetchOrcamentos() async {
@@ -47,8 +55,67 @@ class _CopiarGastosFixosPageState extends State<CopiarGastosFixosPage> {
       ..sort((a, b) => b.dataCriacao.compareTo(a.dataCriacao));
   }
 
+  /// Layout de desktop apenas na web e com espaço suficiente.
+  static const double _larguraMinimaWeb = 720;
+
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, constraints) {
+      final isWeb = kIsWeb && constraints.maxWidth >= _larguraMinimaWeb;
+      return isWeb ? _buildWeb() : _buildMobile();
+    });
+  }
+
+  // ── Versão web ──────────────────────────────────────────────────────────────
+  Widget _buildWeb() {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF4F5F9),
+      body: FutureBuilder<List<dynamic>>(
+        future: _dadosWeb,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: OrcamentosLoading(message: 'Carregando...'));
+          }
+          if (snapshot.hasError) {
+            return Center(
+                child: Text('Erro ao carregar orçamentos ${snapshot.error}',
+                    style: TextStyle(color: Colors.grey[600])));
+          }
+          final orcamentos = snapshot.data![0] as List<OrcamentoResponseDto>;
+          final destino = snapshot.data![1] as OrcamentoResponseDto;
+
+          return CopiarWebContent(
+            destinoId: widget.orcamentoDestinoId,
+            destinoNome: destino.nome,
+            orcamentos: orcamentos,
+            onBack: () => Navigator.of(context).pop(),
+            onConcluido: (copiou) => Navigator.of(context).pop(copiou),
+            breadcrumb: [
+              WebCrumb('Orçamentos',
+                  onTap: () => context
+                      .read<NavigationController>()
+                      .select(NavigationController.orcamentosIndex)),
+              WebCrumb(
+                destino.nome,
+                onTap: () => Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => OrcamentoDetalhesPage(
+                        orcamentoId: widget.orcamentoDestinoId),
+                  ),
+                  (route) => route.isFirst,
+                ),
+              ),
+              const WebCrumb('Copiar gastos fixos'),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  // ── Versão mobile ───────────────────────────────────────────────────────────
+  Widget _buildMobile() {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F5F9),
       body: Column(
@@ -168,36 +235,6 @@ class _SelecionarGastosPageState extends State<_SelecionarGastosPage> {
     return apiService.getGastosFixos(orcamentoId: widget.orcamentoFonteId);
   }
 
-  DateTime? _ajustarDataVencimento(DateTime? dataVencimento) {
-    if (dataVencimento == null) return null;
-
-    final agora = DateTime.now();
-
-    int ano = dataVencimento.year;
-    int mes = dataVencimento.month;
-
-    if (ano < agora.year || (ano == agora.year && mes < agora.month)) {
-      mes = agora.month;
-      ano = agora.year;
-    } else if (ano == agora.year && mes == agora.month) {
-      mes++;
-
-      if (mes > 12) {
-        mes = 1;
-        ano++;
-      }
-    }
-
-    // último dia do mês alvo
-    final ultimoDiaDoMes = DateTime(ano, mes + 1, 0).day;
-
-    final dia = dataVencimento.day > ultimoDiaDoMes
-        ? ultimoDiaDoMes
-        : dataVencimento.day;
-
-    return DateTime(ano, mes, dia);
-  }
-
   Future<void> _copiar() async {
     if (_selecionados.isEmpty) {
       OrcamentosSnackBar.error(
@@ -211,27 +248,8 @@ class _SelecionarGastosPageState extends State<_SelecionarGastosPage> {
       final selecionados =
       gastos.where((g) => _selecionados.contains(g.id)).toList();
 
-      int erros = 0;
-
-      for (final g in selecionados) {
-        // Transfere data_venc para o mesmo dia no mês atual
-        DateTime? dataVencAtualizada = _ajustarDataVencimento(g.dataVenc);
-
-        try {
-          await apiService.createGastoFixo(
-            widget.orcamentoDestinoId,
-            GastoFixoCreateDto(
-              descricao: g.descricao,
-              previsto: g.previsto,
-              categoriaId: g.categoriaId,
-              observacoes: g.observacoes ?? '',
-              dataVenc: dataVencAtualizada,
-            ),
-          );
-        } catch (_) {
-          erros++;
-        }
-      }
+      final erros = await copiarGastosFixos(
+          apiService, widget.orcamentoDestinoId, selecionados);
 
       if (!mounted) return;
 

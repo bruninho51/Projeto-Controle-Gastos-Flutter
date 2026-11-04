@@ -10,7 +10,10 @@ import 'package:orcamentos_app/components/gastos_variados_page/gastos_page_empty
 import 'package:orcamentos_app/components/gastos_variados_page/web/gastos_web_content.dart';
 import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_loading.dart';
+import 'package:orcamentos_app/features/budgets/pages/orcamento_detalhes_page.dart';
+import 'package:orcamentos_app/features/shared/components/web/web_breadcrumb.dart';
 import 'package:orcamentos_app/features/shared/components/web/web_page_toolbar.dart';
+import 'package:orcamentos_app/features/shared/navigation/navigation_controller.dart';
 import 'package:orcamentos_app/shared/api_models.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
 import 'package:provider/provider.dart';
@@ -239,6 +242,23 @@ class _GastosVariadosPageState extends State<GastosVariadosPage>
           future: _orcamento,
           builder: (context, snapshot) => WebPageToolbar(
             titulo: 'Gastos Variados',
+            breadcrumb: [
+              WebCrumb('Orçamentos',
+                  onTap: () => context
+                      .read<NavigationController>()
+                      .select(NavigationController.orcamentosIndex)),
+              WebCrumb(
+                snapshot.data?.nome ?? 'Orçamento',
+                onTap: () => Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        OrcamentoDetalhesPage(orcamentoId: widget.orcamentoId),
+                  ),
+                ),
+              ),
+              const WebCrumb('Gastos Variados'),
+            ],
             subtitulo: 'Extrato de lançamentos',
             busca: _filtroNome,
             temFiltroAtivo: _temFiltroAtivo,

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
 
 import 'package:orcamentos_app/features/shared/navigation/app_navigation_items.dart';
 import 'package:orcamentos_app/features/shared/navigation/navigation_item.dart';
@@ -10,6 +12,9 @@ class AppNavigationRail extends StatelessWidget {
   final VoidCallback onToggleExtended;
   final VoidCallback onLogout;
 
+  /// Índice do item exibido ao tocar no card do usuário (perfil).
+  final int? profileIndex;
+
   const AppNavigationRail({
     super.key,
     required this.currentIndex,
@@ -17,6 +22,7 @@ class AppNavigationRail extends StatelessWidget {
     required this.onItemSelected,
     required this.onToggleExtended,
     required this.onLogout,
+    this.profileIndex,
   });
 
   @override
@@ -54,38 +60,25 @@ class AppNavigationRail extends StatelessWidget {
                 Container(
                   width: 40,
                   height: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
                   ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
+                  child: ClipOval(
                     child: Image.asset('assets/icon.png', fit: BoxFit.cover),
                   ),
                 ),
                 if (extended) ...[
                   const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Orçamentos',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.2,
-                          ),
-                        ),
-                        Text(
-                          'App',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.5),
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
+                  const Expanded(
+                    child: Text(
+                      'Minhas\nFinanças',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        height: 1.15,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ],
@@ -110,21 +103,16 @@ class AppNavigationRail extends StatelessWidget {
             ),
           ),
 
-          // Rodapé: colapsar + sair
+          // Rodapé: colapsar + sair + usuário
           Padding(
             padding: EdgeInsets.fromLTRB(
               10,
               0,
               10,
-              MediaQuery.of(context).padding.bottom + 20,
+              MediaQuery.of(context).padding.bottom + 16,
             ),
             child: Column(
               children: [
-                Container(
-                  height: 1,
-                  color: Colors.white.withValues(alpha: 0.1),
-                  margin: const EdgeInsets.only(bottom: 12),
-                ),
                 _RailFooterButton(
                   extended: extended,
                   icon: extended
@@ -133,7 +121,7 @@ class AppNavigationRail extends StatelessWidget {
                   label: 'Recolher',
                   onTap: onToggleExtended,
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 _RailFooterButton(
                   extended: extended,
                   icon: Icons.logout_rounded,
@@ -141,10 +129,90 @@ class AppNavigationRail extends StatelessWidget {
                   onTap: onLogout,
                   isDanger: true,
                 ),
+                Container(
+                  height: 1,
+                  color: Colors.white.withValues(alpha: 0.12),
+                  margin: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                _RailUserCard(
+                  extended: extended,
+                  onTap: profileIndex == null
+                      ? null
+                      : () => onItemSelected(profileIndex!),
+                ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─── Card do usuário ─────────────────────────────────────────────────────────
+
+class _RailUserCard extends StatelessWidget {
+  final bool extended;
+  final VoidCallback? onTap;
+
+  const _RailUserCard({required this.extended, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final user = Provider.of<AuthState>(context).user;
+    final nome = user?.displayName ?? user?.email ?? 'Usuário';
+    final foto = user?.photoURL;
+
+    final avatar = CircleAvatar(
+      radius: 18,
+      backgroundColor: Colors.white.withValues(alpha: 0.2),
+      backgroundImage: foto != null ? NetworkImage(foto) : null,
+      child: foto == null
+          ? const Icon(Icons.person_rounded, color: Colors.white, size: 18)
+          : null,
+    );
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+        child: Row(
+          mainAxisAlignment:
+              extended ? MainAxisAlignment.start : MainAxisAlignment.center,
+          children: [
+            avatar,
+            if (extended) ...[
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      nome,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      'Ver perfil',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.55),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.keyboard_arrow_down_rounded,
+                  color: Colors.white.withValues(alpha: 0.6), size: 18),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -189,35 +257,23 @@ class _RailItemState extends State<_RailItem> {
           ),
           decoration: BoxDecoration(
             color: widget.selected
-                ? Colors.white.withValues(alpha: 0.18)
+                ? Colors.white.withValues(alpha: 0.16)
                 : _hovered
                     ? Colors.white.withValues(alpha: 0.08)
                     : Colors.transparent,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
             mainAxisAlignment: widget.extended
                 ? MainAxisAlignment.start
                 : MainAxisAlignment.center,
             children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: 3,
-                height: widget.selected ? 20 : 0,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              SizedBox(
-                width: widget.selected ? 10 : (widget.extended ? 13 : 0),
-              ),
               Icon(
                 widget.selected ? widget.item.activeIcon : widget.item.icon,
                 color: widget.selected
                     ? Colors.white
-                    : Colors.white.withValues(alpha: 0.55),
-                size: 22,
+                    : Colors.white.withValues(alpha: 0.7),
+                size: 20,
               ),
               if (widget.extended) ...[
                 const SizedBox(width: 12),
@@ -227,10 +283,10 @@ class _RailItemState extends State<_RailItem> {
                     style: TextStyle(
                       color: widget.selected
                           ? Colors.white
-                          : Colors.white.withValues(alpha: 0.55),
+                          : Colors.white.withValues(alpha: 0.7),
                       fontSize: 14,
                       fontWeight: widget.selected
-                          ? FontWeight.w700
+                          ? FontWeight.w600
                           : FontWeight.w400,
                     ),
                   ),

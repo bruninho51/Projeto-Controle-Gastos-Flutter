@@ -3,6 +3,11 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:orcamentos_app/features/shared/components/orcamentos_loading.dart';
 import 'package:orcamentos_app/features/shared/components/value_input_dialog.dart';
 import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
+import 'package:orcamentos_app/components/form_gasto_fixo_page/form_gasto_fixo_page.dart';
+import 'package:orcamentos_app/components/form_gasto_variado_page/form_gasto_variado_page.dart';
+import 'package:orcamentos_app/features/budgets/components/web/orcamento_detalhes_web_content.dart';
+import 'package:orcamentos_app/features/budgets/components/web/orcamento_detalhes_web_header.dart';
+import 'package:orcamentos_app/features/budgets/components/web/orcamento_detalhes_web_utilizacao.dart';
 import 'package:orcamentos_app/shared/api_models.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
 import 'package:orcamentos_app/shared/patch_field.dart';
@@ -192,14 +197,14 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
     );
   }
 
-  Widget _buildDashboardCards(Map<String, dynamic> orcamento) {
-    final isEncerrado = orcamento['data_encerramento'] != null;
+  /// Definição dos cards de métricas (compartilhada por mobile e web).
+  List<MetricCardDef> _cardDefs(Map<String, dynamic> orcamento) {
     final valorInicial = double.parse(orcamento['valor_inicial'] ?? '0.0');
     final valorAtual = double.parse(orcamento['valor_atual'] ?? '0.0');
     final valorLivre = double.parse(orcamento['valor_livre'] ?? '0.0');
     final gastosVencidos = int.parse(orcamento['gastos_vencidos']);
 
-    final cardDefs = [
+    return [
       MetricCardDef(title: 'Valor Inicial', value: formatarValorDouble(valorInicial), color: const Color(0xFF3949AB), icon: Icons.account_balance_rounded),
       MetricCardDef(title: 'Valor Atual', value: formatarValorDouble(valorAtual), color: const Color(0xFF00897B), icon: Icons.bar_chart_rounded),
       MetricCardDef(title: 'Valor Livre', value: formatarValorDouble(valorLivre), color: const Color(0xFF43A047), icon: Icons.account_balance_wallet_rounded),
@@ -207,6 +212,13 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
       MetricCardDef(title: 'Gastos Variados', value: '${orcamento['gastos_variados']} itens', color: const Color(0xFF5E35B1), icon: Icons.trending_up_rounded, onTap: _navigateToGastosVariados),
       MetricCardDef(title: 'Vencidos', value: '$gastosVencidos itens', color: gastosVencidos > 0 ? const Color(0xFFE53935) : const Color(0xFF43A047), icon: gastosVencidos > 0 ? Icons.warning_amber_rounded : Icons.check_circle_outline_rounded),
     ];
+  }
+
+  Widget _buildDashboardCards(Map<String, dynamic> orcamento) {
+    final isEncerrado = orcamento['data_encerramento'] != null;
+    final valorInicial = double.parse(orcamento['valor_inicial'] ?? '0.0');
+
+    final cardDefs = _cardDefs(orcamento);
 
     return LayoutBuilder(builder: (context, constraints) {
       final isWide = constraints.maxWidth > 800;
@@ -392,18 +404,10 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
           _showRenameDialog(context);
           break;
         case 'encerrar':
-          ConfirmationDialog.confirmAction(
-            context: context, title: 'Confirmar Encerramento',
-            message: 'Deseja encerrar este orçamento?', actionText: 'Encerrar',
-            action: () async { await _encerrarOrcamento(); setState(() {}); },
-          );
+          _confirmarEncerrar(context);
           break;
         case 'reativar':
-          ConfirmationDialog.confirmAction(
-            context: context, title: 'Confirmar Reativação',
-            message: 'Deseja reativar este orçamento?', actionText: 'Reativar',
-            action: () async { await _reativarOrcamento(); setState(() {}); },
-          );
+          _confirmarReativar(context);
           break;
         case 'apagar':
           ConfirmationDialog.confirmAction(
@@ -414,6 +418,30 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
           break;
       }
     });
+  }
+
+  void _confirmarEncerrar(BuildContext context) {
+    ConfirmationDialog.confirmAction(
+      context: context, title: 'Confirmar Encerramento',
+      message: 'Deseja encerrar este orçamento?', actionText: 'Encerrar',
+      action: () async { await _encerrarOrcamento(); setState(() {}); },
+    );
+  }
+
+  void _confirmarReativar(BuildContext context) {
+    ConfirmationDialog.confirmAction(
+      context: context, title: 'Confirmar Reativação',
+      message: 'Deseja reativar este orçamento?', actionText: 'Reativar',
+      action: () async { await _reativarOrcamento(); setState(() {}); },
+    );
+  }
+
+  Future<void> _novoGasto(String tipo) async {
+    final pagina = tipo == 'fixo'
+        ? CriacaoGastoFixoPage(orcamentoId: widget.orcamentoId)
+        : CriacaoGastoVariadoPage(orcamentoId: widget.orcamentoId);
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => pagina));
+    if (mounted) _loadOrcamentoData();
   }
 
   PopupMenuItem<String> _menuItem(String value, IconData icon, String label, Color color, {bool isDanger = false}) {
@@ -431,8 +459,73 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
     );
   }
 
+  /// Layout de desktop apenas na web e com espaço suficiente.
+  static const double _larguraMinimaWeb = 720;
+
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, constraints) {
+      final isWeb = kIsWeb && constraints.maxWidth >= _larguraMinimaWeb;
+      return isWeb ? _buildWeb() : _buildMobile();
+    });
+  }
+
+  // ── Versão web ──────────────────────────────────────────────────────────────
+  Widget _buildWeb() {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF4F5F9),
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: _orcamentoDetalhes,
+        builder: (context, snapshot) {
+          final data = snapshot.data;
+
+          Widget corpo;
+          if (snapshot.connectionState == ConnectionState.waiting && data == null) {
+            corpo = Center(child: OrcamentosLoading(message: 'Carregando o Orçamento...'));
+          } else if (snapshot.hasError) {
+            corpo = InfoStateWidget(buttonForegroundColor: Colors.red, buttonBackgroundColor: Colors.white, icon: Icons.error, iconColor: Colors.red, message: snapshot.error is String ? snapshot.error as String : 'Erro desconhecido', buttonText: 'Tentar novamente', onPressed: _loadOrcamentoData);
+          } else if (data == null) {
+            corpo = InfoStateWidget(buttonForegroundColor: Colors.orange, buttonBackgroundColor: Colors.white, icon: Icons.warning_amber, iconColor: Colors.orange, message: 'Nenhum dado encontrado');
+          } else {
+            final valorInicial = double.parse(data['valor_inicial'] ?? '0.0');
+            final valorAtual = double.parse(data['valor_atual'] ?? '0.0');
+            corpo = OrcamentoDetalhesWebContent(
+              cards: _buildDashboardCards(data),
+              grafico: _buildGraficoCategorias(),
+              valorInicial: valorInicial,
+              valorAtual: valorAtual,
+              vencidos: int.parse(data['gastos_vencidos']),
+              criadoEm: DateTime.tryParse('${data['data_criacao']}'),
+            );
+          }
+
+          return Column(
+            children: [
+              OrcamentoDetalhesWebHeader(
+                nome: _nomeOrcamento,
+                encerrado: _isEncerrado,
+                criadoEm: DateTime.tryParse('${data?['data_criacao']}'),
+                refreshCtrl: _refreshCtrl,
+                menuKey: _menuButtonKey,
+                onBack: () => Navigator.of(context).pop(),
+                onRefresh: _handleRefresh,
+                onEditar: () => _showRenameDialog(context),
+                onEncerrarOuReativar: () => _isEncerrado
+                    ? _confirmarReativar(context)
+                    : _confirmarEncerrar(context),
+                onMenu: () => _showOptionsMenu(context),
+                onNovoGasto: _novoGasto,
+              ),
+              Expanded(child: corpo),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  // ── Versão mobile ───────────────────────────────────────────────────────────
+  Widget _buildMobile() {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F5F9),
       body: Column(
@@ -495,6 +588,14 @@ class _OrcamentoDetalhesPageState extends State<OrcamentoDetalhesPage>
                       const SizedBox(height: 24),
                       _sectionLabel('GASTOS POR CATEGORIA'),
                       _buildGraficoCategorias(),
+                      const SizedBox(height: 24),
+                      _sectionLabel('UTILIZAÇÃO'),
+                      OrcamentoDetalhesWebUtilizacao(
+                        valorInicial: double.parse(data['valor_inicial'] ?? '0.0'),
+                        valorAtual: double.parse(data['valor_atual'] ?? '0.0'),
+                        vencidos: int.parse(data['gastos_vencidos']),
+                        criadoEm: DateTime.tryParse('${data['data_criacao']}'),
+                      ),
                     ],
                   ),
                 );

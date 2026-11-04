@@ -14,7 +14,11 @@ import 'package:orcamentos_app/components/gastos_fixos_page/status_group.dart';
 import 'package:orcamentos_app/components/gastos_fixos_page/web/gastos_fixos_web_content.dart';
 import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_loading.dart';
+import 'package:orcamentos_app/features/budgets/pages/orcamento_detalhes_page.dart';
+import 'package:orcamentos_app/features/shared/components/web/web_breadcrumb.dart';
+import 'package:orcamentos_app/features/shared/components/web/web_botoes.dart';
 import 'package:orcamentos_app/features/shared/components/web/web_page_toolbar.dart';
+import 'package:orcamentos_app/features/shared/navigation/navigation_controller.dart';
 import 'package:orcamentos_app/shared/api_models.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
 import 'package:provider/provider.dart';
@@ -320,6 +324,23 @@ class _GastosFixosPageState extends State<GastosFixosPage>
           future: _orcamento,
           builder: (context, snapshot) => WebPageToolbar(
             titulo: 'Gastos Fixos',
+            breadcrumb: [
+              WebCrumb('Orçamentos',
+                  onTap: () => context
+                      .read<NavigationController>()
+                      .select(NavigationController.orcamentosIndex)),
+              WebCrumb(
+                snapshot.data?.nome ?? 'Orçamento',
+                onTap: () => Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        OrcamentoDetalhesPage(orcamentoId: widget.orcamentoId),
+                  ),
+                ),
+              ),
+              const WebCrumb('Gastos Fixos'),
+            ],
             subtitulo: 'Planejamento de despesas',
             cor: _indigo,
             busca: _filtroNome,
@@ -336,19 +357,10 @@ class _GastosFixosPageState extends State<GastosFixosPage>
                 ? () => Navigator.of(context).pop()
                 : null,
             acoes: [
-              OutlinedButton.icon(
-                onPressed: _abrirCopiarGastos,
-                icon: const Icon(Icons.copy_all_rounded, size: 18),
-                label: const Text('Copiar do Orçamento'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: _indigo,
-                  backgroundColor: _indigo.withOpacity(0.1),
-                  side: BorderSide.none,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                ),
+              WebOutlinedButton(
+                icon: Icons.copy_all_rounded,
+                label: 'Copiar do Orçamento',
+                onTap: _abrirCopiarGastos,
               ),
             ],
           ),

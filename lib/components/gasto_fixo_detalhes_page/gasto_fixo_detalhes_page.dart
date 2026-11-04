@@ -1,7 +1,12 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:orcamentos_app/features/shared/components/orcamentos_loading.dart';
+import 'package:orcamentos_app/components/gasto_fixo_detalhes_page/web/gasto_fixo_web_content.dart';
+import 'package:orcamentos_app/features/budgets/pages/orcamento_detalhes_page.dart';
+import 'package:orcamentos_app/features/shared/components/web/web_breadcrumb.dart';
+import 'package:orcamentos_app/features/shared/navigation/navigation_controller.dart';
 import 'package:orcamentos_app/shared/api_models.dart';
 import 'package:orcamentos_app/shared/api_service.dart';
 import 'package:orcamentos_app/features/categories/components/category_tipo_badge.dart';
@@ -545,8 +550,85 @@ class _DetalhesGastoFixoPageState extends State<DetalhesGastoFixoPage>
     );
   }
 
+  /// Layout de desktop apenas na web e com espaço suficiente.
+  static const double _larguraMinimaWeb = 720;
+
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, constraints) {
+      final isWeb = kIsWeb && constraints.maxWidth >= _larguraMinimaWeb;
+      return isWeb ? _buildWeb() : _buildMobile();
+    });
+  }
+
+  // ─── Versão web ──────────────────────────────────────────────────────────────
+  Widget _buildWeb() {
+    final g = gasto;
+    final o = orcamento;
+    if (g == null || o == null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF4F5F9),
+        body: Center(child: OrcamentosLoading(message: 'Carregando...')),
+      );
+    }
+    final venc = g.dataVenc;
+    final isVencido = venc != null && !_isPago && venc.isBefore(DateTime.now());
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF4F5F9),
+      body: GastoFixoWebContent(
+        onBack: () => Navigator.of(context).pop(),
+        breadcrumb: [
+          WebCrumb('Orçamentos',
+              onTap: () => context
+                  .read<NavigationController>()
+                  .select(NavigationController.orcamentosIndex)),
+          WebCrumb(
+            o.nome,
+            onTap: () => Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    OrcamentoDetalhesPage(orcamentoId: widget.orcamentoId),
+              ),
+              (route) => route.isFirst,
+            ),
+          ),
+          WebCrumb('Gastos Fixos', onTap: () => Navigator.of(context).pop()),
+          WebCrumb(g.descricao.toUpperCase()),
+        ],
+        gasto: g,
+        isPago: _isPago,
+        isVencido: isVencido,
+        isPatrimonio: _isPatrimonio,
+        isAtivo: _isOrcamentoAtivo,
+        refreshCtrl: _refreshCtrl,
+        onRefresh: _handleRefresh,
+        onRegistrar: !_isPago && _isOrcamentoAtivo ? _registrarPagamento : null,
+        onDelete: _isOrcamentoAtivo ? _confirmarExclusao : null,
+        onEditNome: _editNome,
+        onEditPrevisto: _editValorPrevisto,
+        onEditPago: _editValorPago,
+        onEditDataPgto: _editDataPagamento,
+        onEditVencimento: _editDataVencimento,
+        onEditCategoria: _editCategoria,
+        onEditObservacoes: _editObservacoes,
+      ),
+    );
+  }
+
+  void _confirmarExclusao() => ConfirmationDialog.confirmAction(
+        context: context,
+        title: _isPatrimonio ? 'Apagar Aporte' : 'Apagar Gasto',
+        message: _isPatrimonio
+            ? 'Deseja realmente apagar este aporte?'
+            : 'Deseja realmente apagar este gasto fixo?',
+        actionText: 'Apagar',
+        action: _delete,
+      );
+
+  // ─── Versão mobile ───────────────────────────────────────────────────────────
+  Widget _buildMobile() {
     final g = gasto;
     final o = orcamento;
     final descricao = g?.descricao ?? 'Gasto Fixo';

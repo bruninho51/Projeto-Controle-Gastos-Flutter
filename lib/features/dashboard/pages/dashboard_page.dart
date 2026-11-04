@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -8,6 +9,9 @@ import 'package:orcamentos_app/features/dashboard/components/dashboard_header.da
 import 'package:orcamentos_app/features/dashboard/models/dashboard_data.dart';
 import 'package:orcamentos_app/features/dashboard/services/dashboard_service.dart';
 import 'package:orcamentos_app/features/auth/providers/auth_provider.dart';
+import 'package:orcamentos_app/features/dashboard/components/web/dashboard_web_content.dart';
+import 'package:orcamentos_app/features/dashboard/components/web/dashboard_web_header.dart';
+import 'package:orcamentos_app/features/shared/navigation/navigation_controller.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -20,11 +24,13 @@ class _DashboardPageState extends State<DashboardPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _service = DashboardService();
+  late Future<DashboardData> _dados;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _dados = _carregar();
   }
 
   @override
@@ -33,20 +39,32 @@ class _DashboardPageState extends State<DashboardPage>
     super.dispose();
   }
 
+  Future<DashboardData> _carregar() => _service
+      .getDashboardData(Provider.of<AuthState>(context, listen: false).apiToken!);
+
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthState>(context);
+    return LayoutBuilder(builder: (context, constraints) {
+      final isWeb = kIsWeb && constraints.maxWidth >= 720;
+      return _buildScaffold(auth, isWeb);
+    });
+  }
+
+  Widget _buildScaffold(AuthState auth, bool isWeb) {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F5F9),
       body: Column(
         children: [
-          DashboardHeader(auth: auth, tabController: _tabController),
+          isWeb
+              ? DashboardWebHeader(tabController: _tabController)
+              : DashboardHeader(auth: auth, tabController: _tabController),
           Expanded(
             child: TabBarView(
               controller: _tabController,
               children: [
                 FutureBuilder<DashboardData>(
-                  future: _service.getDashboardData(auth.apiToken!),
+                  future: _dados,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const OrcamentosLoading(
@@ -62,7 +80,7 @@ class _DashboardPageState extends State<DashboardPage>
                             ? snapshot.error as String
                             : 'Erro desconhecido',
                         buttonText: 'Tentar novamente',
-                        onPressed: () => setState(() {}),
+                        onPressed: () => setState(() => _dados = _carregar()),
                       );
                     } else if (!snapshot.hasData) {
                       return InfoStateWidget(
@@ -73,7 +91,18 @@ class _DashboardPageState extends State<DashboardPage>
                         message: 'Nenhum dado disponível',
                       );
                     }
-                    return DashboardCardGrid(data: snapshot.data!);
+                    void verOrcamentos() =>
+                        context.read<NavigationController>().select(NavigationController.orcamentosIndex);
+                    if (isWeb) {
+                      return DashboardWebContent(
+                        data: snapshot.data!,
+                        onVerOrcamentos: verOrcamentos,
+                      );
+                    }
+                    return DashboardCardGrid(
+                      data: snapshot.data!,
+                      onVerOrcamentos: verOrcamentos,
+                    );
                   },
                 ),
                 _buildComingSoon(),

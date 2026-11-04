@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:orcamentos_app/features/shared/components/main_app_scaffold.dart';
+import 'package:orcamentos_app/features/shared/components/web_shell.dart';
+import 'package:orcamentos_app/features/shared/navigation/navigation_controller.dart';
 import 'package:orcamentos_app/features/auth/auth_wrapper.dart';
 import 'package:orcamentos_app/shared/config/global_providers.dart';
 import 'package:provider/provider.dart';
@@ -12,20 +14,24 @@ class App extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: globalProviders(),
-      child: MaterialApp(
-        title: 'Orçamentos App',
-        theme: ThemeData(primarySwatch: Colors.blue),
-        locale: const Locale('pt', 'BR'),
-        supportedLocales: const [
-          Locale('pt', 'BR'),
-          Locale('en', 'US'),
-        ],
-        localizationsDelegates: const [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        home: const AuthWrapper(home: MainAppScaffold()),
+      child: Builder(
+        builder: (context) => MaterialApp(
+          navigatorKey: context.read<NavigationController>().navigatorKey,
+          builder: (context, child) => WebShell(child: child!),
+          title: 'Orçamentos App',
+          theme: ThemeData(primarySwatch: Colors.blue),
+          locale: const Locale('pt', 'BR'),
+          supportedLocales: const [
+            Locale('pt', 'BR'),
+            Locale('en', 'US'),
+          ],
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          home: const AuthWrapper(home: MainAppScaffold()),
+        ),
       ),
     );
   }

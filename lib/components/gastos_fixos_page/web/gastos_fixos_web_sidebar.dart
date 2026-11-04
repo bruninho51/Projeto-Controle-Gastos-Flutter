@@ -69,8 +69,7 @@ class _ResumoCard extends StatelessWidget {
             children: [
               Expanded(
                   child: Text(rotulo,
-                      style:
-                          TextStyle(fontSize: 12, color: Colors.grey[600]))),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[600]))),
               Text(fmt.format(valor),
                   style: TextStyle(
                       fontSize: 12, fontWeight: FontWeight.w700, color: cor)),
@@ -167,7 +166,8 @@ class _FiltrosRapidosCard extends StatelessWidget {
                   selected: status == s,
                   selectedColor: corDoStatusFixo(s).withOpacity(0.15),
                   labelStyle: TextStyle(
-                      color: status == s ? corDoStatusFixo(s) : Colors.grey[600],
+                      color:
+                          status == s ? corDoStatusFixo(s) : Colors.grey[600],
                       fontWeight: FontWeight.w600),
                   showCheckmark: false,
                   onSelected: (sel) => onStatus(sel ? s : null),
